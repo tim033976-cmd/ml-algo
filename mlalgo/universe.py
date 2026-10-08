@@ -58,15 +58,29 @@ def synthetic_universe(n: int = 60, n_days: int = 2500, seed: int = 0) -> dict[s
 
 @dataclass
 class FilterConfig:
-    min_price: float = 10.0
-    min_dollar_volume: float = 20e6      # 50-day average $ volume
-    max_below_52w_high: float = 0.25     # within 25% of 52-week high
-    min_above_52w_low: float = 0.30      # at least 30% above 52-week low
-    min_rs_rank: float = 0.70            # top 30% relative strength in the universe
-    require_trend: bool = True           # close > SMA50 > SMA150 > SMA200, SMA200 rising
+    """Two presets:
+    momentum       - the TradingView-style leader scan: price > $3, volume > 500k, ADR > 2%,
+                     price above the 8/21/50 EMAs, top relative strength.
+    trend_template - Minervini-style: price > $10, $20M/day, close > SMA50 > SMA150 > SMA200,
+                     near 52-week highs and well off the lows.
+    """
+    min_price: float = 3.0
+    min_avg_volume: float = 500_000      # 50-day average shares/day
+    min_dollar_volume: float = 0.0       # 50-day average $ volume
+    min_adr: float = 0.02                # average daily range
+    trend: str = "emas"                  # "emas" | "sma_template" | "none"
+    max_below_52w_high: float = 1.0
+    min_above_52w_low: float = 0.0
+    min_rs_rank: float = 0.70            # 0.70 = top 30% of the universe
 
 
-FILTER_COLUMNS = ["f_price", "f_liquidity", "f_trend", "f_near_high", "f_off_low", "f_rs"]
+PRESETS = {
+    "momentum": FilterConfig(),
+    "trend_template": FilterConfig(min_price=10, min_avg_volume=0, min_dollar_volume=20e6, min_adr=0,
+                                   trend="sma_template", max_below_52w_high=0.25, min_above_52w_low=0.30),
+}
+
+FILTER_COLUMNS = ["f_price", "f_liquidity", "f_adr", "f_trend", "f_near_high", "f_off_low", "f_rs"]
 
 
 def apply_filters(panel: pd.DataFrame, cfg: FilterConfig = FilterConfig()) -> pd.DataFrame:
@@ -74,8 +88,10 @@ def apply_filters(panel: pd.DataFrame, cfg: FilterConfig = FilterConfig()) -> pd
     `panel` is the (date, ticker) frame from structure.build_panel."""
     p = panel
     p["f_price"] = p["close"] >= cfg.min_price
-    p["f_liquidity"] = p["dollar_vol_50"] >= cfg.min_dollar_volume
-    p["f_trend"] = p["trend_template"].astype(bool) if cfg.require_trend else True
+    p["f_liquidity"] = (p["avg_vol_50"] >= cfg.min_avg_volume) & (p["dollar_vol_50"] >= cfg.min_dollar_volume)
+    p["f_adr"] = p["adr_pct"] >= cfg.min_adr
+    p["f_trend"] = {"emas": p["above_emas"] == 1, "sma_template": p["trend_template"] == 1,
+                    "none": pd.Series(True, index=p.index)}[cfg.trend]
     p["f_near_high"] = p["dist_52w_high"] >= -cfg.max_below_52w_high
     p["f_off_low"] = p["above_52w_low"] >= cfg.min_above_52w_low
     p["f_rs"] = p["rs_rank"] >= cfg.min_rs_rank

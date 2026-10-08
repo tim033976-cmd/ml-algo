@@ -3,19 +3,42 @@
 A small, honest starting point for machine-learning stock trading research:
 daily prices → features → walk-forward model → backtest with trading costs.
 
+## The playbook: market → leaders → setup → entry → trim plan
+
+```bash
+python strategy.py --universe universes/sample.txt                  # backtest setups + exits, test each rule
+python strategy.py --universe universes/sample.txt --require-market --ml
+python scan.py --universe universes/sample.txt --fundamentals       # today's signals + watchlist
+```
+
+| Step | Rule | Code |
+|---|---|---|
+| Market | Long when SPY/QQQ are above their 8/21/50 EMAs; reduce size in chop | `mlalgo/market.py`, `--require-market` |
+| Leaders | Price > $3, volume > 500k, ADR > 2%, above 8/21/50 EMA, top 30% relative strength (`--filter momentum`) | `mlalgo/universe.py` |
+| Setup | Tight base, volume drying up, above the MAs, 1st/2nd staircase step, quiet pullback (not big red candles on rising volume) | `mlalgo/structure.py` |
+| Entry: **breakout** | Close through a level rejected ≥ 2 times, ≥ 1.5× volume. Stop = low of day | `mlalgo/setups.py` |
+| Entry: **retest** | 8/21 EMA cross → break key level → retest level/8 EMA → close above the prior high. Stop = retest low | `mlalgo/setups.py` |
+| Entry: **undercut & rally** | Dip below the base low, then reclaim it. Stop = undercut low | `mlalgo/setups.py` |
+| Management | Sell 1/4 at +2R and move the stop to breakeven. Then sell 1/4 on a close below the 8 EMA, 1/4 below the 21 EMA, and the rest below the 50 EMA | `mlalgo/trade_sim.py` |
+
+`strategy.py` reports win rate, average R (profit in multiples of initial risk), profit factor and share of 5R+ winners for each setup. It then prints a **"do the rules hold up?"** table that splits trades by market regime, staircase number, pullback volume, volatility contraction, RS rank, extension from the 8 EMA, 12-month range position and the rates regime. Every rule gets tested instead of trusted. `--ml` trains a model on the setup signals walk-forward, using only trades that had already closed, and checks whether its top third beats taking every signal.
+
+Limits of daily data: entries are at the signal day's close (not 5-minute "sniper" entries), a gap through a stop fills at the open, and if the stop and target fall inside the same bar the stop is assumed to hit first. The default cost is 0.1% per side. Sanity check: on zero-drift random data every setup loses money after costs, as it should.
+
+**Multibagger paper factors** (Yartseva 2025, `mlalgo/fundamentals.py`, `--fundamentals`): FCF yield, book-to-market, ROA, small size, and a flag for asset growth outpacing EBITDA growth. These are combined into `paper_score`, with an industry-level relative strength as the theme gauge. Yahoo only provides *current* fundamentals, so these columns rank today's candidates and are never used in backtests. Note that the paper studies a 1-year horizon and found that buying near 12-month *lows* after a decline worked best for 10-baggers. That's the opposite of the momentum playbook, so the claims table checks `range_pos_12m` on your own trades.
+
 ## Scanner: universe → filter → chart structure → "primed?"
 
 ```bash
 python scan.py --universe universes/sample.txt               # today's ranked watchlist
 python scan.py --universe universes/sample.txt --evaluate    # does it actually work? (walk-forward)
-python scan.py --tickers NVDA,AAPL,META --target 0.15 --stop 0.07 --horizon 30
 python scan.py --csv-dir prices/                             # folder of TICKER.csv files
 python scan.py --synthetic --evaluate                        # offline pipeline check
 ```
 
-**Stage 1: filter the universe** (`mlalgo/universe.py`, all thresholds are CLI flags)
+**Stage 1: filter the universe** (`mlalgo/universe.py`). There are two presets: `--filter momentum` (the default, described above) and `--filter trend_template`:
 
-| Filter | Default |
+| Filter | trend_template |
 |---|---|
 | Price | ≥ $10 |
 | Liquidity | 50-day average $ volume ≥ $20M |

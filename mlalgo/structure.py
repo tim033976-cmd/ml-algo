@@ -13,11 +13,28 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from mlalgo.indicators import adr_pct, atr as _atr, ema
 
-def _atr(df: pd.DataFrame, n: int) -> pd.Series:
-    prev = df["close"].shift()
-    tr = pd.concat([df["high"] - df["low"], (df["high"] - prev).abs(), (df["low"] - prev).abs()], axis=1).max(axis=1)
-    return tr.rolling(n).mean()
+
+def _staircase_count(c: pd.Series, h: pd.Series, sma200: pd.Series, min_base: int = 10, lookback: int = 20) -> np.ndarray:
+    """How many 'steps' the current uptrend has made: breakouts to a new 20-day high after
+    a rest of >= `min_base` days, counted since price was last below its 200-day SMA.
+    1st/2nd steps are the sweet spot; late steps fail more often."""
+    prior_high = h.rolling(lookback).max().shift(1).to_numpy()
+    cc, s = c.to_numpy(), sma200.to_numpy()
+    out = np.zeros(len(cc))
+    count, since_high = 0, 0
+    for t in range(len(cc)):
+        if np.isnan(s[t]) or cc[t] < s[t]:
+            count = 0
+        if not np.isnan(prior_high[t]) and cc[t] > prior_high[t]:
+            if since_high >= min_base:
+                count += 1
+            since_high = 0
+        else:
+            since_high += 1
+        out[t] = count
+    return out
 
 
 def _window_range(df: pd.DataFrame, length: int, offset: int) -> pd.Series:
@@ -68,6 +85,33 @@ def structure_features(df: pd.DataFrame) -> pd.DataFrame:
     f["dist_to_pivot"] = c / pivot - 1                     # 0 = at pivot, -0.03 = 3% below
     f["days_since_pivot"] = h.rolling(40).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
     f["close_in_range_20"] = (c - l.rolling(20).min()) / (pivot - l.rolling(20).min())
+
+    # --- EMA momentum gauge (8/21/50) and daily range
+    e8, e21, e50 = ema(c, 8), ema(c, 21), ema(c, 50)
+    f["avg_vol_50"] = v.rolling(50).mean()
+    f["adr_pct"] = adr_pct(df)
+    f["above_emas"] = ((c > e8) & (c > e21) & (c > e50)).astype(int)
+    f["ema_stack"] = ((e8 > e21) & (e21 > e50)).astype(int)
+    f["ext_ema8_adr"] = (c / e8 - 1) / f["adr_pct"]        # extension from 8 EMA in ADRs
+    f["dist_ema21"] = c / e21 - 1
+
+    # --- healthy pullback vs reversal: quiet drift on low volume vs big red candles on rising volume
+    down = c < c.shift()
+    f["down_vol_ratio_10"] = (v.where(down).rolling(10, min_periods=1).mean() / v.rolling(50).mean()).fillna(0)
+    f["down_candle_exp_5"] = ((h - l).where(down).rolling(5, min_periods=1).mean() / _atr(df, 20)).fillna(0)
+    f["distribution_days_25"] = (down & (c.pct_change() < -0.002) & (v > v.rolling(50).mean())).rolling(25).sum()
+    f["closes_below_e21_10"] = (c < e21).rolling(10).sum()
+
+    # --- stage analysis (Weinstein, 30-week ~ 150-day SMA) and staircase count
+    sma150 = c.rolling(150).mean()
+    f["sma150_slope"] = sma150 / sma150.shift(20) - 1
+    f["stage"] = np.select([(c > sma150) & (f["sma150_slope"] > 0.005),
+                            (c < sma150) & (f["sma150_slope"] < -0.005)], [2, 4], 1)  # 1 = basing/flat
+    f["base_count"] = _staircase_count(c, h, sma200)
+
+    # --- the multibagger paper's entry-point factor: where in the 12-month range is price?
+    hi252, lo252 = h.rolling(252).max(), l.rolling(252).min()
+    f["range_pos_12m"] = (c - lo252) / (hi252 - lo252)
     return f.replace([np.inf, -np.inf], np.nan)
 
 
@@ -82,6 +126,9 @@ def setup_score(p: pd.DataFrame) -> pd.Series:
         "higher_lows": p["higher_lows"] == 1,
         "shallow_base": p["base_depth_60"] < 0.30,
         "accumulation": p["updown_vol_50"] > 1.0,
+        "above_emas": p["above_emas"] == 1,
+        "quiet_pullback": p["down_vol_ratio_10"] < 1.0,
+        "early_stage": p["base_count"].between(1, 2),
     })
     return checks.mean(axis=1)
 
@@ -102,4 +149,7 @@ ML_FEATURES = [
     "base_depth_60", "leg1_range", "leg2_range", "leg3_range", "contraction_ratio", "contracting",
     "higher_lows", "atr_ratio", "atr_pct", "tight_10", "close_std_10", "vol_dryup", "updown_vol_50",
     "dist_to_pivot", "days_since_pivot", "close_in_range_20", "setup_score",
+    "adr_pct", "above_emas", "ema_stack", "ext_ema8_adr", "dist_ema21", "down_vol_ratio_10",
+    "down_candle_exp_5", "distribution_days_25", "closes_below_e21_10", "sma150_slope", "stage",
+    "base_count", "range_pos_12m",
 ]

@@ -41,11 +41,11 @@ def synthetic(n_days: int = 3000, seed: int = 0) -> pd.DataFrame:
     """Random-walk prices for testing the pipeline offline. There is no real edge here,
     so a model that 'works' on this data is a sign of a bug (e.g. lookahead)."""
     rng = np.random.default_rng(seed)
-    rets = rng.normal(0.0003, 0.012, n_days)
+    rets = rng.normal(0.0003, 0.02, n_days)
     close = 100 * np.exp(np.cumsum(rets))
-    open_ = close * np.exp(rng.normal(0, 0.003, n_days))
-    high = np.maximum(open_, close) * np.exp(np.abs(rng.normal(0, 0.005, n_days)))
-    low = np.minimum(open_, close) * np.exp(-np.abs(rng.normal(0, 0.005, n_days)))
+    open_ = close * np.exp(rng.normal(0, 0.006, n_days))
+    high = np.maximum(open_, close) * np.exp(np.abs(rng.normal(0, 0.012, n_days)))
+    low = np.minimum(open_, close) * np.exp(-np.abs(rng.normal(0, 0.012, n_days)))
     volume = rng.lognormal(15, 0.3, n_days)
     idx = pd.bdate_range("2010-01-01", periods=n_days, name="date")
     return pd.DataFrame(

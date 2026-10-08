@@ -39,7 +39,7 @@ def test_same_day_target_and_stop_counts_as_stop():
 
 
 def test_filters_are_point_in_time_and_rank_cross_sectionally():
-    panel = apply_filters(build_panel(synthetic_universe(n=10, n_days=600)), FilterConfig(min_price=0, min_dollar_volume=0))
+    panel = apply_filters(build_panel(synthetic_universe(n=10, n_days=600)), FilterConfig(min_price=0, min_avg_volume=0))
     ranks = panel["rs_rank"].dropna().groupby(level="date")
     assert (ranks.max() == 1.0).all()
     assert panel["passes"].dtype == bool
