@@ -3,6 +3,45 @@
 A small, honest starting point for machine-learning stock trading research:
 daily prices → features → walk-forward model → backtest with trading costs.
 
+## Scanner: universe → filter → chart structure → "primed?"
+
+```bash
+python scan.py --universe universes/sample.txt               # today's ranked watchlist
+python scan.py --universe universes/sample.txt --evaluate    # does it actually work? (walk-forward)
+python scan.py --tickers NVDA,AAPL,META --target 0.15 --stop 0.07 --horizon 30
+python scan.py --csv-dir prices/                             # folder of TICKER.csv files
+python scan.py --synthetic --evaluate                        # offline pipeline check
+```
+
+**Stage 1: filter the universe** (`mlalgo/universe.py`, all thresholds are CLI flags)
+
+| Filter | Default |
+|---|---|
+| Price | ≥ $10 |
+| Liquidity | 50-day average $ volume ≥ $20M |
+| Trend template | close > SMA50 > SMA150 > SMA200, with SMA200 rising |
+| Near highs | within 25% of the 52-week high |
+| Off lows | ≥ 30% above the 52-week low |
+| Relative strength | top 30% of the universe (weighted 3/6/12-month return) |
+
+The scan prints how many stocks survive each filter.
+
+**Stage 2: chart structure** (`mlalgo/structure.py`). For each candidate it measures the "tight base near highs" setup:
+
+- **Volatility contraction (VCP):** the last 60 days are split into three 20-day legs. It checks whether each pullback is smaller than the one before (`contraction_ratio`, `contracting`).
+- **Tightness:** the 10-day price range, plus 10-day ATR divided by 50-day ATR (`tight_10`, `atr_ratio`). ATR is average true range, a standard daily volatility measure.
+- **Volume dry-up:** 10-day volume divided by 50-day volume (`vol_dryup`). It also compares volume on up days with volume on down days (`updown_vol_50`).
+- **Higher lows**, base depth, and distance to the pivot (the top of the base).
+- `setup_score`: a transparent 0–1 rule-based score showing what fraction of these "primed" conditions are met.
+
+**Stage 3: ML** (`mlalgo/labels.py`, `mlalgo/primed_model.py`). "It went" is defined with a triple barrier: from the close on the signal day, did the stock hit `+target` before `-stop` within `horizon` days? A gradient-boosting model is trained on all filtered candidates from all stocks to predict that outcome from the structure features. It outputs `prob_primed` for today's candidates.
+
+`--evaluate` runs this walk-forward with an embargo period, so training labels never overlap test dates. It compares three groups: all candidates, the top 5 per day by rule score, and the top 5 per day by ML probability. If the top picks don't beat "all candidates" on hit rate and average trade return, the structure signal isn't adding anything.
+
+Caveats: a ticker list of *today's* index members has survivorship bias (it leaves out stocks that later failed or were dropped). Stop fills assume no gaps through the stop. Daily bars can't tell whether the stop or the target was hit first on the same day; this code counts that as a stop.
+
+## Single-ticker model
+
 ## Quick start
 
 ```bash
