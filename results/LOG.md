@@ -1,5 +1,16 @@
 # Research log (newest first)
 
+## Run 6 — 2026-10-08 (commit 32c75da), 659,965 signals: wedges, triangles, tightness
+Excess avg R over random entries, averaged over all exits (OOS 2018+; IS in brackets):
+- **descending triangle (upside breakout):** +0.21 (IS +0.21). Consistent, but only ~80 signals/yr and n=706 OOS.
+- **falling wedge:** +0.13 (IS +0.27). With the O'Neil exit: IS +0.48R, OOS +0.19R, t 3.6, ~170/yr. The best new setup.
+- **symmetrical triangle:** +0.13 (IS +0.08).
+- **ascending triangle:** +0.05; **rising wedge:** +0.00. No edge, despite asc triangles' reputation.
+- **tight coils:** 7-day +0.04, 15-day +0.00. Tightness alone is not an edge, which matches the user's own trades (the tightest ATR bucket did worse) and the low ML importance of tightness features in every run.
+- With the sma50 exit and no filter, every pattern is near zero OOS. Their edge depends on the exit (O'Neil +20% target suits patterns better than long trends).
+- Bullish patterns that beat random are the ones that break a *falling* upper line (falling wedge, descending and symmetrical triangle). Flat-top (ascending) triangles did not.
+- Run 9 (idle cash in SPY) was cancelled at the moment run 8 finished, for an unknown reason. Re-triggered.
+
 ## Run 5 — 2026-10-08 (commit fd50739)
 - **Top-10-by-IS-expectancy portfolio (all EP strategies):** 12.0% CAGR, −32% MTM max DD, 506 trades, avg 6.3 of 10 slots used. Top 5: 10%/−33%. Top 20: 8%/−33%. SPY: 14.6%/−34%. The per-trade edge is real (OOS +0.3 to +0.6R), but there are too few signals (~57/yr) to keep capital working.
 - **Lumpy returns:** the best portfolios made 68-87% in 2023-2024 but mostly trailed SPY in 2018-2022.
