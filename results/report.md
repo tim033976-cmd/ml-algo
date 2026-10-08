@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-08 14:02 UTC in 34 min.
+Generated 2026-10-08 14:27 UTC in 22 min.
 Universe: 1488 stocks with data (sp600: 591, sp500: 499, sp400: 398; 0 former S&P 500 members). Signals 2006-01-03 -> 2026-10-06: 659,965.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
@@ -47,6 +47,7 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 | 2026-10-08 10:25 | d8d63d9  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh | high52, multi_touch, stage2               | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low     | early_stage, rs80_early, rs80_early_theme |            4 | Only setups in the model's top 10% likely superperformers / sma50_close           |        0.28 |       0.15 | Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades)          |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct |             nan    |             nan    |             nan    |             nan    |
 | 2026-10-08 10:53 | d8399f4  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh | high52, multi_touch, stage2               | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low     | early_stage, rs80_early, rs80_early_theme |            4 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct |             nan    |             nan    |             nan    |             nan    |
 | 2026-10-08 14:02 | 749e984  |      1488 |    659965 |        0.54 |        0.06 |          -0.04 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, falling_wedge, ep_gap5, ep_gap10, undercut, donchian_20, ep_gap10_vol2, ema_retest, sym_triangle, donchian_55                                       | high52, multi_touch, pocket_pivot, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.51 |           0.00 |          -0.30 |     0.02 | rates_rising, sma200_slope, above_52w_low, sector_rs, adr_pct | early_stage, rs80_early, rs80_early_theme |            2 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct |               0.56 |               0.02 |               0.38 |               0.03 |
+| 2026-10-08 14:27 | e7af2f7  |      1488 |    659965 |        0.54 |        0.06 |          -0.04 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, falling_wedge, ep_gap5, ep_gap10, undercut, donchian_20, ep_gap10_vol2, ema_retest, sym_triangle, donchian_55                                       | high52, multi_touch, pocket_pivot, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.51 |           0.00 |          -0.30 |     0.02 | rates_rising, sma200_slope, above_52w_low, sector_rs, adr_pct | early_stage, rs80_early, rs80_early_theme |            2 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct |               0.56 |               0.02 |               0.38 |               0.03 |
 
 ## 1. Did picking the best in-sample strategies work out-of-sample?
 
@@ -462,6 +463,24 @@ Break-even hit rate is about 50% (before costs and timeouts). By decile of the m
 |       8 | 27958.000 |       0.597 |        0.513 |      0.422 |            0.008 |           0.098 |
 |       9 | 27959.000 |       0.688 |        0.556 |      0.391 |            0.015 |           0.098 |
 
+Higher confidence tiers (all stocks / point-in-time S&P 500):
+
+| tier       |          n |   hit_target |   hit_stop |   avg_net_return |
+|:-----------|-----------:|-------------:|-----------:|-----------------:|
+| all stocks | 279586.000 |        0.487 |      0.390 |            0.008 |
+| top 10%    |  27959.000 |        0.556 |      0.391 |            0.015 |
+| top 5%     |  13980.000 |        0.578 |      0.374 |            0.019 |
+| top 2%     |   5592.000 |        0.609 |      0.355 |            0.025 |
+| top 1%     |   2796.000 |        0.628 |      0.351 |            0.027 |
+
+| tier       |         n |   hit_target |   hit_stop |   avg_net_return |
+|:-----------|----------:|-------------:|-----------:|-----------------:|
+| all stocks | 91558.000 |        0.466 |      0.348 |            0.011 |
+| top 10%    |  7002.000 |        0.578 |      0.338 |            0.023 |
+| top 5%     |  3541.000 |        0.604 |      0.328 |            0.027 |
+| top 2%     |  1494.000 |        0.630 |      0.320 |            0.030 |
+| top 1%     |   753.000 |        0.649 |      0.320 |            0.033 |
+
 S&P 500 stocks only, and only after they joined the index (survivorship check):
 
 |   p_b10 |         n |   predicted |   hit_target |   hit_stop |   avg_net_return |   median_return |
@@ -493,6 +512,24 @@ Break-even hit rate is about 33% (before costs and timeouts). By decile of the m
 |       7 | 27959.000 |       0.288 |        0.319 |      0.518 |            0.017 |          -0.102 |
 |       8 | 27958.000 |       0.339 |        0.338 |      0.538 |            0.018 |          -0.102 |
 |       9 | 27959.000 |       0.450 |        0.379 |      0.526 |            0.026 |          -0.102 |
+
+Higher confidence tiers (all stocks / point-in-time S&P 500):
+
+| tier       |          n |   hit_target |   hit_stop |   avg_net_return |
+|:-----------|-----------:|-------------:|-----------:|-----------------:|
+| all stocks | 279586.000 |        0.230 |      0.454 |            0.013 |
+| top 10%    |  27959.000 |        0.379 |      0.526 |            0.026 |
+| top 5%     |  13980.000 |        0.391 |      0.525 |            0.029 |
+| top 2%     |   5592.000 |        0.410 |      0.524 |            0.032 |
+| top 1%     |   2796.000 |        0.423 |      0.527 |            0.034 |
+
+| tier       |         n |   hit_target |   hit_stop |   avg_net_return |
+|:-----------|----------:|-------------:|-----------:|-----------------:|
+| all stocks | 91558.000 |        0.179 |      0.388 |            0.016 |
+| top 10%    |  4264.000 |        0.390 |      0.464 |            0.039 |
+| top 5%     |  2144.000 |        0.407 |      0.468 |            0.041 |
+| top 2%     |   893.000 |        0.441 |      0.465 |            0.047 |
+| top 1%     |   472.000 |        0.443 |      0.496 |            0.044 |
 
 S&P 500 stocks only, and only after they joined the index (survivorship check):
 
