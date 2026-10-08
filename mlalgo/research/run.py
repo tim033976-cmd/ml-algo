@@ -16,7 +16,8 @@ EXIT_NAMES = list(engine.EXITS)
 EXIT_CODES = np.array([engine.EXITS[k][0] for k in EXIT_NAMES], dtype=np.int64)
 GROUP_COLS = ["industry_rs", "industry_rank", "sector_rs"]
 SIGNAL_EXTRAS = ["risk_pct", "risk_adr", "vol_ratio", "gap", "close_strength",
-                 "prior_move", "flag_depth", "flag_days", "base_depth", "contraction"]
+                 "prior_move", "flag_depth", "flag_days", "base_depth", "contraction",
+                 "pattern_len", "pattern_width", "pattern_touches", "coil_range"]
 MARKET_COLS = ["mkt_ok", "mkt_ema_stack", "mkt_ret_21", "mkt_above200", "qqq_ok", "qqq_ret_21",
                "rates_rising", "breadth_50"]
 

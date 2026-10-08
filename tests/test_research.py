@@ -79,3 +79,52 @@ def test_research_signals_do_not_use_future_data():
     cols = ["idx", "entry_name", "entry", "stop"]
     key = lambda s: s[s["idx"] < cut][cols].sort_values(cols[:2]).reset_index(drop=True)
     pd.testing.assert_frame_equal(key(base), key(after))
+
+
+def _pattern_df(top, bottom, breakout_close, n_pre=200):
+    """Zig-zag between two trendlines (one swing every 6 bars), then a breakout bar."""
+    rng = np.random.default_rng(0)
+    pre = np.linspace(50, top[0] * 0.95, n_pre)
+    body = []
+    for i in range(len(top)):
+        body.append(bottom[i] + (top[i] - bottom[i]) * (0.5 + 0.5 * np.cos(i * np.pi / 6)))
+    close = np.r_[pre, body, [breakout_close]]
+    high = close * 1.002
+    low = close * 0.998
+    vol = np.r_[np.full(len(close) - 1, 1e6), 3e6]
+    return pd.DataFrame({"open": close, "high": high, "low": low, "close": close, "volume": vol},
+                        index=pd.bdate_range("2015-01-01", periods=len(close)))
+
+
+def _detect(df):
+    b = bars(df)
+    t, kind, *_ = engine.pattern_signals(b["h"], b["l"], b["c"], b["v"], b["vol50prev"], 60, 3, 0.0005, 0.02, 0.75, 1.2)
+    return {int(i): int(k) for i, k in zip(t, kind)}
+
+
+def test_ascending_triangle_and_falling_wedge_detected():
+    n = 60
+    asc = _pattern_df(np.full(n, 100.0), np.linspace(88, 98, n), 102.0)
+    assert _detect(asc).get(len(asc) - 1) == engine.PATTERNS["asc_triangle"]
+    wedge = _pattern_df(np.linspace(100, 92, n), np.linspace(88, 87, n) - np.linspace(0, 3, n) * 0 - np.linspace(0, 2, n), 93.5)
+    assert _detect(wedge).get(len(wedge) - 1) == engine.PATTERNS["falling_wedge"]
+
+
+def test_pattern_detector_does_not_use_future_data():
+    df = synthetic(4000, seed=301)
+    df["volume"] *= 5
+    cut = 3000
+    tampered = df.copy()
+    tampered.iloc[cut:] *= np.linspace(1, 0.4, len(df) - cut)[:, None]
+
+    def run(d):
+        b = bars(d)
+        t, kind, stop, *_ = engine.pattern_signals(b["h"], b["l"], b["c"], b["v"], b["vol50prev"],
+                                                   60, 3, 0.0005, 0.02, 0.75, 1.2)
+        keep = t < cut
+        return t[keep], kind[keep], stop[keep]
+
+    a, b_ = run(df), run(tampered)
+    assert len(a[0]) >= 5  # the check must actually cover some patterns
+    for x, y in zip(a, b_):
+        np.testing.assert_array_equal(x, y)

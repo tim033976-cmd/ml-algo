@@ -222,3 +222,130 @@ def staircase_count(c, h20prev, sma200, min_base):
             since += 1
         out[t] = count
     return out
+
+
+# ---------------------------------------------------------------- wedges / triangles
+PATTERNS = {"asc_triangle": 1, "desc_triangle": 2, "sym_triangle": 3, "falling_wedge": 4, "rising_wedge": 5}
+
+
+@njit(cache=True)
+def _fit(xs, ys, m):
+    """Least-squares line through m points; returns slope, intercept."""
+    sx = 0.0
+    sy = 0.0
+    for i in range(m):
+        sx += xs[i]
+        sy += ys[i]
+    mx, my = sx / m, sy / m
+    num = 0.0
+    den = 0.0
+    for i in range(m):
+        num += (xs[i] - mx) * (ys[i] - my)
+        den += (xs[i] - mx) ** 2
+    b = num / den if den > 0 else 0.0
+    return b, my - b * mx
+
+
+@njit(cache=True)
+def pattern_signals(h, l, c, v, vol50prev, window, k, flat_tol, touch_tol, min_converge, vol_mult):
+    """Trendline patterns from CONFIRMED swing points (a swing at i needs i+k <= t-1, so nothing
+    after the signal day is used). Upper line through swing highs, lower line through swing lows
+    (the last 2-3 touches per side), each within touch_tol of its line, closes contained between the lines,
+    and the lines converging. Classified by the slopes (fraction of price per day):
+      asc_triangle   flat top, rising bottom      desc_triangle  falling top, flat bottom
+      sym_triangle   falling top, rising bottom    falling_wedge  both falling, converging
+      rising_wedge   both rising, converging
+    Signal: first close above the upper line on >= vol_mult x average volume.
+    Stop: the lowest swing low of the last part of the pattern (lower line at the signal day)."""
+    n = len(c)
+    out_t = np.empty(n, dtype=np.int64)
+    out_kind = np.empty(n, dtype=np.int64)
+    out_stop = np.empty(n)
+    out_len = np.empty(n)
+    out_width = np.empty(n)
+    out_touch = np.empty(n)
+    m = 0
+    hx = np.empty(window)
+    hy = np.empty(window)
+    lx = np.empty(window)
+    ly = np.empty(window)
+    for t in range(window + k + 2, n):
+        start = t - window
+        last_pivot = t - 1 - k
+        nh = 0
+        nl = 0
+        for i in range(max(start, k), last_pivot + 1):
+            is_hi = True
+            is_lo = True
+            for j in range(i - k, i + k + 1):
+                if h[j] > h[i]:
+                    is_hi = False
+                if l[j] < l[i]:
+                    is_lo = False
+            if is_hi:
+                hx[nh] = i
+                hy[nh] = h[i]
+                nh += 1
+            if is_lo:
+                lx[nl] = i
+                ly[nl] = l[i]
+                nl += 1
+        if nh < 2 or nl < 2:
+            continue
+        # trendlines are drawn through the most recent touches (up to 3 per side), as a chartist would
+        if nh > 3:
+            for i in range(3):
+                hx[i], hy[i] = hx[nh - 3 + i], hy[nh - 3 + i]
+            nh = 3
+        if nl > 3:
+            for i in range(3):
+                lx[i], ly[i] = lx[nl - 3 + i], ly[nl - 3 + i]
+            nl = 3
+        bu, au = _fit(hx, hy, nh)
+        bl, al = _fit(lx, ly, nl)
+        ok = True
+        for i in range(nh):
+            if abs(hy[i] - (au + bu * hx[i])) > touch_tol * hy[i]:
+                ok = False
+        for i in range(nl):
+            if abs(ly[i] - (al + bl * lx[i])) > touch_tol * ly[i]:
+                ok = False
+        if not ok:
+            continue
+        x0 = min(hx[0], lx[0])
+        for i in range(int(x0), t):   # contained: no close outside the pattern before today
+            up = au + bu * i
+            lo = al + bl * i
+            if c[i] > up * (1 + touch_tol) or c[i] < lo * (1 - touch_tol):
+                ok = False
+                break
+        if not ok:
+            continue
+        up_t = au + bu * t
+        lo_t = al + bl * t
+        up_prev = au + bu * (t - 1)
+        w0 = (au + bu * x0) - (al + bl * x0)
+        w1 = up_t - lo_t
+        if w0 <= 0 or w1 <= 0 or w1 > min_converge * w0:
+            continue
+        if not (c[t] > up_t and c[t - 1] <= up_prev and v[t] >= vol_mult * vol50prev[t]):
+            continue
+        su = bu / c[t - 1]
+        sl = bl / c[t - 1]
+        kind = 0
+        if abs(su) <= flat_tol and sl > flat_tol:
+            kind = 1
+        elif su < -flat_tol and abs(sl) <= flat_tol:
+            kind = 2
+        elif su < -flat_tol and sl > flat_tol:
+            kind = 3
+        elif su < -flat_tol and sl < -flat_tol:
+            kind = 4
+        elif su > flat_tol and sl > flat_tol:
+            kind = 5
+        if kind == 0:
+            continue
+        out_t[m], out_kind[m], out_stop[m] = t, kind, lo_t
+        out_len[m], out_width[m], out_touch[m] = t - x0, w1 / c[t], nh + nl
+        m += 1
+    return out_t[:m], out_kind[:m], out_stop[:m], out_len[:m], out_width[:m], out_touch[:m]

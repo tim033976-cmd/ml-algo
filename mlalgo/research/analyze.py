@@ -130,7 +130,8 @@ def _rank_corr(estimator, X, y):
 def ml_dataset(sig: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     d = sig[sig["entry_name"] != BASELINE].copy()
     # setup-specific features are NaN for other setups by design; an all-NaN column breaks HGB
-    specific = ["prior_move", "flag_depth", "flag_days", "base_depth", "contraction"]
+    specific = ["prior_move", "flag_depth", "flag_days", "base_depth", "contraction",
+                "pattern_len", "pattern_width", "pattern_touches", "coil_range"]
     d[specific] = d[specific].fillna(-1)
     for c in FEATURES:
         if d[c].isna().all():

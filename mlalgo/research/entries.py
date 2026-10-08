@@ -152,6 +152,32 @@ def stage2(b):
     return _frame(t, b["l"][t], base_depth=depth[t])
 
 
+def chart_pattern(b, kind, window=60):
+    """Wedges / triangles from trendlines through confirmed swing points (engine.pattern_signals).
+    Computed once per stock (stored on that stock's bar dict), then split by pattern type."""
+    key = f"_patterns_{window}"
+    if key not in b:
+        b[key] = engine.pattern_signals(
+            b["h"], b["l"], b["c"], b["v"], b["vol50prev"], window, 3, 0.0005, 0.02, 0.75, 1.2)
+    t, kinds, stop, length, width, touches = b[key]
+    sel = kinds == engine.PATTERNS[kind]
+    return _frame(t[sel], np.minimum(stop[sel], b["l"][t[sel]]), pattern_len=length[sel],
+                  pattern_width=width[sel], pattern_touches=touches[sel])
+
+
+def tight_coil(b, days, adr_mult):
+    """Tightness breakout: the last `days` closes sit within adr_mult x ADR of each other (a
+    coiled spring), price above a rising 50-day; trigger is a close above the coil's high on
+    >= 1.2x volume. Stop = bottom of the coil."""
+    c = b["c"]
+    rng = (_rmax(c, days) - _rmin(c, days)) / _shift(c, 1)
+    coil_hi, coil_lo = _rmax(b["h"], days), _rmin(b["l"], days)
+    sig = ((rng <= adr_mult * _shift(b["adr"], 1)) & (c > coil_hi) & (c > b["sma50"])
+           & (b["sma50"] > _shift(b["sma50"], 20)) & (b["v"] >= 1.2 * b["vol50prev"]))
+    t = np.flatnonzero(sig)
+    return _frame(t, coil_lo[t], coil_range=rng[t])
+
+
 def _playbook(fn):
     def run(b, df, **_):
         s = fn(df, playbook.SetupConfig(max_risk=1.0))
@@ -188,6 +214,13 @@ ENTRIES = {
     "ep_gap10_vol5": (episodic_pivot, {"gap": 0.10, "vol_mult": 5.0}, False, "EP variant: gap >= 10% on 5x volume"),
     "ep_gap8_hold": (episodic_pivot, {"gap": 0.08, "hold": True}, False, "EP variant: gap >= 8%, closes above the open"),
     "pocket_pivot": (pocket_pivot, {}, False, "Morales & Kacher pocket pivot"),
+    "asc_triangle": (chart_pattern, {"kind": "asc_triangle"}, False, "Ascending triangle breakout (flat top, rising lows)"),
+    "desc_triangle": (chart_pattern, {"kind": "desc_triangle"}, False, "Descending triangle, upside breakout"),
+    "sym_triangle": (chart_pattern, {"kind": "sym_triangle"}, False, "Symmetrical triangle breakout (pennant)"),
+    "falling_wedge": (chart_pattern, {"kind": "falling_wedge"}, False, "Falling wedge breakout"),
+    "rising_wedge": (chart_pattern, {"kind": "rising_wedge"}, False, "Rising wedge, upside breakout"),
+    "tight_coil_7": (tight_coil, {"days": 7, "adr_mult": 1.0}, False, "7-day coil: closes within 1 ADR, breakout on volume"),
+    "tight_coil_15": (tight_coil, {"days": 15, "adr_mult": 1.5}, False, "15-day coil: closes within 1.5 ADR, breakout on volume"),
     "stage2": (stage2, {}, False, "Weinstein stage 2 breakout"),
     "ema_retest": (_playbook(playbook.retests), {}, True, "8/21 EMA cross -> break -> retest (your playbook)"),
     "multi_touch": (_playbook(playbook.breakouts), {}, True, "Multi-touch level breakout on volume (your playbook)"),

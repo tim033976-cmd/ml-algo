@@ -1,5 +1,12 @@
 # Research log (newest first)
 
+## Run 6 — planned 2026-10-08 (queued behind run 5)
+**User question:** do ascending/descending triangles, wedges and tightness work?
+- New entries: `asc_triangle`, `desc_triangle`, `sym_triangle`, `falling_wedge`, `rising_wedge` (60-day window). Trendlines are fit through the last 2-3 *confirmed* swing highs/lows (a swing at i needs i+3 <= t-1, so nothing after the signal day is used). Each touch must be within 2% of its line, closes must stay inside the pattern, and the lines must narrow by >= 25%. The pattern is classified by the slopes (flat = |slope| <= 0.05% of price per day). Signal: first close above the upper line on >= 1.2x volume. Stop: the lower line or the day's low, whichever is lower.
+- New entries: `tight_coil_7` (7 closes within 1 ADR) and `tight_coil_15` (15 closes within 1.5 ADR), then a breakout above the coil high on >= 1.2x volume, above a rising 50-day. Stop: coil low.
+- First detector version required *every* swing in the window to touch the lines and fired 0 times on test data; changed to the last 2-3 touches. A dedicated lookahead test covers the pattern kernel.
+- Prior evidence on tightness: in the user's own 1,363 trades, the tightest ATR bucket (ATR10/ATR50 < 0.8) did *worse* (−0.11R). Tightness features (tight_10, atr_ratio, close_std_10) have ranked low in ML importance in every run.
+
 ## Run 5 — planned 2026-10-08
 **Changes, each driven by a run-4 finding:**
 1. Trade the expectancy-selected strategies as portfolios: the top 5/10/20 by IS avgR (min 200 IS trades), each keeping its own exit. Duplicates on the same stock and day keep the higher-ranked strategy. Signals are ranked by RS.
