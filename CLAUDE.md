@@ -33,6 +33,11 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - Episodic pivots (gap >= 8-10% on 3x volume) are the most consistent edge vs random entries,
   robust across all tested variants (gap 5-15%, volume 2-5x).
 - Ranking same-day signals by RS is worth ~16 CAGR points vs random order (run 3).
+- Superperformer model (predict +40% in 3 months, clean: before -20%) ranks stocks well (top decile
+  4x base rate, AUC 0.83). Volatility (ADR) is its main driver. Stock selection is most of the edge.
+- SURVIVORSHIP IS LARGE: S&P 500 names traded on all dates 47% CAGR vs only after joining the index
+  20% (run 12). Always report point-in-time results; treat all-dates numbers as inflated.
+- Adaptive sizing (x0.5 / x1.5 by last 20 closed trades) improved risk-adjusted returns every time.
 - Select strategies by in-sample expectancy (avgR, n >= 200), not t-stat (run 4).
 - Industry-group ("theme") RS did not help as a filter (run 4). Honest MTM drawdowns of pooled
   portfolios are ~-50%: a portfolio must be judged on drawdown, not just CAGR.

@@ -13,6 +13,14 @@
 - **Portfolios:** setups only in the model's top 10% with the sma50 exit: **28% CAGR**, −42% DD, beat SPY in 6/9 years, top-2-years share 51% (least concentrated so far). Adaptive sizing on the top-20 pool: **17% / −24%** vs 14% / −26%, better on both.
 - **Warnings:** (1) survivorship: the universe is today's members, so beaten-down stocks in it are ones that recovered; (2) "+40% high within 3 months" rewards volatility (a stock can hit +40% and still crash).
 
+## Run 12 — 2026-10-08 (commit d8399f4): stress tests of the superperformer edge
+- **Survivorship / future-membership bias is large.** S&P 500 names, top-10% model setups, sma50 exit: **47% CAGR on all dates, but 20% CAGR when a stock is only traded after it actually joined the S&P 500** (point-in-time; 2,705 vs 5,163 OOS signals; DD −32% both). Most of the apparent excess comes from knowing which stocks *will become* index members. The honest number for that subset is ~20% vs SPY 14.6%, with a similar drawdown.
+- **The stock selection is most of the edge:** random entries in the model's top-10% stocks made 20% CAGR (−43% DD); adding real setups raised it to 28% (−42%).
+- **It doesn't depend on beaten-down rebounds:** leaders only (within 40% of the 52w high) did better, 32% / −39%.
+- **Clean label (+40% before −20%):** same lift (top decile 27.5% vs 6.7%, 4.1x, AUC 0.83), portfolio 28% / **−33%**, a lower drawdown than the plain label.
+- **Adaptive sizing helps again:** top 10% + adaptive 33% / −31% (vs 28% / −42%). It has improved risk-adjusted returns in every test.
+- **Conclusion:** the model-ranked approach beats SPY even point-in-time (~20% vs 15% in the S&P 500 subset), but the headline 28-47% numbers are inflated by survivorship in this free-data universe. A definitive answer needs survivorship-free data with delisted stocks (e.g. Norgate Data or Sharadar). Every all-dates number should get a large haircut.
+
 ## Run 12 — planned 2026-10-08: is the superperformer edge real?
 - Survivorship test: S&P 500 names traded on all dates vs only after their Wikipedia "Date added".
 - Random entries in the model's top 10% (is it the setups or the stock list?).
