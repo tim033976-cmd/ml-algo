@@ -122,6 +122,8 @@ def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port) -> tuple[li
                 f.append(f"Best return per unit of drawdown: {r['strategy']} ({r['CAGR']:.1%} CAGR, {r['max_DD']:.1%} max DD).")
                 key["best_calmar"] = r["strategy"]
         key.update(best_portfolio=b["strategy"], best_cagr=b["CAGR"], spy_cagr=spy.iloc[0])
+        if "top2_years_share" in b and b["top2_years_share"] == b["top2_years_share"] and b["top2_years_share"] > 0.6:
+            f.append(f"Caution: {b['top2_years_share']:.0%} of that portfolio's growth came from its two best years.")
         if b["CAGR"] < spy.iloc[0]:
             nxt.append("No strategy beat buy-and-hold after constraints: improve trade selection before adding complexity.")
     return f, nxt, key

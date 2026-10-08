@@ -225,10 +225,13 @@ def rule_tree(d: pd.DataFrame, cols: list[str], exit_name: str, depth: int = 3) 
 
 # ------------------------------------------------------------------ portfolio simulation
 def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END, capital=100_000.0,
-              risk=0.01, max_pos=10, pos_cap=0.20, closes: pd.DataFrame | None = None) -> dict:
+              risk=0.01, max_pos=10, pos_cap=0.20, closes: pd.DataFrame | None = None,
+              idle: pd.Series | None = None) -> dict:
     """Fixed-fractional sizing (1% equity at risk per trade), max 10 positions, no leverage.
     With `closes` (dates x tickers), open positions are marked to market every day, so the
-    drawdown is honest; without it equity only moves when trades close (run 1-3 reports)."""
+    drawdown is honest; without it equity only moves when trades close (run 1-3 reports).
+    `idle`: close prices of an asset (e.g. SPY) that uninvested cash is held in (run 5: EP
+    portfolios averaged ~6 of 10 slots filled, with the rest of the cash earning nothing)."""
     t = trades[trades["date"] >= start].copy()
     if exit_name == "per_row":  # each row carries its own exit plan in `exit_choice`
         t["exit_date"], t["ret"] = pd.NaT, np.nan
@@ -251,7 +254,12 @@ def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END,
     cash, realized = capital, capital
     open_pos: list[tuple] = []          # (exit_date, alloc, ret, ticker, entry_price)
     curve, taken = [], []
+    idle_ret = idle.pct_change().fillna(0) if idle is not None else None
     for day in days:
+        if idle_ret is not None and day in idle_ret.index:
+            gain = cash * float(idle_ret.at[day])
+            cash += gain
+            realized += gain
         still = []
         for pos in open_pos:
             if pos[0] <= day:
@@ -315,3 +323,10 @@ def yearly(curve: pd.Series) -> pd.Series:
     y = curve.groupby(curve.index.year).last()
     first = curve.iloc[0]
     return pd.concat([pd.Series([y.iloc[0] / first - 1], index=[y.index[0]]), y.pct_change().iloc[1:]])
+
+
+def concentration(curve: pd.Series) -> float:
+    """Share of the total log-return that came from the two best calendar years."""
+    y = np.log1p(yearly(curve))
+    total = y.sum()
+    return float(y.nlargest(2).sum() / total) if total > 0 else np.nan

@@ -1,5 +1,11 @@
 # Research log (newest first)
 
+## Run 5 — 2026-10-08 (commit fd50739)
+- **Top-10-by-IS-expectancy portfolio (all EP strategies):** 12.0% CAGR, −32% MTM max DD, 506 trades, avg 6.3 of 10 slots used. Top 5: 10%/−33%. Top 20: 8%/−33%. SPY: 14.6%/−34%. The per-trade edge is real (OOS +0.3 to +0.6R), but there are too few signals (~57/yr) to keep capital working.
+- **Lumpy returns:** the best portfolios made 68-87% in 2023-2024 but mostly trailed SPY in 2018-2022.
+- **EP-only ML is useless:** taken +0.354R vs skipped +0.353R. Stop investing in ML meta-labeling for EP. The pooled ML still only separates losers.
+- **Next (added to run 6 via [skip ci], since run 6 checks out the newest code):** hold idle cash in SPY; test 2% risk and 15 slots; report how much growth comes from the two best years.
+
 ## Run 6 — planned 2026-10-08 (queued behind run 5)
 **User question:** do ascending/descending triangles, wedges and tightness work?
 - New entries: `asc_triangle`, `desc_triangle`, `sym_triangle`, `falling_wedge`, `rising_wedge` (60-day window). Trendlines are fit through the last 2-3 *confirmed* swing highs/lows (a swing at i needs i+3 <= t-1, so nothing after the signal day is used). Each touch must be within 2% of its line, closes must stay inside the pattern, and the lines must narrow by >= 25%. The pattern is classified by the slopes (flat = |slope| <= 0.05% of price per day). Signal: first close above the upper line on >= 1.2x volume. Stop: the lower line or the day's low, whichever is lower.

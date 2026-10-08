@@ -144,8 +144,16 @@ def main() -> None:
         port_rows.append((f"Top {k} strategies by IS expectancy (own exits), ranked by RS",
                           P(pool, "per_row", "rs_rank")))
     top10_picks = ranked.head(10)[["entry", "filter", "exit", "IS_n", "IS_avgR", "OOS_n", "OOS_avgR", "OOS_t"]]
+    # run-5 lesson: the EP portfolio left ~40% of capital idle and earning nothing
+    pool10 = A.strategy_pool(sig, ranked.head(10))
+    spy_close = market["SPY"]["close"] if "SPY" in market else None
+    for risk, slots in ((0.01, 10), (0.02, 10), (0.02, 15)):
+        port_rows.append((f"Top 10 by IS expectancy, {risk:.0%} risk, {slots} slots, idle cash in SPY",
+                          A.portfolio(pool10, "per_row", "rs_rank", closes=closes, idle=spy_close,
+                                      risk=risk, max_pos=slots)))
     spy = A.spy_stats(market["SPY"]) if "SPY" in market else {"CAGR": np.nan, "max_DD": np.nan}
-    port = pd.DataFrame([{"strategy": k, **{m: v for m, v in res.items() if m != "curve"}} for k, res in port_rows])
+    port = pd.DataFrame([{"strategy": k, **{m: v for m, v in res.items() if m != "curve"},
+                          "top2_years_share": A.concentration(res["curve"])} for k, res in port_rows])
     port.loc[len(port)] = {"strategy": "SPY buy & hold", "CAGR": spy["CAGR"], "max_DD": spy["max_DD"]}
     port.to_csv(out / "portfolio.csv", index=False)
     # year-by-year for the best few portfolios vs SPY
