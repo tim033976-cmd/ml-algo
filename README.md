@@ -3,6 +3,15 @@
 A small, honest starting point for machine-learning stock trading research:
 daily prices → features → walk-forward model → backtest with trading costs.
 
+## Getting started (no install, in your browser)
+
+1. On the GitHub repo page, switch the branch dropdown to this branch.
+2. Click the green **Code** button → **Codespaces** tab → **Create codespace on …**
+3. Wait for setup to finish (it installs the Python packages automatically). A terminal opens at the bottom.
+4. Run `python scan.py --synthetic` to check that everything works, then try the real commands below.
+
+On your own computer, install Python 3.10+ instead, download the code, then run `pip install -r requirements.txt` in its folder.
+
 ## The playbook: market → leaders → setup → entry → trim plan
 
 ```bash
