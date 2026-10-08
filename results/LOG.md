@@ -1,5 +1,13 @@
 # Research log (newest first)
 
+## Run 15 — 2026-10-08 (commit f522ebc): Qullamaggie replication on daily data
+- **His breakout with his exits fails mechanically on daily bars.** qull_breakout + qull_sma10/20: OOS −0.15 to −0.25R per trade (PF 0.64-0.77, win 33-37%), IS similar. Portfolios: **−11% to −14% CAGR, −71% to −76% DD**. With his regime rule: −2% to −7% CAGR. The 60%-run variant is no better.
+- **The same breakouts with longer exits are fine:** + bracket +20/−10 → +0.15R OOS (t 6.8; regime +0.19R), + sma50 & regime +0.28R. So his entries/stocks are OK; the fast 10/20-SMA trailing with tight stops is what loses on daily bars.
+- **His scan helps EPs a lot, after 2018 only:** ep_gap10 / ep_gap8_hold + qull_scan + sma50: OOS +0.83 to +1.0R (PF 2.3-2.5), but IS only +0.01 to +0.15R. That is period-dependent (2018+ momentum era), so treat it with caution.
+- **Regime rule (QQQ > 10/20 SMA)** improves breakouts slightly (+0.04 to +0.10R) and cuts portfolio drawdowns. Best Qull portfolio: scan + setups + regime + sma50 → 18% CAGR, −45% DD; + adaptive sizing 14% / −34%. Not better than the +20/−10 model portfolio (18% / −29% point-in-time).
+- **Likely reasons the replication fails:** (1) on daily bars the stop is touched on the entry day in many trades, and we count that as a loss even when the low may have come *before* the entry (conservative); his intraday entry + LOD stop avoids that ambiguity; (2) a tight stop (<= 1 ADR) on volatile names gets hit by normal noise; (3) his discretionary selection (he skips most setups).
+- **Next:** measure how many trades are decided by the ambiguous entry-day bar, bound the result (optimistic vs conservative fill), test wider stops (flag low, 2 ADR), and check with 2 years of hourly data which assumption is right.
+
 ## Run 15 — planned 2026-10-08: Qullamaggie replication on daily data
 User decision: match Qullamaggie's strategy and validate it rather than trust it.
 - **Scan:** top 3% performer over 1, 3 or 6 months (per-day percentile, best of the three) with ADR >= 4% (`qull_scan`), plus his regime rule, QQQ above its 10- and 20-day SMAs (`qull_scan_regime`, `qqq_trend`).
