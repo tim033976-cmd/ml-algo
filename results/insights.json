@@ -1,22 +1,23 @@
 {
   "findings": [
-    "Selection is mostly noise: IS-vs-OOS rank correlation 0.57; the 20 best in-sample strategies averaged +0.054R out-of-sample vs +0.072R for all strategies and -0.068R for random entries.",
+    "In-sample rankings persist out-of-sample (rank correlation 0.55). Top 20 by IS t-stat: +0.051R OOS; top 20 by IS avgR (n>=200): +0.342R; all strategies +0.062R; random entries -0.072R.",
+    "Ranking by t-stat favours very frequent, thin-edge strategies (e.g. 20-day breakouts on everything); rank by expectancy with a minimum trade count instead.",
     "Too few signals to judge (need 100+ per period): htf (IS 52, OOS 99).",
-    "Entries that beat random entries in both periods for most exits: donchian_55 (+0.07R OOS), donchian_20 (+0.09R OOS), ema_retest (+0.07R OOS), ep_gap5 (+0.14R OOS), ep_gap15 (+0.32R OOS), ep_gap10_vol5 (+0.25R OOS), ep_gap8_neglected (+0.18R OOS), high52_fresh (+0.05R OOS), ep_gap8_hold (+0.21R OOS), ep_gap10 (+0.26R OOS), undercut (+0.09R OOS), flag_60 (+0.20R OOS), flag_30_early (+0.17R OOS), ep_gap10_vol2 (+0.27R OOS), vcp (+0.05R OOS), base_50 (+0.13R OOS).",
-    "Entries with no edge over random entries: multi_touch, high52, stage2.",
+    "Entries with a clear edge over random entries (>= +0.05R in both periods): ep_gap15 (IS +0.34R, OOS +0.32R), ep_gap8_hold (IS +0.21R, OOS +0.21R), ep_gap10_vol5 (IS +0.20R, OOS +0.25R), ep_gap8_neglected (IS +0.23R, OOS +0.18R), ep_gap5 (IS +0.16R, OOS +0.14R), ep_gap10 (IS +0.12R, OOS +0.26R), ep_gap10_vol2 (IS +0.09R, OOS +0.27R), donchian_20 (IS +0.12R, OOS +0.09R), undercut (IS +0.14R, OOS +0.09R), flag_60 (IS +0.07R, OOS +0.20R), ema_retest (IS +0.11R, OOS +0.07R), donchian_55 (IS +0.10R, OOS +0.07R), flag_30_early (IS +0.06R, OOS +0.17R), high52_fresh (IS +0.06R, OOS +0.05R).",
+    "Entries with no edge over random entries: high52, multi_touch, stage2.",
     "Best exit out-of-sample (avg over entries): sma50_close (+0.159R); worst: qull_sma10 (-0.038R).",
-    "Filters that help OOS: rs80_early (+0.136R), early_stage (+0.070R), rs80 (+0.065R), rs80_mkt (+0.040R); that hurt: none.",
-    "ML filter adds little: OOS rank corr 0.254, AUC 0.554, decile monotonicity -0.07, taken +0.011R vs skipped +0.001R.",
+    "Filters that help OOS: rs80_early (+0.136R), rs80_early_theme (+0.080R), early_stage (+0.070R), rs80 (+0.065R), rs80_mkt (+0.040R); that hurt: none.",
+    "ML filter adds little: OOS rank corr 0.252, AUC 0.553, decile monotonicity -0.13, taken +0.014R vs skipped -0.001R.",
     "Features the model relies on most: risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank.",
-    "Filters that improve even RANDOM entries in both periods (the stock selection itself is the edge): early_stage (IS +0.08R, OOS +0.03R), rs80_early (IS +0.05R, OOS +0.09R).",
+    "Filters that improve even RANDOM entries in both periods (the stock selection itself is the edge): early_stage (IS +0.08R, OOS +0.03R), rs80_early (IS +0.05R, OOS +0.09R), rs80_early_theme (IS +0.09R, OOS +0.04R).",
     "Best readable rule that held OOS: `risk_adr <= 0.633 AND breadth_50 <= 0.523 AND vol_ratio <= 1.11` (IS +0.92R, OOS +0.05R, n=4480).",
-    "Best portfolio 2018->today: All setups, ranked by RS / oneil_20_8 at 20.9% CAGR (max realized DD -47.2%) vs SPY 14.6%."
+    "Best portfolio 2018->today: All setups, ranked by RS / oneil_20_8 at 20.9% CAGR (max drawdown -50.2%) vs SPY 14.6%.",
+    "Best return per unit of drawdown: All setups + rs80_early filter, ranked by RS / oneil_20_8 (12.8% CAGR, -27.3% max DD)."
   ],
   "next_steps": [
-    "In-sample rankings don't persist: test fewer, more different ideas instead of fine-tuning parameters.",
     "Loosen the definitions of htf or widen the universe so they can be evaluated.",
-    "Drop or rework: multi_touch, high52, stage2.",
-    "Focus development on: donchian_55, donchian_20, ema_retest, ep_gap5, ep_gap15, ep_gap10_vol5, ep_gap8_neglected, high52_fresh, ep_gap8_hold, ep_gap10, undercut, flag_60, flag_30_early, ep_gap10_vol2, vcp, base_50 (tune them on IS data only, re-check OOS).",
+    "Drop or rework: high52, multi_touch, stage2.",
+    "Focus development on: ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, ep_gap10, ep_gap10_vol2, donchian_20, undercut, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh (tune them on IS data only, re-check OOS).",
     "Make rs80_early a default filter.",
     "Inspect risk_adr and risk_pct: plot avgR by bucket and consider a hard rule.",
     "ML is weak here: prefer simple rules, or add new information (fundamentals, sector/theme, earnings dates).",
@@ -24,43 +25,42 @@
     "Turn that rule into a scan filter and test it as its own strategy."
   ],
   "key": {
-    "rank_corr": 0.5653112517061877,
-    "top20_oos": 0.053595835040166295,
-    "baseline_oos": -0.06821483141584271,
+    "rank_corr": 0.5465123648359251,
+    "top20_oos": 0.05108558084407232,
+    "baseline_oos": -0.07161979068060596,
     "edge_entries": [
-      "donchian_55",
-      "donchian_20",
-      "ema_retest",
-      "ep_gap5",
       "ep_gap15",
+      "ep_gap8_hold",
       "ep_gap10_vol5",
       "ep_gap8_neglected",
-      "high52_fresh",
-      "ep_gap8_hold",
+      "ep_gap5",
       "ep_gap10",
+      "ep_gap10_vol2",
+      "donchian_20",
       "undercut",
       "flag_60",
+      "ema_retest",
+      "donchian_55",
       "flag_30_early",
-      "ep_gap10_vol2",
-      "vcp",
-      "base_50"
+      "high52_fresh"
     ],
     "no_edge_entries": [
-      "multi_touch",
       "high52",
+      "multi_touch",
       "stage2"
     ],
     "best_exit": "sma50_close",
     "helpful_filters": [
       "rs80_early",
+      "rs80_early_theme",
       "early_stage",
       "rs80",
       "rs80_mkt"
     ],
-    "ml_auc": 0.5537385961092811,
-    "ml_rank_corr": 0.254331262319768,
-    "ml_monotonic": -0.06666666666666665,
-    "ml_gap": "0.010438472",
+    "ml_auc": 0.5533169473073349,
+    "ml_rank_corr": 0.2520585418885222,
+    "ml_monotonic": -0.12727272727272726,
+    "ml_gap": "0.014616227",
     "top_features": [
       "risk_adr",
       "risk_pct",
@@ -70,9 +70,11 @@
     ],
     "filters_lifting_baseline": [
       "early_stage",
-      "rs80_early"
+      "rs80_early",
+      "rs80_early_theme"
     ],
     "rules_held": 4,
+    "best_calmar": "All setups + rs80_early filter, ranked by RS / oneil_20_8",
     "best_portfolio": "All setups, ranked by RS / oneil_20_8",
     "best_cagr": 0.20922060704176704,
     "spy_cagr": 0.14608118342176346
