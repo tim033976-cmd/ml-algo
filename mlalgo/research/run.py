@@ -171,22 +171,29 @@ def process_ticker(args):
     return out, sample
 
 
+def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers) -> dict[str, pd.DataFrame]:
+    """Per-ticker sub-industry / sector RS series (empty if the universe has no sector info)."""
+    grp = {}
+    if universe is None or "sub_industry" not in universe:
+        return grp
+    u = universe.drop_duplicates("ticker").set_index("ticker")
+    ind_rs, ind_rank = group_strength(rank, u["sub_industry"].replace("nan", np.nan))
+    sec_rs, _ = group_strength(rank, u["sector"].replace("nan", np.nan))
+    for t in tickers:
+        if t in u.index:
+            sub, sec = u.at[t, "sub_industry"], u.at[t, "sector"]
+            grp[t] = pd.DataFrame({
+                "industry_rs": ind_rs[sub] if sub in ind_rs else np.nan,
+                "industry_rank": ind_rank[sub] if sub in ind_rank else np.nan,
+                "sector_rs": sec_rs[sec] if sec in sec_rs else np.nan}, index=rank.index)
+    return grp
+
+
 def run(prices: dict[str, pd.DataFrame], market: dict[str, pd.DataFrame], max_days: int = 250,
         cost: float = 0.001, workers: int | None = None, universe: pd.DataFrame | None = None) -> pd.DataFrame:
     rank, breadth = cross_section(prices)
     mkt = market_frame(market, breadth)
-    grp = {}
-    if universe is not None and "sub_industry" in universe:
-        u = universe.set_index("ticker")
-        ind_rs, ind_rank = group_strength(rank, u["sub_industry"].replace("nan", np.nan))
-        sec_rs, _ = group_strength(rank, u["sector"].replace("nan", np.nan))
-        for t in prices:
-            if t in u.index:
-                sub, sec = u.at[t, "sub_industry"], u.at[t, "sector"]
-                grp[t] = pd.DataFrame({
-                    "industry_rs": ind_rs[sub] if sub in ind_rs else np.nan,
-                    "industry_rank": ind_rank[sub] if sub in ind_rank else np.nan,
-                    "sector_rs": sec_rs[sec] if sec in sec_rs else np.nan}, index=rank.index)
+    grp = group_frames(rank, universe, prices)
     tasks = [(t, df, rank[t], grp.get(t), max_days, cost, i) for i, (t, df) in enumerate(prices.items())]
     workers = workers or os.cpu_count() or 1
     frames, samples = [], []

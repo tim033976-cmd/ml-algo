@@ -3,6 +3,13 @@
 A small, honest starting point for machine-learning stock trading research:
 daily prices → features → walk-forward model → backtest with trading costs.
 
+## Daily picks (your goal: +20% / +10% before -10%)
+
+**Actions → picks → Run workflow** builds `results/today_picks.md`: every stock ranked by the model's
+probability of hitting +20% (and +10%) before a -10% loss within 63 trading days, with stop / target
+prices and any setups that fired in the last 3 days. Out-of-sample (2018+) the model's top 10% hit
++20% first ~38-39% of the time vs a ~33% break-even (all stocks: 23%). Paper trade before using it.
+
 ## Strategy research on real data (runs on GitHub Actions)
 
 `research.py` tests ~20 published breakout entries (Turtle/Donchian, 52-week high, O'Neil/Darvas bases,

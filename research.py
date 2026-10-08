@@ -138,6 +138,8 @@ def main() -> None:
                 continue
             sample, (sig,) = A.super_walk_forward(sample, [sig], label=g, col=f"p_{g}")
             goal_tables[g] = {"all": A.goal_report(sample, g, f"p_{g}"),
+                              "tiers": A.goal_tiers(sample, g, f"p_{g}"),
+                              "tiers_pit": A.goal_tiers(sample, g, f"p_{g}", keep=pit(sample)) if pit else None,
                               "pit": A.goal_report(sample, g, f"p_{g}", keep=pit(sample)) if pit else None,
                               "name": gname, "breakeven": breakeven}
             goal_tables[g]["all"].to_csv(out / f"goal_{g}_deciles.csv")
@@ -383,6 +385,9 @@ def main() -> None:
                    "probability, out-of-sample 2018+: how often the target came first, how often the -10% stop, and the "
                    "average net return per trade (0.1% costs per side, timeouts included).", "",
                    md(v["all"], index=True, floatfmt=".3f"), "",
+                   "Higher confidence tiers (all stocks / point-in-time S&P 500):", "",
+                   md(v["tiers"], index=True, floatfmt=".3f"), "",
+                   *([md(v["tiers_pit"], index=True, floatfmt=".3f"), ""] if v.get("tiers_pit") is not None else []),
                    *(["S&P 500 stocks only, and only after they joined the index (survivorship check):", "",
                       md(v["pit"], index=True, floatfmt=".3f"), ""] if v["pit"] is not None else [])]
                   for g, v in goal_tables.items()), []),

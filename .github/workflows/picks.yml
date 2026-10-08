@@ -1,0 +1,55 @@
+name: picks
+
+# Daily list of stocks with the best modelled odds of +20% (or +10%) before -10%.
+# Scheduled runs only fire from the default branch (after this branch is merged into main);
+# from this branch, use Actions -> picks -> Run workflow.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 22 * * 1-5"   # 22:30 UTC, after the US close
+
+permissions:
+  contents: write
+
+concurrency:
+  group: picks
+  cancel-in-progress: false
+
+jobs:
+  picks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Build today's picks (fresh prices)
+        run: python picks.py --cache data_picks --out /tmp/picks
+
+      - name: Commit picks
+        run: |
+          set -euo pipefail
+          BR="${GITHUB_REF_NAME}"
+          git config user.name "research-bot"
+          git config user.email "research-bot@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin "$BR"
+            git reset -q --hard "origin/$BR"
+            mkdir -p results
+            cp /tmp/picks/today_picks.md /tmp/picks/today_picks.csv results/
+            git add results/today_picks.md results/today_picks.csv
+            git commit -q -m "Daily picks $(date -u +%Y-%m-%d) [skip ci]" || { echo "no changes"; exit 0; }
+            if git push -q origin "HEAD:$BR"; then echo "picks pushed"; exit 0; fi
+            sleep $((i * 5))
+          done
+          echo "::error::could not push picks"
+          exit 1

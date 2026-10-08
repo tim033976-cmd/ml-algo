@@ -1,5 +1,18 @@
 # Research log (newest first)
 
+## Run 13 — 2026-10-08 (commit 749e984): the user's goal
+Out-of-sample 2018+, every stock every 10 days (~280k rows), entry at the close, 63-day limit, 0.2% round-trip costs:
+- **+20% before −10% (break-even ~33%):** all stocks 23%. The model's top 10% hit it **38%**, avg **+2.6% net per trade**. **Point-in-time S&P 500 top 10%: 39%, +3.9% per trade** (n=4,264), so this survives the survivorship check. Monotonic across deciles; the top decile is a little overconfident (predicted 45%, actual 38%).
+- **But the stop rate also rises with the score** (top decile 53% stopped vs 33% in the bottom decile): the model mostly picks volatile stocks, which hit both levels more often. The edge is that the target wins more of those races, not that the stop is avoided.
+- **+10% before −10% (break-even ~50%):** weak. All stocks 49%, top 10% 56%, +1.5% per trade. PIT S&P 500 58%, +2.3%.
+- **Bottom deciles are also slightly positive** (bull-market drift 2018-2026): the edge over an average stock is ~+1.3% per trade for b20.
+- **Portfolios:** b20 model top 10% (no setup needed): **22% CAGR, −41% DD**; point-in-time S&P 500 only: **18%, −29%** (SPY 14.6%, −34%). b10: 15% / −34%; PIT 10% / −26%. Requiring a setup on top of the model *hurt* b20 (10% CAGR) but helped b10 (17%).
+- **Conclusion:** the goal is reachable at modest odds. The best honest version is ~39% chance of +20% before −10% (vs 33% break-even) on point-in-time S&P 500 stocks, worth ~+3-4% per trade and ~18% a year with a lower drawdown than SPY.
+
+## Run 14 — planned 2026-10-08
+- Confidence tiers: do the top 5/2/1% have better odds than the top 10%?
+- `picks.py` + `picks.yml`: daily list of stocks ranked by P(+20% before −10%), with stop/targets and any setups that fired in the last 3 days. Scheduled runs fire only from the default branch.
+
 ## Run 13 — planned 2026-10-08: the user's goal, +10% / +20% before −10% on the daily chart
 User decision: daily chart only (no intraday). Goal: a model that gives a high probability of +10% to +20% before a −10% loss.
 - New exits `bracket_10_10` and `bracket_20_10`: fixed −10% stop, +10% / +20% target, 63-day time limit. Gaps fill at the open; target and stop in the same bar count as the stop. The engine matches the label logic exactly (unit test).

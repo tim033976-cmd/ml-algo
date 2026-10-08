@@ -486,3 +486,17 @@ def top_decile_trades(sample: pd.DataFrame, goal: str, col: str, q: float = 0.9)
     return pd.DataFrame({"date": o["date"], "ticker": o["ticker"], "entry": o["close"], "risk_pct": 0.10,
                          "exit_bracket": o[f"{goal}_exit"], "ret_bracket": o[f"{goal}_ret"].astype(float),
                          "priority": o[col], "rs_rank": o["rs_rank"]})
+
+
+def goal_tiers(sample: pd.DataFrame, goal: str, col: str, keep: pd.Series | None = None) -> pd.DataFrame:
+    """Does more confidence mean better odds? Hit rate for the model's top 10/5/2/1% (OOS cut-offs)."""
+    o = sample[(sample["date"] >= IS_END) & sample[col].notna() & sample[f"{goal}_hit"].notna()]
+    cuts = {f"top {int(round((1 - q) * 100))}%": np.quantile(o[col], q) for q in (0.90, 0.95, 0.98, 0.99)}
+    if keep is not None:
+        o = o[keep.reindex(o.index).fillna(False).to_numpy()]
+    rows = []
+    for name, cut in {"all stocks": -np.inf, **cuts}.items():
+        g = o[o[col] >= cut]
+        rows.append({"tier": name, "n": len(g), "hit_target": g[f"{goal}_hit"].mean(),
+                     "hit_stop": (g[f"{goal}_ret"] <= -0.1019).mean(), "avg_net_return": g[f"{goal}_ret"].mean()})
+    return pd.DataFrame(rows).set_index("tier")
