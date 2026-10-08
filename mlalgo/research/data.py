@@ -86,9 +86,12 @@ def index_members(name: str) -> tuple[pd.DataFrame, list[str]]:
             if col is not None and len(t) > 100:
                 sec = next((c for c in t.columns if "sector" in str(c).lower()), None)
                 sub = next((c for c in t.columns if "industry" in str(c).lower()), None)
+                added = next((c for c in t.columns if "added" in str(c).lower()), None)
                 current = pd.DataFrame({"ticker": [_yahoo_symbol(s) for s in t[col]],
                                         "sector": t[sec].astype(str).to_numpy() if sec else None,
-                                        "sub_industry": t[sub].astype(str).to_numpy() if sub else None})
+                                        "sub_industry": t[sub].astype(str).to_numpy() if sub else None,
+                                        "date_added": pd.to_datetime(t[added].astype(str).str[:10], errors="coerce").to_numpy()
+                                        if added else pd.NaT})
                 break
         if name == "sp500":
             removed = _removed_from_changes(tables)
@@ -164,8 +167,9 @@ def load_all(cache_dir: str, start: str, indexes=("sp500", "sp400", "sp600"), ma
     fresh = pfile.exists() and (time.time() - pfile.stat().st_mtime) < max_age_days * 86400
     if fresh:
         universe = pd.read_csv(ufile)
-        if "sub_industry" not in universe.columns:  # older cache: refresh membership/sector info only
+        if "sub_industry" not in universe.columns or "date_added" not in universe.columns:  # older cache: refresh info only
             universe = universe[["ticker"]].merge(build_universe(indexes), on="ticker", how="left")
+            print(f"[data] refreshed universe info; date_added known for {universe['date_added'].notna().sum()} tickers")
             universe["status"] = universe["status"].fillna("current")
             universe.to_csv(ufile, index=False)
         long = pd.read_parquet(pfile)

@@ -84,9 +84,18 @@ def superperformer_sample(ticker, df, feats_all, rs_rank, grp, warmup=252) -> pd
     for col in GROUP_COLS:
         out[col] = grp[col].reindex(df.index).to_numpy()[idx] if grp is not None and col in grp else np.nan
     out["fwd_max_gain"] = fwd_max[idx] / c[idx] - 1
+    # "clean" superperformer: reaches +40% before it ever trades 20% below the starting close
+    l = df["low"].to_numpy(float)
+    first_up = np.full(len(idx), np.inf)
+    first_dn = np.full(len(idx), np.inf)
+    for k in range(SUPER_HORIZON, 0, -1):   # iterate backwards so the earliest hit wins
+        j = np.minimum(idx + k, n - 1)
+        first_up = np.where(h[j] >= 1.4 * c[idx], k, first_up)
+        first_dn = np.where(l[j] <= 0.8 * c[idx], k, first_dn)
+    out["clean_super"] = ((first_up < first_dn) & np.isfinite(first_up)).astype("float32")
     out["fwd_ret_63"] = fwd_ret[idx]
     out["label_end"] = df.index[np.minimum(idx + SUPER_HORIZON, n - 1)]
-    out.loc[idx + SUPER_HORIZON > n - 1, ["fwd_max_gain", "fwd_ret_63"]] = np.nan
+    out.loc[idx + SUPER_HORIZON > n - 1, ["fwd_max_gain", "fwd_ret_63", "clean_super"]] = np.nan
     ok = (c[idx] >= 5) & (c[idx] * feats_all["avg_vol_50"].to_numpy()[idx] >= 5e6)
     return out[ok].astype({k: "float32" for k in out.select_dtypes("float64").columns})
 

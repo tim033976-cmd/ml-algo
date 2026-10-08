@@ -145,6 +145,14 @@ def test_superperformer_label_and_features_are_point_in_time():
     tampered = df.copy()
     tampered.iloc[t + 1:] *= 2
     s2 = superperformer_sample("T", tampered, structure_features(tampered), rs, None)
-    a = s[s["date"] == row["date"]].drop(columns=["fwd_max_gain", "fwd_ret_63"]).reset_index(drop=True)
-    b = s2[s2["date"] == row["date"]].drop(columns=["fwd_max_gain", "fwd_ret_63"]).reset_index(drop=True)
+    labels = ["fwd_max_gain", "fwd_ret_63", "clean_super"]
+    a = s[s["date"] == row["date"]].drop(columns=labels).reset_index(drop=True)
+    b = s2[s2["date"] == row["date"]].drop(columns=labels).reset_index(drop=True)
     pd.testing.assert_frame_equal(a, b)
+    # clean label: +40% (high) reached before a -20% low within 63 days
+    c0 = df["close"].iloc[t]
+    hs, ls = df["high"].iloc[t + 1:t + 64].to_numpy(), df["low"].iloc[t + 1:t + 64].to_numpy()
+    up = np.flatnonzero(hs >= 1.4 * c0)
+    dn = np.flatnonzero(ls <= 0.8 * c0)
+    expect_clean = len(up) > 0 and (len(dn) == 0 or up[0] < dn[0])
+    assert row["clean_super"] == float(expect_clean)

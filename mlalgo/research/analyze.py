@@ -354,22 +354,29 @@ def _super_model():
                                           min_samples_leaf=500, l2_regularization=1.0, random_state=0)
 
 
-def _xy(d):
+def _label(d, label):
+    if label == "clean" and "clean_super" in d:
+        return (d["clean_super"] == 1).to_numpy()
+    return (d["fwd_max_gain"] >= 0.40).to_numpy() if "fwd_max_gain" in d else None
+
+
+def _xy(d, label="gain40"):
     X = d[SUPER_FEATURES].copy()
     for c in SUPER_FEATURES:
         if X[c].isna().all():
             X[c] = 0.0
-    y = (d["fwd_max_gain"] >= 0.40).to_numpy() if "fwd_max_gain" in d else None
-    return X, y
+    return X, _label(d, label)
 
 
-def super_walk_forward(sample: pd.DataFrame, score: list[pd.DataFrame], max_train: int = 200_000):
-    """Adds `super_prob` to `sample` and to every frame in `score` (e.g. the setup signals)."""
+def super_walk_forward(sample: pd.DataFrame, score: list[pd.DataFrame], max_train: int = 200_000,
+                       label: str = "gain40", col: str = "super_prob"):
+    """Adds `col` (predicted probability) to `sample` and to every frame in `score`.
+    label: 'gain40' = high >= +40% within 3 months; 'clean' = +40% before -20%."""
     sample = sample.copy()
-    sample["super_prob"] = np.nan
+    sample[col] = np.nan
     score = [f.copy() for f in score]
     for f in score:
-        f["super_prob"] = np.nan
+        f[col] = np.nan
     rng = np.random.default_rng(0)
     known = sample["fwd_max_gain"].notna()
     for yr in sorted(sample["date"].dt.year.unique()):
@@ -379,27 +386,29 @@ def super_walk_forward(sample: pd.DataFrame, score: list[pd.DataFrame], max_trai
             continue
         if len(tr) > max_train:
             tr = rng.choice(tr, max_train, replace=False)
-        X, y = _xy(sample.iloc[tr])
+        X, y = _xy(sample.iloc[tr], label)
         if y.sum() < 200:
             continue
         m = _super_model().fit(X, y)
         te = (sample["date"].dt.year == yr).to_numpy()
-        sample.loc[te, "super_prob"] = m.predict_proba(_xy(sample[te])[0])[:, 1]
+        sample.loc[te, col] = m.predict_proba(_xy(sample[te])[0])[:, 1]
         for f in score:
             fm = (f["date"].dt.year == yr).to_numpy()
             if fm.any():
-                f.loc[fm, "super_prob"] = m.predict_proba(_xy(f[fm])[0])[:, 1]
+                f.loc[fm, col] = m.predict_proba(_xy(f[fm])[0])[:, 1]
     return sample, score
 
 
-def super_report(sample: pd.DataFrame) -> dict:
-    o = sample[(sample["date"] >= IS_END) & sample["super_prob"].notna() & sample["fwd_max_gain"].notna()]
-    y = o["fwd_max_gain"] >= 0.40
-    dec = o.groupby(pd.qcut(o["super_prob"], 10, labels=False, duplicates="drop")).agg(
-        n=("fwd_max_gain", "size"), superperformer_rate=("fwd_max_gain", lambda g: (g >= 0.40).mean()),
-        avg_3m_return=("fwd_ret_63", "mean"), median_3m_return=("fwd_ret_63", "median"))
-    return {"n": len(o), "base_rate": float(y.mean()), "auc": float(roc_auc_score(y, o["super_prob"])),
-            "top_decile_rate": float(dec["superperformer_rate"].iloc[-1]), "deciles": dec}
+def super_report(sample: pd.DataFrame, label: str = "gain40", col: str = "super_prob") -> dict:
+    o = sample[(sample["date"] >= IS_END) & sample[col].notna() & sample["fwd_max_gain"].notna()]
+    y = pd.Series(_label(o, label), index=o.index)
+    o = o.assign(_y=y)
+    dec = o.groupby(pd.qcut(o[col], 10, labels=False, duplicates="drop")).agg(
+        n=("fwd_max_gain", "size"), hit_rate=("_y", "mean"),
+        avg_3m_return=("fwd_ret_63", "mean"), median_3m_return=("fwd_ret_63", "median"),
+        share_down_20pct=("fwd_ret_63", lambda r: (r <= -0.20).mean()))
+    return {"n": len(o), "base_rate": float(y.mean()), "auc": float(roc_auc_score(y, o[col])),
+            "top_decile_rate": float(dec["hit_rate"].iloc[-1]), "deciles": dec}
 
 
 def super_explain(sample: pd.DataFrame, n_eval: int = 80_000):

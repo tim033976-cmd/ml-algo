@@ -107,10 +107,17 @@ def main() -> None:
     print(f"[research] ML done ({time.time() - t0:.0f}s)")
 
     # ---------------- superperformer model: learn what future big winners look like beforehand
-    sup = None
+    sup = sup_clean = None
     if len(sample):
         sample, (sig,) = A.super_walk_forward(sample, [sig])
         sup = A.super_report(sample)
+        # run-11 lesson: +40% highs reward plain volatility; also model "+40% before -20%"
+        if "clean_super" in sample:
+            sample, (sig,) = A.super_walk_forward(sample, [sig], label="clean", col="clean_prob")
+            sup_clean = A.super_report(sample, label="clean", col="clean_prob")
+            sup_clean["deciles"].to_csv(out / "super_clean_deciles.csv")
+        else:
+            sup_clean = None
         sup_imp, sup_rules, sup_prof = A.super_explain(sample)
         sup_sig = A.signals_by_super(sig, ref_exit)
         sup["deciles"].to_csv(out / "super_deciles.csv")
@@ -171,9 +178,36 @@ def main() -> None:
         allsig = sig[(sig["entry_name"] != A.BASELINE) & sig["super_prob"].notna()]
         port_rows.append((f"All setups, ranked by superperformer model / {ref_exit}",
                           A.portfolio(allsig, ref_exit, "super_prob", closes=closes)))
-        top_sup = allsig[allsig["super_prob"] >= allsig.groupby(allsig["date"].dt.year)["super_prob"].transform(lambda p: p.quantile(0.9))]
+        def top10(df, col="super_prob"):
+            # causal-enough cut: 90th percentile of the score within each calendar year of signals
+            return df[df[col] >= df.groupby(df["date"].dt.year)[col].transform(lambda p: p.quantile(0.9))]
+
+        top_sup = top10(allsig)
         port_rows.append((f"Only setups in the model's top 10% likely superperformers / sma50_close",
                           A.portfolio(top_sup, "sma50_close", "super_prob", closes=closes)))
+        # run-11 checks: is it the setups, survivorship, beaten-down rebounds, or volatility?
+        base_sig = sig[(sig["entry_name"] == A.BASELINE) & sig["super_prob"].notna()]
+        port_rows.append(("CHECK random entries in the model's top 10% / sma50_close",
+                          A.portfolio(top10(base_sig), "sma50_close", "super_prob", closes=closes)))
+        port_rows.append(("CHECK top 10% model, leaders only (within 40% of 52w high) / sma50_close",
+                          A.portfolio(top_sup[top_sup["dist_52w_high"] >= -0.40], "sma50_close", "super_prob", closes=closes)))
+        port_rows.append(("Top 10% model + adaptive sizing / sma50_close",
+                          A.portfolio(top_sup, "sma50_close", "super_prob", closes=closes, adaptive=True)))
+        if "clean_prob" in sig:
+            clean_sig = sig[(sig["entry_name"] != A.BASELINE) & sig["clean_prob"].notna()]
+            port_rows.append(("Top 10% CLEAN model (+40% before -20%) / sma50_close",
+                              A.portfolio(top10(clean_sig, "clean_prob"), "sma50_close", "clean_prob", closes=closes)))
+        if "date_added" in universe.columns:
+            added = universe.set_index("ticker")["date_added"]
+            added = pd.to_datetime(added, errors="coerce")
+            sp5 = top_sup[top_sup["ticker"].isin(universe.loc[universe["index"] == "sp500", "ticker"])].copy()
+            sp5["date_added"] = sp5["ticker"].map(added)
+            after = sp5[sp5["date"] >= sp5["date_added"]]
+            n_oos = lambda d: int((d["date"] >= A.IS_END).sum())
+            port_rows.append((f"SURVIVORSHIP S&P 500 names, all dates, top 10% model ({n_oos(sp5)} signals) / sma50_close",
+                              A.portfolio(sp5, "sma50_close", "super_prob", closes=closes)))
+            port_rows.append((f"SURVIVORSHIP S&P 500 names, only after joining the index ({n_oos(after)} signals) / sma50_close",
+                              A.portfolio(after, "sma50_close", "super_prob", closes=closes)))
     # run-5 lesson: the EP portfolio left ~40% of capital idle and earning nothing
     pool10 = A.strategy_pool(sig, ranked.head(10))
     spy_close = market["SPY"]["close"] if "SPY" in market else None
@@ -308,6 +342,13 @@ def main() -> None:
             "Readable rules (depth-3 tree fit before 2018, scored after):",
             "",
             md(sup_rules, floatfmt=".3f"),
+            "",
+            *([f"Stricter label, +40% BEFORE a -20% drop (so plain volatility doesn't count): base rate "
+               f"{sup_clean['base_rate']:.1%}, model top 10% {sup_clean['top_decile_rate']:.1%} "
+               f"({sup_clean['top_decile_rate'] / sup_clean['base_rate']:.1f}x), AUC {sup_clean['auc']:.3f}.", "",
+               md(sup_clean["deciles"], index=True, floatfmt=".3f"), ""] if sup_clean else []),
+            "Caution: the universe is today's index members, so beaten-down stocks in the sample are ones that "
+            "survived. See the SURVIVORSHIP and CHECK rows in section 9.",
             "",
             f"Setup signals split by the model's score (OOS, exit {ref_exit}; last column sma50_close):",
             "",

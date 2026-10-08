@@ -6,6 +6,20 @@
 - **Without idle cash:** the top 20 by IS expectancy is still the best risk-adjusted (13.8%, −26%).
 - **Conclusion:** the mechanical setups give SPY-like returns with different timing. Beating SPY decisively needs something the setups alone don't provide (stock selection / sizing), which is what run 11 tests.
 
+## Run 11 — 2026-10-08 (commit 0c6ddba): superperformer model + adaptive sizing
+- **Superperformer model (every stock every 10 days, ~280k OOS rows):** the model's top 10% hit +40% within 3 months **30.4%** of the time vs a 7.1% base rate (4.3x), AUC 0.83, monotonic across deciles. Avg 3-month return: top decile +11.6% vs about +2% overall.
+- **What drives it:** ADR% (volatility) by far, then distance above the 52w low and below the 52w high. Profile of future superperformers: ADR 4.5% vs 2.6%, 27% below the 52w high (vs 13%), base_count 0. RS rank barely matters. Top rule: stocks > 54% below their 52w high hit +40% 45% of the time (IS and OOS), i.e. beaten-down rebounds.
+- **Your setups in high-score stocks:** +0.19R (sma50 exit) vs −0.10R in low-score stocks.
+- **Portfolios:** setups only in the model's top 10% with the sma50 exit: **28% CAGR**, −42% DD, beat SPY in 6/9 years, top-2-years share 51% (least concentrated so far). Adaptive sizing on the top-20 pool: **17% / −24%** vs 14% / −26%, better on both.
+- **Warnings:** (1) survivorship: the universe is today's members, so beaten-down stocks in it are ones that recovered; (2) "+40% high within 3 months" rewards volatility (a stock can hit +40% and still crash).
+
+## Run 12 — planned 2026-10-08: is the superperformer edge real?
+- Survivorship test: S&P 500 names traded on all dates vs only after their Wikipedia "Date added".
+- Random entries in the model's top 10% (is it the setups or the stock list?).
+- Leaders only (within 40% of the 52w high): does it work without beaten-down rebounds?
+- Clean label: +40% before −20%.
+- Top 10% + adaptive sizing.
+
 ## Run 11 — planned 2026-10-08: "how do top traders consistently beat the S&P?"
 Six runs show our setups have a real per-trade edge, but as portfolios they roughly match SPY with lumpy years (2023-24). What pros do that we haven't modelled:
 1. **They hunt for future superperformers, not setups.** O'Neil and Minervini studied hundreds of big winners to see what they looked like *before* the move. New: a model trained on every stock every 10 days (~600k rows) to predict a >= 40% gain within 3 months. Walk-forward by year; rows only train once their 3-month label window has closed. Reports lift over the base rate, permutation importance, a profile of future winners vs everything else, readable rules, and whether setups in high-score stocks pay more. Portfolios are ranked by this score.
