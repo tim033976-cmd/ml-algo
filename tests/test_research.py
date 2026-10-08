@@ -187,3 +187,25 @@ def test_engine_bracket_exit_matches_label_logic():
             ret, _, xidx, _ = _sim(df, t, e, e * 0.5, code, cost=0.001)
             _, r2, x2 = bracket_outcome(b["o"], b["h"], b["l"], b["c"], np.array([t]), up, 0.10, 63)
             assert np.isclose(ret, r2[0]) and xidx == x2[0]
+
+
+def test_picks_drops_todays_partial_bar_only_before_the_close(monkeypatch):
+    import picks
+    from datetime import datetime, timezone
+    idx = pd.to_datetime(["2026-10-06", "2026-10-07", "2026-10-08"])
+    dfs = {"X": pd.DataFrame({"close": [1.0, 2.0, 3.0]}, index=idx)}
+
+    class Morning(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 10, 8, 14, 30, tzinfo=timezone.utc)
+
+    class Evening(Morning):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 10, 8, 22, 30, tzinfo=timezone.utc)
+
+    monkeypatch.setattr(picks, "datetime", Morning)
+    assert len(picks.trim_incomplete(dfs)["X"]) == 2
+    monkeypatch.setattr(picks, "datetime", Evening)
+    assert len(picks.trim_incomplete(dfs)["X"]) == 3

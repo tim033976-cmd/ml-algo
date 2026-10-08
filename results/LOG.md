@@ -9,6 +9,11 @@ Out-of-sample 2018+, every stock every 10 days (~280k rows), entry at the close,
 - **Portfolios:** b20 model top 10% (no setup needed): **22% CAGR, −41% DD**; point-in-time S&P 500 only: **18%, −29%** (SPY 14.6%, −34%). b10: 15% / −34%; PIT 10% / −26%. Requiring a setup on top of the model *hurt* b20 (10% CAGR) but helped b10 (17%).
 - **Conclusion:** the goal is reachable at modest odds. The best honest version is ~39% chance of +20% before −10% (vs 33% break-even) on point-in-time S&P 500 stocks, worth ~+3-4% per trade and ~18% a year with a lower drawdown than SPY.
 
+## Run 14 — 2026-10-08 (commit e7af2f7): confidence tiers + first daily picks
+- **More confidence = better odds** (OOS 2018+). +20% before −10%: top 10% 38%, top 5% 39%, top 2% 41%, top 1% 42%; point-in-time S&P 500: 39 / 41 / **44 / 44%**, avg net +3.9% → +4.7% per trade. +10% before −10%: top 10% 56% → top 1% 63% (PIT 58 → 65%).
+- **First picks run** exposed three problems: (1) it ran at ~10:20 ET, so today's bar was partial; (2) final-model probabilities were in-sample-overconfident (~55-60% vs ~40-44% real); (3) all 30 picks were beaten-down names (35-60% below highs, low RS), the model's strongest statistical mode but not the user's momentum style.
+- **Fixes:** drop today's bar before 21:00 UTC (tested); probabilities calibrated on held-out 2023+ years with 20 equal-count bins (isotonic gave 0/100% extremes); a second list of **leaders** (RS >= 70th pct, within 25% of the 52w high, above the 50-day) shown first.
+
 ## Run 14 — planned 2026-10-08
 - Confidence tiers: do the top 5/2/1% have better odds than the top 10%?
 - `picks.py` + `picks.yml`: daily list of stocks ranked by P(+20% before −10%), with stop/targets and any setups that fired in the last 3 days. Scheduled runs fire only from the default branch.
