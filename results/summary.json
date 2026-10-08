@@ -1,11 +1,11 @@
 {
-  "strategies_tested": 3069.0,
-  "strategies_with_enough_trades": 2488.0,
-  "rank_corr_IS_vs_OOS_avgR": 0.537131870527779,
-  "rank_corr_IS_vs_OOS_t": 0.5763835682973613,
-  "OOS_avgR_all_strategies": 0.04709384492783817,
+  "strategies_tested": 3993.0,
+  "strategies_with_enough_trades": 3104.0,
+  "rank_corr_IS_vs_OOS_avgR": 0.5072075617938212,
+  "rank_corr_IS_vs_OOS_t": 0.5540360745053815,
+  "OOS_avgR_all_strategies": 0.04258544232507344,
   "OOS_avgR_top20_by_IS": 0.06040301355296779,
   "OOS_avgR_top20_by_IS_avgR": 0.3226528456789339,
-  "OOS_avgR_random_baseline": -0.04154361943364609,
+  "OOS_avgR_random_baseline": -0.020256456352837772,
   "share_top20_positive_OOS": 1.0
 }
