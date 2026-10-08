@@ -17,6 +17,7 @@ from mlalgo.research import analyze as A
 from mlalgo.research import data as D
 from mlalgo.research import engine
 from mlalgo.research.entries import ENTRIES
+from mlalgo.research.insights import append_history, findings
 from mlalgo.research.run import EXIT_NAMES, run
 
 
@@ -107,6 +108,11 @@ def main() -> None:
     port.to_csv(out / "portfolio.csv", index=False)
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
 
+    # ---------------- what this run tells us
+    found, nxt, key = findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port)
+    hist = append_history(out / "history.csv", key, len(prices), len(sig))
+    (out / "insights.json").write_text(json.dumps({"findings": found, "next_steps": nxt, "key": key}, indent=2, default=str))
+
     # ---------------- report
     first, last = sig["date"].min().date(), sig["date"].max().date()
     counts = sig.groupby("entry_name").size().rename("signals")
@@ -118,6 +124,18 @@ def main() -> None:
         f"{int((universe['status'] == 'removed').sum())} former S&P 500 members). Signals {first} -> {last}: {len(sig):,}.",
         f"**In-sample (selection): trades closed before IS_END_STR. Out-of-sample (judgement): entries from IS_END_STR.**",
         "R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.",
+        "",
+        "## What this run tells us",
+        "",
+        *[f"- {x}" for x in found],
+        "",
+        "**Next steps for the strategy:**",
+        "",
+        *[f"{i + 1}. {x}" for i, x in enumerate(nxt)],
+        "",
+        "**Run history** (each run should move these numbers):",
+        "",
+        md(hist.tail(10)),
         "",
         "## 1. Did picking the best in-sample strategies work out-of-sample?",
         "",

@@ -1,0 +1,30 @@
+# ml-algo: working notes for Claude
+
+## Goal
+Find stock-trading strategies (screen -> chart setup -> entry -> exit) that work on **real data**,
+using ML to test many variations honestly. The user trades breakout / momentum setups.
+
+## Rules
+- **Never backtest on synthetic data.** Random-walk data is allowed only inside unit tests that
+  check mechanics (lookahead, fills). Don't report numbers from synthetic data.
+- Real data comes from Yahoo via GitHub Actions (`.github/workflows/research.yml`); this sandbox
+  can't reach Yahoo. Pushing changes under `mlalgo/`, `research.py`, `requirements.txt` triggers a
+  run (and **cancels any run in progress**, so don't push mid-run unless you mean to).
+- Selection on 2006-2017 only (`IS_END` in `mlalgo/research/analyze.py`), judgement on 2018+.
+  Never tune anything on out-of-sample results and then report those same results as validation.
+- Always compare against the `random_uptrend` baseline with the same exit and filter.
+
+## Research loop (every run must teach us something)
+1. Run (push or Actions -> research -> Run workflow). Results land in `results/`.
+2. Read `results/report.md` -> "What this run tells us" and "Next steps", plus `results/history.csv`.
+3. Pick the top next step, change the code, add or adjust tests, push, repeat.
+4. Record what was learned and decided in `results/LOG.md` (newest first): hypothesis, change,
+   result, decision. Don't repeat experiments that are already logged.
+
+## Layout
+- `mlalgo/research/entries.py` entry setups (add new ones to `ENTRIES`)
+- `mlalgo/research/engine.py` numba exit simulator (`EXITS`) and pattern kernels
+- `mlalgo/research/analyze.py` leaderboard, baseline, ML, rules, portfolio
+- `mlalgo/research/insights.py` findings / next steps / history
+- `scan.py`, `strategy.py` user-facing daily scan and playbook backtest
+- Tests: `python -m pytest -q`
