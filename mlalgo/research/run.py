@@ -62,18 +62,49 @@ def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series) -> pd.Data
     return m.reindex(columns=MARKET_COLS)
 
 
-def process_ticker(args) -> pd.DataFrame | None:
+SUPER_HORIZON, SUPER_GAIN, SAMPLE_EVERY = 63, 0.40, 10
+
+
+def superperformer_sample(ticker, df, feats_all, rs_rank, grp, warmup=252) -> pd.DataFrame:
+    """Every 10th trading day of every stock, with its chart state and whether it went on to
+    gain >= 40% (intraday high) within the next 63 trading days: the 'superperformance' that
+    O'Neil and Minervini studied by hand. The label uses future data by design; the features
+    don't, and the walk-forward training only uses rows whose 63-day window has fully ended."""
+    n = len(df)
+    idx = np.arange(warmup, n, SAMPLE_EVERY)
+    if len(idx) == 0:
+        return pd.DataFrame()
+    c, h = df["close"].to_numpy(float), df["high"].to_numpy(float)
+    fwd_max = pd.Series(h).rolling(SUPER_HORIZON).max().shift(-SUPER_HORIZON).to_numpy()
+    fwd_ret = pd.Series(c).shift(-SUPER_HORIZON).to_numpy() / c - 1
+    out = feats_all.iloc[idx][[x for x in ML_FEATURES + ["dollar_vol_50"] if x in feats_all]].reset_index(drop=True)
+    out.insert(0, "date", df.index[idx])
+    out.insert(0, "ticker", ticker)
+    out["rs_rank"] = rs_rank.reindex(df.index).to_numpy()[idx]
+    for col in GROUP_COLS:
+        out[col] = grp[col].reindex(df.index).to_numpy()[idx] if grp is not None and col in grp else np.nan
+    out["fwd_max_gain"] = fwd_max[idx] / c[idx] - 1
+    out["fwd_ret_63"] = fwd_ret[idx]
+    out["label_end"] = df.index[np.minimum(idx + SUPER_HORIZON, n - 1)]
+    out.loc[idx + SUPER_HORIZON > n - 1, ["fwd_max_gain", "fwd_ret_63"]] = np.nan
+    ok = (c[idx] >= 5) & (c[idx] * feats_all["avg_vol_50"].to_numpy()[idx] >= 5e6)
+    return out[ok].astype({k: "float32" for k in out.select_dtypes("float64").columns})
+
+
+def process_ticker(args):
     ticker, df, rs_rank, grp, max_days, cost, seed = args
     b = bars(df)
+    feats_all = structure_features(df)
+    feats_all["setup_score"] = setup_score(feats_all)
+    sample = superperformer_sample(ticker, df, feats_all, rs_rank, grp)
     sig = all_signals(df, b, seed=seed)
     if sig.empty:
-        return None
+        return None, sample
     idx = sig["idx"].to_numpy()
     ret, rmult, xidx, reason = engine.simulate_all(
         b["o"], b["h"], b["l"], b["c"], b["sma10"], b["sma20"], b["sma50"], b["ema8"], b["ema21"], b["ema50"],
         b["atr20"], b["low10prev"], idx, sig["entry"].to_numpy(), sig["stop"].to_numpy(), EXIT_CODES, max_days, cost)
-    feats = structure_features(df).iloc[idx].reset_index(drop=True)
-    feats["setup_score"] = setup_score(feats)
+    feats = feats_all.iloc[idx].reset_index(drop=True)
     out = pd.DataFrame({"ticker": ticker, "date": df.index[idx], "entry_name": sig["entry_name"].to_numpy(),
                         "entry": sig["entry"].to_numpy(), "stop": sig["stop"].to_numpy()})
     for col in SIGNAL_EXTRAS:
@@ -90,7 +121,7 @@ def process_ticker(args) -> pd.DataFrame | None:
         out[f"exit_{name}"] = dates[xidx[:, j]]
         out[f"reason_{name}"] = reason[:, j].astype("int8")
         out.loc[xidx[:, j] == len(dates) - 1, f"reason_{name}"] = 0  # still open at data end
-    return out
+    return out, sample
 
 
 def run(prices: dict[str, pd.DataFrame], market: dict[str, pd.DataFrame], max_days: int = 250,
@@ -111,19 +142,30 @@ def run(prices: dict[str, pd.DataFrame], market: dict[str, pd.DataFrame], max_da
                     "sector_rs": sec_rs[sec] if sec in sec_rs else np.nan}, index=rank.index)
     tasks = [(t, df, rank[t], grp.get(t), max_days, cost, i) for i, (t, df) in enumerate(prices.items())]
     workers = workers or os.cpu_count() or 1
-    frames = []
+    frames, samples = [], []
+
+    def collect(results):
+        for k, (res, smp) in enumerate(results):
+            if res is not None:
+                frames.append(res)
+            if smp is not None and len(smp):
+                samples.append(smp)
+            if (k + 1) % 200 == 0:
+                print(f"[run] {k + 1}/{len(tasks)} tickers")
+
     if workers > 1:
         with ProcessPoolExecutor(workers) as ex:
-            for k, res in enumerate(ex.map(process_ticker, tasks, chunksize=10)):
-                if res is not None:
-                    frames.append(res)
-                if (k + 1) % 200 == 0:
-                    print(f"[run] {k + 1}/{len(tasks)} tickers")
+            collect(ex.map(process_ticker, tasks, chunksize=10))
     else:
-        frames = [r for r in map(process_ticker, tasks) if r is not None]
-    sig = pd.concat(frames, ignore_index=True)
-    m = mkt.reindex(mkt.index.union(pd.DatetimeIndex(sig["date"].unique()))).ffill()
-    sig = sig.join(m, on="date")
-    float_cols = sig.select_dtypes("float64").columns
-    sig[float_cols] = sig[float_cols].astype("float32")
-    return sig.sort_values(["date", "ticker"]).reset_index(drop=True)
+        collect(map(process_ticker, tasks))
+
+    def with_market(d):
+        m = mkt.reindex(mkt.index.union(pd.DatetimeIndex(d["date"].unique()))).ffill()
+        d = d.join(m, on="date")
+        fc = d.select_dtypes("float64").columns
+        d[fc] = d[fc].astype("float32")
+        return d.sort_values(["date", "ticker"]).reset_index(drop=True)
+
+    sig = with_market(pd.concat(frames, ignore_index=True))
+    sample = with_market(pd.concat(samples, ignore_index=True)) if samples else pd.DataFrame()
+    return sig, sample

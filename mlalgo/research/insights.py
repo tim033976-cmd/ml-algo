@@ -12,7 +12,7 @@ import pandas as pd
 from mlalgo.research.analyze import BASELINE
 
 
-def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port) -> tuple[list[str], list[str], dict]:
+def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup=None, sup_imp=None) -> tuple[list[str], list[str], dict]:
     f, nxt, key = [], [], {}
 
     # 1. does in-sample selection carry information?
@@ -107,6 +107,16 @@ def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port) -> tuple[li
         nxt.append("Turn that rule into a scan filter and test it as its own strategy.")
     key["rules_held"] = int(len(held))
 
+    # 6b. superperformer model
+    if sup:
+        lift = sup["top_decile_rate"] / sup["base_rate"] if sup["base_rate"] else np.nan
+        feats = ", ".join(sup_imp["feature"].head(5)) if sup_imp is not None else ""
+        f.append(f"Superperformer model: {sup['top_decile_rate']:.1%} of its top-10% picks gained >= 40% within 3 months "
+                 f"vs {sup['base_rate']:.1%} for all stocks ({lift:.1f}x), AUC {sup['auc']:.3f}. Driven by: {feats}.")
+        key.update(super_auc=sup["auc"], super_lift=lift, super_features=feats)
+        if lift >= 2:
+            nxt.append("Use the superperformer score in the daily scan to choose which stocks to watch for setups.")
+
     # 7. portfolio vs SPY
     strat = port[~port["strategy"].str.startswith(("SPY", "BASELINE"))]
     spy = port.loc[port["strategy"] == "SPY buy & hold", "CAGR"]
@@ -137,7 +147,7 @@ def append_history(path: Path, key: dict, n_tickers: int, n_signals: int) -> pd.
     row = {"run_utc": pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%d %H:%M"),
            "commit": commit or os.environ.get("GITHUB_SHA", "local")[:7], "tickers": n_tickers, "signals": n_signals}
     row.update({k: (", ".join(v) if isinstance(v, list) else v) for k, v in key.items()})
-    hist = pd.read_csv(path) if path.exists() else pd.DataFrame()
+    hist = pd.read_csv(path, dtype={"commit": str}) if path.exists() else pd.DataFrame()
     hist = pd.concat([hist, pd.DataFrame([row])], ignore_index=True)
     hist.to_csv(path, index=False)
     return hist

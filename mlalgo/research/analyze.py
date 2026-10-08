@@ -6,10 +6,10 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
-from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import roc_auc_score
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from mlalgo.research.entries import ENTRIES
 from mlalgo.research.run import EXIT_NAMES, GROUP_COLS, MARKET_COLS, SIGNAL_EXTRAS
@@ -226,12 +226,14 @@ def rule_tree(d: pd.DataFrame, cols: list[str], exit_name: str, depth: int = 3) 
 # ------------------------------------------------------------------ portfolio simulation
 def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END, capital=100_000.0,
               risk=0.01, max_pos=10, pos_cap=0.20, closes: pd.DataFrame | None = None,
-              idle: pd.Series | None = None) -> dict:
+              idle: pd.Series | None = None, adaptive: bool = False) -> dict:
     """Fixed-fractional sizing (1% equity at risk per trade), max 10 positions, no leverage.
     With `closes` (dates x tickers), open positions are marked to market every day, so the
     drawdown is honest; without it equity only moves when trades close (run 1-3 reports).
     `idle`: close prices of an asset (e.g. SPY) that uninvested cash is held in (run 5: EP
-    portfolios averaged ~6 of 10 slots filled, with the rest of the cash earning nothing)."""
+    portfolios averaged ~6 of 10 slots filled, with the rest of the cash earning nothing).
+    `adaptive`: size like a discretionary pro, by how the strategy is working right now: risk
+    x0.5 when the last 20 closed trades averaged < 0R, x1.5 when > +0.5R (only closed trades)."""
     t = trades[trades["date"] >= start].copy()
     if exit_name == "per_row":  # each row carries its own exit plan in `exit_choice`
         t["exit_date"], t["ret"] = pd.NaT, np.nan
@@ -252,7 +254,8 @@ def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END,
         days = sorted(set(t["date"]) | set(t["exit_date"]))
         px = None
     cash, realized = capital, capital
-    open_pos: list[tuple] = []          # (exit_date, alloc, ret, ticker, entry_price)
+    open_pos: list[tuple] = []          # (exit_date, alloc, ret, ticker, entry_price, risk_pct)
+    closed_R: list[float] = []
     curve, taken = [], []
     idle_ret = idle.pct_change().fillna(0) if idle is not None else None
     for day in days:
@@ -266,22 +269,27 @@ def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END,
                 cash += pos[1] * (1 + pos[2])
                 realized += pos[1] * pos[2]
                 taken.append(pos[2])
+                closed_R.append(pos[2] / max(pos[5], 1e-4))
             else:
                 still.append(pos)
         open_pos = still
         g = by_day.get(day)
         if g is not None:
             held = {p[3] for p in open_pos}
+            mult = 1.0
+            if adaptive and len(closed_R) >= 20:
+                recent = float(np.mean(closed_R[-20:]))
+                mult = 0.5 if recent < 0 else (1.5 if recent > 0.5 else 1.0)
             for r in g.itertuples(index=False):
                 if len(open_pos) >= max_pos:
                     break
                 if r.ticker in held or r.exit_date <= day:
                     continue
-                alloc = min(realized * risk / max(r.risk_pct, 1e-4), realized * pos_cap, cash)
+                alloc = min(realized * risk * mult / max(r.risk_pct, 1e-4), realized * pos_cap, cash)
                 if alloc < realized * 0.02:
                     continue
                 cash -= alloc
-                open_pos.append((r.exit_date, alloc, r.ret, r.ticker, r.entry))
+                open_pos.append((r.exit_date, alloc, r.ret, r.ticker, r.entry, r.risk_pct))
                 held.add(r.ticker)
         if px is not None:
             mtm = cash
@@ -330,3 +338,112 @@ def concentration(curve: pd.Series) -> float:
     y = np.log1p(yearly(curve))
     total = y.sum()
     return float(y.nlargest(2).sum() / total) if total > 0 else np.nan
+
+
+# ------------------------------------------------------------------ superperformer model
+# "How do top traders do it?" They spend their time finding the stocks that are about to make
+# huge moves (O'Neil / Minervini studied hundreds of big winners by hand). This model learns that
+# directly: from every stock every 10 days, which chart / RS / market states preceded a >= 40%
+# gain within 3 months. Walk-forward by year; a row is only trained on once its 3-month label
+# window has ended before the test year starts.
+SUPER_FEATURES = list(dict.fromkeys(ML_FEATURES + MARKET_COLS + GROUP_COLS + ["rs_rank"]))
+
+
+def _super_model():
+    return HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, max_leaf_nodes=31,
+                                          min_samples_leaf=500, l2_regularization=1.0, random_state=0)
+
+
+def _xy(d):
+    X = d[SUPER_FEATURES].copy()
+    for c in SUPER_FEATURES:
+        if X[c].isna().all():
+            X[c] = 0.0
+    y = (d["fwd_max_gain"] >= 0.40).to_numpy() if "fwd_max_gain" in d else None
+    return X, y
+
+
+def super_walk_forward(sample: pd.DataFrame, score: list[pd.DataFrame], max_train: int = 200_000):
+    """Adds `super_prob` to `sample` and to every frame in `score` (e.g. the setup signals)."""
+    sample = sample.copy()
+    sample["super_prob"] = np.nan
+    score = [f.copy() for f in score]
+    for f in score:
+        f["super_prob"] = np.nan
+    rng = np.random.default_rng(0)
+    known = sample["fwd_max_gain"].notna()
+    for yr in sorted(sample["date"].dt.year.unique()):
+        start = pd.Timestamp(f"{yr}-01-01")
+        tr = np.flatnonzero((known & (sample["label_end"] < start)).to_numpy())
+        if len(tr) < 20_000:
+            continue
+        if len(tr) > max_train:
+            tr = rng.choice(tr, max_train, replace=False)
+        X, y = _xy(sample.iloc[tr])
+        if y.sum() < 200:
+            continue
+        m = _super_model().fit(X, y)
+        te = (sample["date"].dt.year == yr).to_numpy()
+        sample.loc[te, "super_prob"] = m.predict_proba(_xy(sample[te])[0])[:, 1]
+        for f in score:
+            fm = (f["date"].dt.year == yr).to_numpy()
+            if fm.any():
+                f.loc[fm, "super_prob"] = m.predict_proba(_xy(f[fm])[0])[:, 1]
+    return sample, score
+
+
+def super_report(sample: pd.DataFrame) -> dict:
+    o = sample[(sample["date"] >= IS_END) & sample["super_prob"].notna() & sample["fwd_max_gain"].notna()]
+    y = o["fwd_max_gain"] >= 0.40
+    dec = o.groupby(pd.qcut(o["super_prob"], 10, labels=False, duplicates="drop")).agg(
+        n=("fwd_max_gain", "size"), superperformer_rate=("fwd_max_gain", lambda g: (g >= 0.40).mean()),
+        avg_3m_return=("fwd_ret_63", "mean"), median_3m_return=("fwd_ret_63", "median"))
+    return {"n": len(o), "base_rate": float(y.mean()), "auc": float(roc_auc_score(y, o["super_prob"])),
+            "top_decile_rate": float(dec["superperformer_rate"].iloc[-1]), "deciles": dec}
+
+
+def super_explain(sample: pd.DataFrame, n_eval: int = 80_000):
+    """Permutation importance (model trained before 2018, scored after), readable rules, and a
+    profile of what future superperformers looked like vs. everything else."""
+    known = sample[sample["fwd_max_gain"].notna()]
+    tr = known[known["label_end"] < IS_END]
+    tr = tr.sample(min(200_000, len(tr)), random_state=0)
+    te = known[known["date"] >= IS_END]
+    te = te.sample(min(n_eval, len(te)), random_state=0)
+    Xtr, ytr = _xy(tr)
+    Xte, yte = _xy(te)
+    m = _super_model().fit(Xtr, ytr)
+    pi = permutation_importance(m, Xte, yte, scoring="roc_auc", n_repeats=3, random_state=0)
+    imp = pd.DataFrame({"feature": SUPER_FEATURES, "auc_drop": pi.importances_mean}).sort_values("auc_drop", ascending=False)
+
+    tree = DecisionTreeClassifier(max_depth=3, min_samples_leaf=max(2000, len(tr) // 100), random_state=0)
+    tree.fit(Xtr.fillna(-999), ytr)
+    t = tree.tree_
+    paths = {}
+
+    def walk(node, conds):
+        if t.children_left[node] == -1:
+            paths[node] = " AND ".join(conds) or "(all)"
+            return
+        f, thr = SUPER_FEATURES[t.feature[node]], t.threshold[node]
+        walk(t.children_left[node], conds + [f"{f} <= {thr:.3g}"])
+        walk(t.children_right[node], conds + [f"{f} > {thr:.3g}"])
+
+    walk(0, [])
+    li, lo = tree.apply(Xtr.fillna(-999)), tree.apply(Xte.fillna(-999))
+    rules = pd.DataFrame([{"rule": r, "IS_n": int((li == k).sum()), "IS_rate": ytr[li == k].mean(),
+                           "OOS_n": int((lo == k).sum()), "OOS_rate": yte[lo == k].mean() if (lo == k).any() else np.nan}
+                          for k, r in paths.items()]).sort_values("IS_rate", ascending=False)
+    top = list(imp["feature"].head(12))
+    prof = pd.DataFrame({"future superperformers (median)": te.loc[yte, top].median(),
+                         "everything else (median)": te.loc[~yte, top].median()})
+    return imp, rules.reset_index(drop=True), prof
+
+
+def signals_by_super(sig: pd.DataFrame, exit_name: str) -> pd.DataFrame:
+    """Do setups in stocks the model flags as likely superperformers pay more? (OOS)"""
+    o = sig[(sig["date"] >= IS_END) & sig["super_prob"].notna() & (sig["entry_name"] != BASELINE)]
+    g = pd.qcut(o["super_prob"], 3, labels=["low", "mid", "high"])
+    return o.groupby(g, observed=True).agg(n=(f"R_{exit_name}", "size"), avgR=(f"R_{exit_name}", "mean"),
+                                           win=(f"R_{exit_name}", lambda r: (r > 0).mean()),
+                                           avgR_sma50=("R_sma50_close", "mean"))

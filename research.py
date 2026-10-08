@@ -57,11 +57,15 @@ def main() -> None:
         prices = dict(list(prices.items())[: a.limit])
     print(f"[research] {len(prices)} tickers, market: {list(market)}  ({time.time() - t0:.0f}s)")
 
+    sample_path = Path(a.cache) / "superperformer_sample.parquet"
     if a.signals and Path(a.signals).exists():
         sig = pd.read_parquet(a.signals)
+        sample = pd.read_parquet(sample_path) if sample_path.exists() else pd.DataFrame()
     else:
-        sig = run(prices, market, workers=a.workers or None, universe=universe)
+        sig, sample = run(prices, market, workers=a.workers or None, universe=universe)
         sig.to_parquet(Path(a.cache) / "signals.parquet", index=False)
+        if len(sample):
+            sample.to_parquet(sample_path, index=False)
     print(f"[research] {len(sig):,} signals ({time.time() - t0:.0f}s)")
 
     # ---------------- strategy grid
@@ -101,6 +105,19 @@ def main() -> None:
     imp.to_csv(out / "ml_importance.csv", index=False)
     rules.to_csv(out / "ml_rules.csv", index=False)
     print(f"[research] ML done ({time.time() - t0:.0f}s)")
+
+    # ---------------- superperformer model: learn what future big winners look like beforehand
+    sup = None
+    if len(sample):
+        sample, (sig,) = A.super_walk_forward(sample, [sig])
+        sup = A.super_report(sample)
+        sup_imp, sup_rules, sup_prof = A.super_explain(sample)
+        sup_sig = A.signals_by_super(sig, ref_exit)
+        sup["deciles"].to_csv(out / "super_deciles.csv")
+        sup_imp.to_csv(out / "super_importance.csv", index=False)
+        sup_rules.to_csv(out / "super_rules.csv", index=False)
+        sup_prof.to_csv(out / "super_profile.csv")
+        print(f"[research] superperformer model done ({time.time() - t0:.0f}s)")
 
     # ---------------- portfolio simulation, 2018 -> today (marked to market daily)
     closes = pd.DataFrame({t: df["close"] for t, df in prices.items()}).astype("float32").ffill()
@@ -144,6 +161,19 @@ def main() -> None:
         port_rows.append((f"Top {k} strategies by IS expectancy (own exits), ranked by RS",
                           P(pool, "per_row", "rs_rank")))
     top10_picks = ranked.head(10)[["entry", "filter", "exit", "IS_n", "IS_avgR", "OOS_n", "OOS_avgR", "OOS_t"]]
+    pool20 = A.strategy_pool(sig, ranked.head(20))
+    # how pros size: more when the strategy is working, less when it isn't
+    port_rows.append(("Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades)",
+                      A.portfolio(pool20, "per_row", "rs_rank", closes=closes, adaptive=True)))
+    if "super_prob" in sig:
+        port_rows.append(("Top 20 by IS expectancy, ranked by superperformer model",
+                          A.portfolio(pool20, "per_row", "super_prob", closes=closes)))
+        allsig = sig[(sig["entry_name"] != A.BASELINE) & sig["super_prob"].notna()]
+        port_rows.append((f"All setups, ranked by superperformer model / {ref_exit}",
+                          A.portfolio(allsig, ref_exit, "super_prob", closes=closes)))
+        top_sup = allsig[allsig["super_prob"] >= allsig.groupby(allsig["date"].dt.year)["super_prob"].transform(lambda p: p.quantile(0.9))]
+        port_rows.append((f"Only setups in the model's top 10% likely superperformers / sma50_close",
+                          A.portfolio(top_sup, "sma50_close", "super_prob", closes=closes)))
     # run-5 lesson: the EP portfolio left ~40% of capital idle and earning nothing
     pool10 = A.strategy_pool(sig, ranked.head(10))
     spy_close = market["SPY"]["close"] if "SPY" in market else None
@@ -167,7 +197,8 @@ def main() -> None:
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
 
     # ---------------- what this run tells us
-    found, nxt, key = findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port)
+    found, nxt, key = findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup,
+                               sup_imp if sup else None)
     hist = append_history(out / "history.csv", key, len(prices), len(sig))
     (out / "insights.json").write_text(json.dumps({"findings": found, "next_steps": nxt, "key": key}, indent=2, default=str))
 
@@ -257,6 +288,32 @@ def main() -> None:
         "",
         md(rules),
         "",
+        *([
+            "## 10. Superperformer model: what do stocks look like BEFORE a +40% move in 3 months?",
+            "",
+            f"Every stock every 10 trading days (n={sup['n']:,} out-of-sample rows). Base rate of a >= 40% gain within 3 months: "
+            f"{sup['base_rate']:.1%}. The model's top 10% hit it {sup['top_decile_rate']:.1%} of the time "
+            f"({sup['top_decile_rate'] / sup['base_rate']:.1f}x the base rate). AUC {sup['auc']:.3f}.",
+            "",
+            md(sup["deciles"], index=True, floatfmt=".3f"),
+            "",
+            "What matters most (permutation importance, drop in OOS AUC):",
+            "",
+            md(sup_imp.head(15), floatfmt=".4f"),
+            "",
+            "Profile: future superperformers vs everything else, at the moment of the sample:",
+            "",
+            md(sup_prof, index=True, floatfmt=".3f"),
+            "",
+            "Readable rules (depth-3 tree fit before 2018, scored after):",
+            "",
+            md(sup_rules, floatfmt=".3f"),
+            "",
+            f"Setup signals split by the model's score (OOS, exit {ref_exit}; last column sma50_close):",
+            "",
+            md(sup_sig, index=True, floatfmt=".3f"),
+            "",
+        ] if sup else []),
         "## 9. Portfolio simulation, 2018 -> today ($100k, 1% risk/trade, max 10 positions, no leverage)",
         "",
         md(port.drop(columns=["final_equity"], errors="ignore")),

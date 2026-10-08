@@ -1,5 +1,12 @@
 # Research log (newest first)
 
+## Run 11 — planned 2026-10-08: "how do top traders consistently beat the S&P?"
+Six runs show our setups have a real per-trade edge, but as portfolios they roughly match SPY with lumpy years (2023-24). What pros do that we haven't modelled:
+1. **They hunt for future superperformers, not setups.** O'Neil and Minervini studied hundreds of big winners to see what they looked like *before* the move. New: a model trained on every stock every 10 days (~600k rows) to predict a >= 40% gain within 3 months. Walk-forward by year; rows only train once their 3-month label window has closed. Reports lift over the base rate, permutation importance, a profile of future winners vs everything else, readable rules, and whether setups in high-score stocks pay more. Portfolios are ranked by this score.
+2. **They size by how their strategy is working** (bigger in hot streaks, smaller in cold). New: adaptive sizing at 0.5x risk when the last 20 closed trades averaged < 0R and 1.5x when > +0.5R (closed trades only).
+3. Not testable with this data (logged as caveats): intraday entries with tight stops, small caps / IPOs outside the S&P 1500, leverage and concentration, and survivorship among traders (we hear from the winners).
+- Fix: history.csv read commit hashes like `5e93689` as numbers (inf). It now reads them as text; the file is repaired.
+
 ## Run 6 — 2026-10-08 (commit 32c75da), 659,965 signals: wedges, triangles, tightness
 Excess avg R over random entries, averaged over all exits (OOS 2018+; IS in brackets):
 - **descending triangle (upside breakout):** +0.21 (IS +0.21). Consistent, but only ~80 signals/yr and n=706 OOS.

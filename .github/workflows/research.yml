@@ -84,9 +84,9 @@ jobs:
             done
             python - <<'PY'
           import pandas as pd, pathlib
-          new = pd.read_csv("/tmp/new/history.csv").tail(1)
+          new = pd.read_csv("/tmp/new/history.csv", dtype={"commit": str}).tail(1)
           p = pathlib.Path("results/history.csv")
-          old = pd.read_csv(p) if p.exists() else pd.DataFrame()
+          old = pd.read_csv(p, dtype={"commit": str}) if p.exists() else pd.DataFrame()
           pd.concat([old, new], ignore_index=True).to_csv(p, index=False)
           PY
             git add results
@@ -102,6 +102,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: signals
-          path: data/signals.parquet
+          path: |
+            data/signals.parquet
+            data/superperformer_sample.parquet
           if-no-files-found: ignore
           retention-days: 14

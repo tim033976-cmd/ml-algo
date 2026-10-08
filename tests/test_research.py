@@ -128,3 +128,23 @@ def test_pattern_detector_does_not_use_future_data():
     assert len(a[0]) >= 5  # the check must actually cover some patterns
     for x, y in zip(a, b_):
         np.testing.assert_array_equal(x, y)
+
+
+def test_superperformer_label_and_features_are_point_in_time():
+    from mlalgo.research.run import superperformer_sample
+    from mlalgo.structure import structure_features
+    df = synthetic(1200, seed=21)
+    df["volume"] *= 5
+    rs = pd.Series(0.5, index=df.index)
+    s = superperformer_sample("T", df, structure_features(df), rs, None)
+    row = s[s["fwd_max_gain"].notna()].iloc[3]
+    t = df.index.get_loc(row["date"])
+    expected = df["high"].iloc[t + 1:t + 64].max() / df["close"].iloc[t] - 1
+    assert np.isclose(row["fwd_max_gain"], expected, rtol=1e-5)
+    # features must not change when the future changes
+    tampered = df.copy()
+    tampered.iloc[t + 1:] *= 2
+    s2 = superperformer_sample("T", tampered, structure_features(tampered), rs, None)
+    a = s[s["date"] == row["date"]].drop(columns=["fwd_max_gain", "fwd_ret_63"]).reset_index(drop=True)
+    b = s2[s2["date"] == row["date"]].drop(columns=["fwd_max_gain", "fwd_ret_63"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(a, b)
