@@ -77,7 +77,8 @@ def test_research_signals_do_not_use_future_data():
     tampered.iloc[cut:] *= np.linspace(1, 3, len(df) - cut)[:, None]
     after = all_signals(tampered, bars(tampered))
     cols = ["idx", "entry_name", "entry", "stop"]
-    key = lambda s: s[s["idx"] < cut][cols].sort_values(cols[:2]).reset_index(drop=True)
+    # next-day stop orders (qull_breakout) legitimately use day idx+1 for the fill: stop one day early
+    key = lambda s: s[s["idx"] < cut - 1][cols].sort_values(cols[:2]).reset_index(drop=True)
     pd.testing.assert_frame_equal(key(base), key(after))
 
 
@@ -209,3 +210,35 @@ def test_picks_drops_todays_partial_bar_only_before_the_close(monkeypatch):
     assert len(picks.trim_incomplete(dfs)["X"]) == 2
     monkeypatch.setattr(picks, "datetime", Evening)
     assert len(picks.trim_incomplete(dfs)["X"]) == 3
+
+
+def test_qull_breakout_fills_at_pivot_or_gap_open():
+    run = np.linspace(20, 40, 40)
+    flag_ = 39 - 1.5 * np.abs(np.sin(np.linspace(0, 3, 15))) * np.linspace(1, 0.3, 15)
+    close = np.r_[np.full(120, 20.0), run, flag_, [41.0]]
+    high = close * 1.01
+    high[159] = 40.5          # pivot
+    low = close * 0.99
+    open_ = close.copy()
+    open_[-1] = 40.0          # opens below the pivot, trades through it
+    df = pd.DataFrame({"open": open_, "high": high, "low": low, "close": close, "volume": 1e6},
+                      index=pd.bdate_range("2020-01-01", periods=len(close)))
+    b = bars(df)
+    t, fill, stop, *_ = engine.qull_setups(b["o"], b["h"], b["l"], b["c"], b["sma10"], b["sma20"], b["adr"],
+                                           0.3, 60, 5, 40, 0.25, 0.0)
+    assert list(t) == [len(close) - 2]                     # setup known at the prior close
+    assert np.isclose(fill[0], 40.5 * 1.001)               # filled at the trigger, not the close
+    assert stop[0] < fill[0]
+
+
+def test_forward_tracker_scores_logged_picks(tmp_path):
+    import picks
+    idx = pd.bdate_range("2026-01-01", periods=80)
+    close = np.r_[np.full(10, 100.0), np.linspace(100, 125, 70)]
+    df = pd.DataFrame({"open": close, "high": close * 1.01, "low": close * 0.99, "close": close}, index=idx)
+    day = idx[9]
+    p = pd.DataFrame({"date": [day], "ticker": ["X"], "close": [100.0], "p_b20": [0.4], "p_b10": [0.6]})
+    picks.track_forward(tmp_path, {"X": df}, p, p.iloc[:0], day, str(tmp_path))
+    out = pd.read_csv(tmp_path / "forward_test.csv")
+    assert out.loc[0, "b20_result"] == "target" and np.isclose(out.loc[0, "b20_ret"], 0.198)
+    assert (tmp_path / "picks_history.csv").exists() and (tmp_path / "forward_test.md").exists()

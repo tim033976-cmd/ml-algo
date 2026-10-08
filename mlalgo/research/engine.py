@@ -365,3 +365,74 @@ def pattern_signals(h, l, c, v, vol50prev, window, k, flat_tol, touch_tol, min_c
         out_len[m], out_width[m], out_touch[m] = t - x0, w1 / c[t], nh + nl
         m += 1
     return out_t[:m], out_kind[:m], out_stop[:m], out_len[:m], out_width[:m], out_touch[:m]
+
+
+# ---------------------------------------------------------------- Qullamaggie-style breakout (buy-stop)
+@njit(cache=True)
+def qull_setups(o, h, l, c, sma10, sma20, adr, min_move, run_window, min_flag, max_flag, max_depth, min_adr):
+    """Setup known at the close of day t: a >= min_move run into a high (pivot), then an orderly
+    consolidation of min_flag..max_flag days, no deeper than max_depth, higher lows, price holding
+    the 10/20-day averages, not yet broken out, ADR >= min_adr.
+    Order for day t+1: buy-stop just above the pivot. Filled only if day t+1 trades through it, at
+    max(open, pivot). Stop = the tighter of the last 3 days' low and 1 ADR below the fill.
+    Returns setup day t (features use data up to t only), fill price, stop."""
+    n = len(c)
+    out_t = np.empty(n, dtype=np.int64)
+    out_fill = np.empty(n)
+    out_stop = np.empty(n)
+    out_move = np.empty(n)
+    out_depth = np.empty(n)
+    out_days = np.empty(n)
+    m = 0
+    for t in range(run_window + max_flag + 2, n - 1):
+        if adr[t] < min_adr or np.isnan(sma20[t]):
+            continue
+        pi = t - max_flag + 1
+        for k in range(t - max_flag + 1, t + 1):
+            if h[k] >= h[pi]:
+                pi = k
+        days = t - pi
+        if days < min_flag:
+            continue
+        pivot = h[pi]
+        if c[t] >= pivot:
+            continue
+        lo_after = l[pi]
+        for k in range(pi, t + 1):
+            if l[k] < lo_after:
+                lo_after = l[k]
+        depth = (pivot - lo_after) / pivot
+        if depth > max_depth:
+            continue
+        lo_before = l[pi - run_window]
+        for k in range(pi - run_window, pi + 1):
+            if l[k] < lo_before:
+                lo_before = l[k]
+        move = pivot / lo_before - 1.0
+        if move < min_move:
+            continue
+        mid = pi + (t - pi) // 2
+        lo1 = l[pi]
+        for k in range(pi, mid + 1):
+            if l[k] < lo1:
+                lo1 = l[k]
+        lo2 = l[mid + 1] if mid + 1 <= t else lo1
+        for k in range(mid + 1, t + 1):
+            if l[k] < lo2:
+                lo2 = l[k]
+        if lo2 < lo1:
+            continue
+        if c[t] < 0.98 * sma20[t] or c[t] < 0.97 * sma10[t]:
+            continue
+        trigger = pivot * 1.001
+        if h[t + 1] < trigger:
+            continue
+        fill = max(o[t + 1], trigger)
+        low3 = min(l[t], min(l[t - 1], l[t - 2]))
+        stop = max(low3, fill * (1.0 - adr[t]))
+        if stop >= fill:
+            continue
+        out_t[m], out_fill[m], out_stop[m] = t, fill, stop
+        out_move[m], out_depth[m], out_days[m] = move, depth, days
+        m += 1
+    return out_t[:m], out_fill[:m], out_stop[:m], out_move[:m], out_depth[:m], out_days[:m]

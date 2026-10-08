@@ -14,12 +14,12 @@ from mlalgo.structure import ML_FEATURES, setup_score, structure_features
 
 EXIT_NAMES = list(engine.EXITS)
 EXIT_CODES = np.array([engine.EXITS[k][0] for k in EXIT_NAMES], dtype=np.int64)
-GROUP_COLS = ["industry_rs", "industry_rank", "sector_rs"]
+GROUP_COLS = ["industry_rs", "industry_rank", "sector_rs", "qull_rank"]
 SIGNAL_EXTRAS = ["risk_pct", "risk_adr", "vol_ratio", "gap", "close_strength",
                  "prior_move", "flag_depth", "flag_days", "base_depth", "contraction",
                  "pattern_len", "pattern_width", "pattern_touches", "coil_range"]
 MARKET_COLS = ["mkt_ok", "mkt_ema_stack", "mkt_ret_21", "mkt_above200", "qqq_ok", "qqq_ret_21",
-               "rates_rising", "breadth_50"]
+               "qqq_trend", "rates_rising", "breadth_50"]
 
 
 def _rs_composite(df: pd.DataFrame) -> pd.Series:
@@ -55,7 +55,10 @@ def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series) -> pd.Data
         parts.append(index_regime(spy, "mkt"))
         parts.append((spy["close"] > spy["close"].rolling(200).mean()).astype(int).rename("mkt_above200"))
     if "QQQ" in market:
+        q = market["QQQ"]["close"]
         parts.append(index_regime(market["QQQ"], "qqq")[["qqq_ok", "qqq_ret_21"]])
+        # Qullamaggie: be aggressive only when the Nasdaq is above its 10- and 20-day averages
+        parts.append(((q > q.rolling(10).mean()) & (q > q.rolling(20).mean())).astype(int).rename("qqq_trend"))
     if "^IRX" in market:
         parts.append(rates_regime(market["^IRX"]["close"]))
     m = pd.concat(parts, axis=1).sort_index().ffill()
@@ -171,9 +174,23 @@ def process_ticker(args):
     return out, sample
 
 
-def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers) -> dict[str, pd.DataFrame]:
+def perf_rank(prices: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Qullamaggie's scan: the best performers over 1, 3 or 6 months. Per day, each stock's best
+    percentile rank across the three look-backs (0.98 = top 2% on at least one of them)."""
+    ranks = []
+    for n in (21, 63, 126):
+        r = pd.DataFrame({t: df["close"] / df["close"].shift(n) - 1 for t, df in prices.items()})
+        ranks.append(r.rank(axis=1, pct=True))
+    return pd.concat(ranks).groupby(level=0).max().astype("float32")
+
+
+def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers,
+                 qrank: pd.DataFrame | None = None) -> dict[str, pd.DataFrame]:
     """Per-ticker sub-industry / sector RS series (empty if the universe has no sector info)."""
     grp = {}
+    if qrank is not None:
+        for t in tickers:
+            grp[t] = pd.DataFrame({"qull_rank": qrank[t] if t in qrank else np.nan}, index=rank.index)
     if universe is None or "sub_industry" not in universe:
         return grp
     u = universe.drop_duplicates("ticker").set_index("ticker")
@@ -182,10 +199,11 @@ def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers) -> 
     for t in tickers:
         if t in u.index:
             sub, sec = u.at[t, "sub_industry"], u.at[t, "sector"]
-            grp[t] = pd.DataFrame({
+            g = pd.DataFrame({
                 "industry_rs": ind_rs[sub] if sub in ind_rs else np.nan,
                 "industry_rank": ind_rank[sub] if sub in ind_rank else np.nan,
                 "sector_rs": sec_rs[sec] if sec in sec_rs else np.nan}, index=rank.index)
+            grp[t] = g if t not in grp else pd.concat([grp[t], g], axis=1)
     return grp
 
 
@@ -193,7 +211,7 @@ def run(prices: dict[str, pd.DataFrame], market: dict[str, pd.DataFrame], max_da
         cost: float = 0.001, workers: int | None = None, universe: pd.DataFrame | None = None) -> pd.DataFrame:
     rank, breadth = cross_section(prices)
     mkt = market_frame(market, breadth)
-    grp = group_frames(rank, universe, prices)
+    grp = group_frames(rank, universe, prices, qrank=perf_rank(prices))
     tasks = [(t, df, rank[t], grp.get(t), max_days, cost, i) for i, (t, df) in enumerate(prices.items())]
     workers = workers or os.cpu_count() or 1
     frames, samples = [], []

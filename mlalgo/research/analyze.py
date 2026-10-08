@@ -24,6 +24,9 @@ FILTERS = {
     "early_stage": lambda s: s["base_count"].between(1, 2).to_numpy(),
     "rs80_mkt": lambda s: ((s["rs_rank"] >= 0.8) & (s["mkt_ok"] == 1)).to_numpy(),
     "rs80_early": lambda s: ((s["rs_rank"] >= 0.8) & s["base_count"].between(1, 2)).to_numpy(),
+    # Qullamaggie's scan: top 3% performer over 1/3/6 months and ADR >= 4%; and with his regime rule
+    "qull_scan": lambda s: ((s["qull_rank"] >= 0.97) & (s["adr_pct"] >= 0.04)).to_numpy(),
+    "qull_scan_regime": lambda s: ((s["qull_rank"] >= 0.97) & (s["adr_pct"] >= 0.04) & (s["qqq_trend"] == 1)).to_numpy(),
     # "hot theme": the stock's sub-industry is in the top 30% of sub-industries by median RS
     "theme": lambda s: (s["industry_rank"] >= 0.7).to_numpy(),
     "rs80_theme": lambda s: ((s["rs_rank"] >= 0.8) & (s["industry_rank"] >= 0.7)).to_numpy(),

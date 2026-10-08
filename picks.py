@@ -19,7 +19,7 @@ import pandas as pd
 from mlalgo.research import analyze as A
 from mlalgo.research import data as D
 from mlalgo.research.entries import all_signals, bars
-from mlalgo.research.run import cross_section, group_frames, market_frame, superperformer_sample
+from mlalgo.research.run import bracket_outcome, cross_section, group_frames, market_frame, perf_rank, superperformer_sample
 from mlalgo.structure import ML_FEATURES, setup_score, structure_features
 
 CAL_START = pd.Timestamp("2023-01-01")   # calibration years: model trained before, checked on these
@@ -45,7 +45,7 @@ def _worker(args):
     last.insert(0, "ticker", ticker)
     last["close"] = df["close"].iloc[-1]
     last["rs_rank"] = rs.reindex(df.index).iloc[-1]
-    for col in ("industry_rs", "industry_rank", "sector_rs"):
+    for col in ("industry_rs", "industry_rank", "sector_rs", "qull_rank"):
         last[col] = grp[col].reindex(df.index).iloc[-1] if grp is not None else np.nan
     try:
         sig = all_signals(df, bars(df), warmup=0)
@@ -56,6 +56,52 @@ def _worker(args):
     return sample, last
 
 
+def track_forward(out: Path, prices: dict, picks: pd.DataFrame, leaders: pd.DataFrame, asof, history_dir: str) -> None:
+    """Forward test: log the top 10 of each list every day, then score every logged pick against
+    +20% / +10% before -10% (bought at that day's close, 63 trading days max) as real prices arrive."""
+    hist_path = Path(history_dir) / "picks_history.csv"
+    hist = pd.read_csv(hist_path, parse_dates=["date"]) if hist_path.exists() else pd.DataFrame()
+    new = pd.concat([picks.head(10).assign(list="all"), leaders.head(10).assign(list="leaders")])
+    new = new[["date", "ticker", "list", "close", "p_b20", "p_b10"]]
+    if len(hist) and (hist["date"] == asof).any():
+        hist = hist[hist["date"] != asof]          # re-run on the same day replaces that day's log
+    hist = pd.concat([hist, new], ignore_index=True)
+    rows = []
+    for r in hist.itertuples(index=False):
+        df = prices.get(r.ticker)
+        if df is None or r.date not in df.index:
+            rows.append({}); continue
+        i = df.index.get_loc(r.date)
+        o, h, l, c = (df[k].to_numpy(float) for k in ("open", "high", "low", "close"))
+        res = {}
+        for name, up in (("b20", 0.20), ("b10", 0.10)):
+            hit, ret, xi = bracket_outcome(o, h, l, c, np.array([i]), up, 0.10, 63)
+            closed = hit[0] != 0 or xi[0] - i >= 63
+            res[f"{name}_result"] = ("target" if hit[0] == 1 else "stop" if hit[0] == -1 else
+                                     "timeout" if closed else "open")
+            res[f"{name}_ret"] = ret[0] if closed else c[-1] / c[i] - 1
+        rows.append(res)
+    hist = pd.concat([hist.reset_index(drop=True), pd.DataFrame(rows)], axis=1)
+    keep = ["date", "ticker", "list", "close", "p_b20", "p_b10"]
+    hist[keep].to_csv(out / "picks_history.csv", index=False)   # the workflow commits this back
+    hist.to_csv(out / "forward_test.csv", index=False)
+    done = hist[hist["b20_result"].isin(["target", "stop", "timeout"])]
+    lines = [f"# Forward test (paper trading record) — updated {asof.date()}", "",
+             "Every day the top 10 of each picks list is logged and scored as real prices arrive: bought at that "
+             "day's close, +20% (or +10%) target vs -10% stop, 63 trading days max. This is the only fully "
+             "out-of-sample test there is.", "",
+             f"Logged picks: {len(hist)}; finished (+20/-10): {len(done)}; still open: {(hist['b20_result'] == 'open').sum()}.", ""]
+    if len(done):
+        summ = done.groupby("list").agg(n=("ticker", "size"), hit_target=("b20_result", lambda x: (x == "target").mean()),
+                                        stopped=("b20_result", lambda x: (x == "stop").mean()),
+                                        avg_return=("b20_ret", "mean"))
+        lines += ["Finished trades, +20% before -10%:", "", summ.to_markdown(floatfmt=".3f"), ""]
+    lines += ["Most recent picks and their status so far:", "",
+              hist.tail(40)[["date", "ticker", "list", "close", "p_b20", "b20_result", "b20_ret"]]
+              .assign(date=lambda d: d["date"].dt.date).to_markdown(index=False, floatfmt=".3f")]
+    (out / "forward_test.md").write_text("\n".join(lines))
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--cache", default="data_picks")
@@ -63,6 +109,7 @@ def main() -> None:
     p.add_argument("--start", default="2005-01-01")
     p.add_argument("--top", type=int, default=30)
     p.add_argument("--max-age-days", type=float, default=0.5, help="re-download prices if older than this")
+    p.add_argument("--history", default="results", help="folder holding picks_history.csv (the forward-test log)")
     a = p.parse_args()
     t0 = time.time()
 
@@ -70,7 +117,7 @@ def main() -> None:
     prices, market = trim_incomplete(prices), trim_incomplete(market)
     rank, breadth = cross_section(prices)
     mkt = market_frame(market, breadth)
-    grp = group_frames(rank, universe, prices)
+    grp = group_frames(rank, universe, prices, qrank=perf_rank(prices))
     tasks = [(t, df, rank[t], grp.get(t)) for t, df in prices.items()]
     with ProcessPoolExecutor(os.cpu_count() or 1) as ex:
         results = list(ex.map(_worker, tasks, chunksize=10))
@@ -157,6 +204,7 @@ def main() -> None:
         table(picks),
     ]
     (out / "today_picks.md").write_text("\n".join(lines))
+    track_forward(out, prices, picks, leaders, asof, a.history)
     print(f"[picks] wrote {out / 'today_picks.md'} ({time.time() - t0:.0f}s)")
 
 

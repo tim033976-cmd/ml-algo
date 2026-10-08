@@ -178,6 +178,14 @@ def tight_coil(b, days, adr_mult):
     return _frame(t, coil_lo[t], coil_range=rng[t])
 
 
+def qull_breakout(b, min_move=0.30, max_flag=40):
+    """Qullamaggie breakout with a realistic daily-chart order: setup known at the close, buy-stop
+    above the pivot the next day (engine.qull_setups). Entry price is the fill, not the close."""
+    t, fill, stop, move, depth, days = engine.qull_setups(
+        b["o"], b["h"], b["l"], b["c"], b["sma10"], b["sma20"], b["adr"], min_move, 60, 5, max_flag, 0.25, 0.035)
+    return _frame(t, stop, fill=fill, prior_move=move, flag_depth=depth, flag_days=days)
+
+
 def _playbook(fn):
     def run(b, df, **_):
         s = fn(df, playbook.SetupConfig(max_risk=1.0))
@@ -225,6 +233,8 @@ ENTRIES = {
     "ema_retest": (_playbook(playbook.retests), {}, True, "8/21 EMA cross -> break -> retest (your playbook)"),
     "multi_touch": (_playbook(playbook.breakouts), {}, True, "Multi-touch level breakout on volume (your playbook)"),
     "undercut": (_playbook(playbook.undercuts), {}, True, "Undercut & rally (your playbook)"),
+    "qull_breakout": (qull_breakout, {}, False, "Qullamaggie breakout: buy-stop above the flag high next day"),
+    "qull_breakout_60": (qull_breakout, {"min_move": 0.60}, False, "Qullamaggie breakout after a 60%+ move"),
     "random_uptrend": (random_uptrend, {"seed": 0}, False, "BASELINE: random entries in an uptrend"),
 }
 
@@ -252,7 +262,9 @@ def all_signals(df: pd.DataFrame, b: dict, cooldown: int = 10, max_risk: float =
         return pd.DataFrame()
     s = pd.concat(frames, ignore_index=True)
     t = s["idx"].to_numpy()
-    c, adr = b["c"][t], b["adr"][t]
+    adr = b["adr"][t]
+    # entry at the signal-day close, except setups that model a next-day stop order (column `fill`)
+    c = s["fill"].fillna(pd.Series(b["c"][t], index=s.index)).to_numpy() if "fill" in s else b["c"][t]
     s["entry"] = c
     s["stop"] = np.minimum(s["stop"].to_numpy(), c * (1 - min_stop_adr * np.nan_to_num(adr)))
     s["risk_pct"] = (c - s["stop"]) / c

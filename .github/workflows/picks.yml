@@ -33,7 +33,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Build today's picks (fresh prices)
-        run: python picks.py --cache data_picks --out /tmp/picks
+        run: python picks.py --cache data_picks --out /tmp/picks --history results
 
       - name: Commit picks
         run: |
@@ -45,8 +45,9 @@ jobs:
             git fetch -q origin "$BR"
             git reset -q --hard "origin/$BR"
             mkdir -p results
-            cp /tmp/picks/today_picks.md /tmp/picks/today_picks.csv results/
-            git add results/today_picks.md results/today_picks.csv
+            cp /tmp/picks/today_picks.md /tmp/picks/today_picks.csv /tmp/picks/forward_test.md \
+               /tmp/picks/forward_test.csv /tmp/picks/picks_history.csv results/
+            git add results/today_picks.md results/today_picks.csv results/forward_test.md results/forward_test.csv results/picks_history.csv
             git commit -q -m "Daily picks $(date -u +%Y-%m-%d) [skip ci]" || { echo "no changes"; exit 0; }
             if git push -q origin "HEAD:$BR"; then echo "picks pushed"; exit 0; fi
             sleep $((i * 5))

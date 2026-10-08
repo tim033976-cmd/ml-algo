@@ -1,5 +1,14 @@
 # Research log (newest first)
 
+## Run 15 — planned 2026-10-08: Qullamaggie replication on daily data
+User decision: match Qullamaggie's strategy and validate it rather than trust it.
+- **Scan:** top 3% performer over 1, 3 or 6 months (per-day percentile, best of the three) with ADR >= 4% (`qull_scan`), plus his regime rule, QQQ above its 10- and 20-day SMAs (`qull_scan_regime`, `qqq_trend`).
+- **Entry `qull_breakout` / `qull_breakout_60`:** setup known at the close (30%/60%+ run, 5-40 day consolidation <= 25% deep, higher lows, holding the 10/20 SMA, not yet broken out). A buy-stop above the pivot the next day fills at max(open, trigger). Stop = the tighter of the 3-day low and 1 ADR below the fill. Features use data up to the setup day only. A same-day stop touch counts as stopped (conservative). EPs are kept as his second setup.
+- **Exits:** his (sell 1/3 on day 5, breakeven stop, trail the 10/20 SMA), plus sma50 and the user's +20/-10 bracket.
+- **Portfolios:** scan + setups with each exit, with/without the regime rule, + adaptive sizing, point-in-time S&P 500.
+- **Forward test:** picks.py now logs the top 10 of each list daily and scores them (+20/+10 vs -10, 63 days) as prices arrive: results/forward_test.md.
+- Intraday (hourly, 2 years) cross-check of daily fills is planned after this run.
+
 ## Run 13 — 2026-10-08 (commit 749e984): the user's goal
 Out-of-sample 2018+, every stock every 10 days (~280k rows), entry at the close, 63-day limit, 0.2% round-trip costs:
 - **+20% before −10% (break-even ~33%):** all stocks 23%. The model's top 10% hit it **38%**, avg **+2.6% net per trade**. **Point-in-time S&P 500 top 10%: 39%, +3.9% per trade** (n=4,264), so this survives the survivorship check. Monotonic across deciles; the top decile is a little overconfident (predicted 45%, actual 38%).

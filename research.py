@@ -230,6 +230,22 @@ def main() -> None:
             if pit is not None:
                 port_rows.append((f"GOAL {g}: model top 10%, S&P 500 point-in-time only / {exit_g}",
                                   A.portfolio(only_model[pit(only_model).to_numpy()], "bracket", "priority", closes=closes)))
+        # ---- Qullamaggie replication: his scan, his setups (flag breakouts via buy-stop, EPs),
+        #      his exits, and his Nasdaq-trend exposure rule
+        qull_entries = ["qull_breakout", "qull_breakout_60", "ep_gap10", "ep_gap8_hold"]
+        qpool = sig[sig["entry_name"].isin(qull_entries)]
+        qpool = qpool[A.FILTERS["qull_scan"](qpool)]
+        for ex in ("qull_sma10", "qull_sma20", "sma50_close", "bracket_20_10"):
+            port_rows.append((f"QULL scan+setups / {ex}", A.portfolio(qpool, ex, "qull_rank", closes=closes)))
+        qreg = qpool[qpool["qqq_trend"] == 1]
+        for ex in ("qull_sma10", "qull_sma20", "sma50_close"):
+            port_rows.append((f"QULL scan+setups, only when QQQ > 10 & 20 SMA / {ex}",
+                              A.portfolio(qreg, ex, "qull_rank", closes=closes)))
+            port_rows.append((f"QULL ... + regime + adaptive sizing / {ex}",
+                              A.portfolio(qreg, ex, "qull_rank", closes=closes, adaptive=True)))
+        if pit is not None:
+            port_rows.append(("QULL scan+setups + regime, S&P 500 point-in-time only / qull_sma20",
+                              A.portfolio(qreg[pit(qreg).to_numpy()], "qull_sma20", "qull_rank", closes=closes)))
         if "date_added" in universe.columns:
             added = universe.set_index("ticker")["date_added"]
             added = pd.to_datetime(added, errors="coerce")
@@ -399,6 +415,19 @@ def main() -> None:
             md(sup_sig, index=True, floatfmt=".3f"),
             "",
         ] if sup else []),
+        "## 11. Qullamaggie replication (per trade, out-of-sample 2018+; IS in brackets)",
+        "",
+        "Scan = top 3% performer over 1, 3 or 6 months with ADR >= 4%. Regime = QQQ above its 10- and 20-day SMAs. "
+        "qull_breakout = buy-stop above the flag high the next day (fill at the trigger or the gap open), stop at the "
+        "tighter of the 3-day low and 1 ADR; a same-day touch of the stop counts as stopped out. Portfolio rows start "
+        "with QULL in section 9.",
+        "",
+        md(lb[lb["entry"].isin(["qull_breakout", "qull_breakout_60", "ep_gap10", "ep_gap8_hold", A.BASELINE])
+              & lb["filter"].isin(["all", "qull_scan", "qull_scan_regime"])
+              & lb["exit"].isin(["qull_sma10", "qull_sma20", "sma50_close", "bracket_20_10"])]
+           [["entry", "filter", "exit", "IS_n", "IS_win", "IS_avgR", "OOS_n", "OOS_per_yr", "OOS_win", "OOS_avgR", "OOS_pf", "OOS_t"]]
+           .sort_values(["entry", "filter", "exit"])),
+        "",
         "## 9. Portfolio simulation, 2018 -> today ($100k, 1% risk/trade, max 10 positions, no leverage)",
         "",
         md(port.drop(columns=["final_equity"], errors="ignore")),
