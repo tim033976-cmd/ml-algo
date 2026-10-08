@@ -1,0 +1,10 @@
+{
+  "strategies_tested": 1080.0,
+  "strategies_with_enough_trades": 963.0,
+  "rank_corr_IS_vs_OOS_avgR": 0.4654803178477898,
+  "rank_corr_IS_vs_OOS_t": 0.553399765405815,
+  "OOS_avgR_all_strategies": 0.04422268215743655,
+  "OOS_avgR_top20_by_IS": 0.05248952208044779,
+  "OOS_avgR_random_baseline": -0.06818481991908337,
+  "share_top20_positive_OOS": 1.0
+}
