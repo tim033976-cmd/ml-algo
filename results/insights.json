@@ -10,8 +10,9 @@
     "Features the model relies on most: risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low.",
     "Filters that improve even RANDOM entries in both periods (the stock selection itself is the edge): early_stage (IS +0.08R, OOS +0.03R), rs80_early (IS +0.05R, OOS +0.09R), rs80_early_theme (IS +0.09R, OOS +0.04R).",
     "Best readable rule that held OOS: `risk_adr <= 0.633 AND breadth_50 <= 0.523 AND vol_ratio <= 1.13` (IS +0.89R, OOS +0.07R, n=4637).",
-    "Best portfolio 2018->today: All setups, ranked by RS / oneil_20_8 at 20.6% CAGR (max drawdown -45.9%) vs SPY 14.6%.",
-    "Best return per unit of drawdown: Top 20 strategies by IS expectancy (own exits), ranked by RS (13.8% CAGR, -26.1% max DD)."
+    "Superperformer model: 30.4% of its top-10% picks gained >= 40% within 3 months vs 7.1% for all stocks (4.3x), AUC 0.834. Driven by: adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct.",
+    "Best portfolio 2018->today: Only setups in the model's top 10% likely superperformers / sma50_close at 27.6% CAGR (max drawdown -42.2%) vs SPY 14.6%.",
+    "Best return per unit of drawdown: Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades) (16.7% CAGR, -23.9% max DD)."
   ],
   "next_steps": [
     "Loosen the definitions of htf or widen the universe so they can be evaluated.",
@@ -21,7 +22,8 @@
     "Inspect risk_adr and risk_pct: plot avgR by bucket and consider a hard rule.",
     "ML is weak here: prefer simple rules, or add new information (fundamentals, sector/theme, earnings dates).",
     "Build the scan around rs80_early first; entries are the second layer.",
-    "Turn that rule into a scan filter and test it as its own strategy."
+    "Turn that rule into a scan filter and test it as its own strategy.",
+    "Use the superperformer score in the daily scan to choose which stocks to watch for setups."
   ],
   "key": {
     "rank_corr": 0.4885052407665981,
@@ -75,9 +77,12 @@
       "rs80_early_theme"
     ],
     "rules_held": 4,
-    "best_calmar": "Top 20 strategies by IS expectancy (own exits), ranked by RS",
-    "best_portfolio": "All setups, ranked by RS / oneil_20_8",
-    "best_cagr": 0.20592411947995815,
+    "super_auc": 0.8342820864306962,
+    "super_lift": 4.276015977917949,
+    "super_features": "adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct",
+    "best_calmar": "Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades)",
+    "best_portfolio": "Only setups in the model's top 10% likely superperformers / sma50_close",
+    "best_cagr": 0.27575678846741547,
     "spy_cagr": 0.14608118342176346
   }
 }

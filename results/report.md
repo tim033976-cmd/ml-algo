@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-08 09:57 UTC in 22 min.
+Generated 2026-10-08 10:25 UTC in 27 min.
 Universe: 1488 stocks with data (sp600: 591, sp500: 499, sp400: 398; 0 former S&P 500 members). Signals 2006-01-03 -> 2026-10-06: 659,965.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
@@ -17,8 +17,9 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 - Features the model relies on most: risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low.
 - Filters that improve even RANDOM entries in both periods (the stock selection itself is the edge): early_stage (IS +0.08R, OOS +0.03R), rs80_early (IS +0.05R, OOS +0.09R), rs80_early_theme (IS +0.09R, OOS +0.04R).
 - Best readable rule that held OOS: `risk_adr <= 0.633 AND breadth_50 <= 0.523 AND vol_ratio <= 1.13` (IS +0.89R, OOS +0.07R, n=4637).
-- Best portfolio 2018->today: All setups, ranked by RS / oneil_20_8 at 20.6% CAGR (max drawdown -45.9%) vs SPY 14.6%.
-- Best return per unit of drawdown: Top 20 strategies by IS expectancy (own exits), ranked by RS (13.8% CAGR, -26.1% max DD).
+- Superperformer model: 30.4% of its top-10% picks gained >= 40% within 3 months vs 7.1% for all stocks (4.3x), AUC 0.834. Driven by: adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct.
+- Best portfolio 2018->today: Only setups in the model's top 10% likely superperformers / sma50_close at 27.6% CAGR (max drawdown -42.2%) vs SPY 14.6%.
+- Best return per unit of drawdown: Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades) (16.7% CAGR, -23.9% max DD).
 
 **Next steps for the strategy:**
 
@@ -30,17 +31,18 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 6. ML is weak here: prefer simple rules, or add new information (fundamentals, sector/theme, earnings dates).
 7. Build the scan around rs80_early first; entries are the second layer.
 8. Turn that rule into a scan filter and test it as its own strategy.
+9. Use the superperformer score in the daily scan to choose which stocks to watch for setups.
 
 **Run history** (each run should move these numbers):
 
-| run_utc          | commit   |   tickers |   signals |   rank_corr |   top20_oos |   baseline_oos | edge_entries                                                                                                                                                                                                                 | no_edge_entries             | best_exit   | helpful_filters                                           |   ml_auc |   ml_rank_corr |   ml_monotonic |   ml_gap | top_features                                              | filters_lifting_baseline                  |   rules_held | best_portfolio                        |   best_cagr |   spy_cagr | best_calmar                                                  |
-|:-----------------|:---------|----------:|----------:|------------:|------------:|---------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|:------------|:----------------------------------------------------------|---------:|---------------:|---------------:|---------:|:----------------------------------------------------------|:------------------------------------------|-------------:|:--------------------------------------|------------:|-----------:|:-------------------------------------------------------------|
-| 2026-10-08 08:22 | inf      |      1488 |    633749 |        0.57 |        0.05 |          -0.07 | donchian_55, donchian_20, ema_retest, ep_gap5, ep_gap15, ep_gap10_vol5, ep_gap8_neglected, high52_fresh, ep_gap8_hold, ep_gap10, undercut, flag_60, flag_30_early, ep_gap10_vol2, vcp, base_50                               | multi_touch, high52, stage2 | sma50_close | rs80_early, early_stage, rs80, rs80_mkt                   |     0.55 |           0.25 |          -0.07 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank       | early_stage, rs80_early                   |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | nan                                                          |
-| 2026-10-08 08:22 | inf      |      1488 |    633749 |        0.57 |        0.05 |          -0.07 | donchian_55, donchian_20, ema_retest, ep_gap5, ep_gap15, ep_gap10_vol5, ep_gap8_neglected, high52_fresh, ep_gap8_hold, ep_gap10, undercut, flag_60, flag_30_early, ep_gap10_vol2, vcp, base_50                               | multi_touch, high52, stage2 | sma50_close | rs80_early, early_stage, rs80, rs80_mkt                   |     0.55 |           0.25 |          -0.07 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank       | early_stage, rs80_early                   |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | nan                                                          |
-| 2026-10-08 08:48 | 48a9d03  |      1488 |    633749 |        0.55 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, ep_gap10, ep_gap10_vol2, donchian_20, undercut, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh                                             | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80, rs80_mkt |     0.55 |           0.25 |          -0.13 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank       | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | All setups + rs80_early filter, ranked by RS / oneil_20_8    |
-| 2026-10-08 09:11 | fd50739  |      1488 |    633749 |        0.55 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, ep_gap10, ep_gap10_vol2, donchian_20, undercut, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh                                             | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80, rs80_mkt |     0.55 |           0.25 |          -0.13 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank       | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | All setups + rs80_early filter, ranked by RS / oneil_20_8    |
-| 2026-10-08 09:33 | 32c75da  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | Top 20 strategies by IS expectancy (own exits), ranked by RS |
-| 2026-10-08 09:57 | 54a58fb  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | Top 20 strategies by IS expectancy (own exits), ranked by RS |
+| run_utc          | commit   |   tickers |   signals |   rank_corr |   top20_oos |   baseline_oos | edge_entries                                                                                                                                                                                                                 | no_edge_entries             | best_exit   | helpful_filters                                           |   ml_auc |   ml_rank_corr |   ml_monotonic |   ml_gap | top_features                                              | filters_lifting_baseline                  |   rules_held | best_portfolio                                                          |   best_cagr |   spy_cagr | best_calmar                                                              |   super_auc |   super_lift | super_features                                             |
+|:-----------------|:---------|----------:|----------:|------------:|------------:|---------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|:------------|:----------------------------------------------------------|---------:|---------------:|---------------:|---------:|:----------------------------------------------------------|:------------------------------------------|-------------:|:------------------------------------------------------------------------|------------:|-----------:|:-------------------------------------------------------------------------|------------:|-------------:|:-----------------------------------------------------------|
+| 2026-10-08 08:22 | 5e93689  |      1488 |    633749 |        0.57 |        0.05 |          -0.07 | donchian_55, donchian_20, ema_retest, ep_gap5, ep_gap15, ep_gap10_vol5, ep_gap8_neglected, high52_fresh, ep_gap8_hold, ep_gap10, undercut, flag_60, flag_30_early, ep_gap10_vol2, vcp, base_50                               | multi_touch, high52, stage2 | sma50_close | rs80_early, early_stage, rs80, rs80_mkt                   |     0.55 |           0.25 |          -0.07 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank       | early_stage, rs80_early                   |            4 | All setups, ranked by RS / oneil_20_8                                   |        0.21 |       0.15 | nan                                                                      |      nan    |       nan    | nan                                                        |
+| 2026-10-08 08:48 | 48a9d03  |      1488 |    633749 |        0.55 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, ep_gap10, ep_gap10_vol2, donchian_20, undercut, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh                                             | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80, rs80_mkt |     0.55 |           0.25 |          -0.13 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank       | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8                                   |        0.21 |       0.15 | All setups + rs80_early filter, ranked by RS / oneil_20_8                |      nan    |       nan    | nan                                                        |
+| 2026-10-08 09:11 | fd50739  |      1488 |    633749 |        0.55 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, ep_gap10, ep_gap10_vol2, donchian_20, undercut, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh                                             | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80, rs80_mkt |     0.55 |           0.25 |          -0.13 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank       | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8                                   |        0.21 |       0.15 | All setups + rs80_early filter, ranked by RS / oneil_20_8                |      nan    |       nan    | nan                                                        |
+| 2026-10-08 09:33 | 32c75da  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8                                   |        0.21 |       0.15 | Top 20 strategies by IS expectancy (own exits), ranked by RS             |      nan    |       nan    | nan                                                        |
+| 2026-10-08 09:57 | 54a58fb  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8                                   |        0.21 |       0.15 | Top 20 strategies by IS expectancy (own exits), ranked by RS             |      nan    |       nan    | nan                                                        |
+| 2026-10-08 10:25 | d8d63d9  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low | early_stage, rs80_early, rs80_early_theme |            4 | Only setups in the model's top 10% likely superperformers / sma50_close |        0.28 |       0.15 | Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades) |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct |
 
 ## 1. Did picking the best in-sample strategies work out-of-sample?
 
@@ -357,33 +359,110 @@ Readable rules (depth-3 tree fit in-sample, scored out-of-sample):
 | risk_adr <= 0.633 AND breadth_50 > 0.523 AND leg3_range <= 0.117  |  19829 |     -0.06 |   15936 |      -0.15 |      0.08 |
 | risk_adr > 0.633 AND rates_rising <= 0.5 AND qqq_ret_21 > 0.0299  |  60794 |     -0.13 |   72818 |       0.00 |      0.25 |
 
+## 10. Superperformer model: what do stocks look like BEFORE a +40% move in 3 months?
+
+Every stock every 10 trading days (n=279,586 out-of-sample rows). Base rate of a >= 40% gain within 3 months: 7.1%. The model's top 10% hit it 30.4% of the time (4.3x the base rate). AUC 0.834.
+
+|   super_prob |         n |   superperformer_rate |   avg_3m_return |   median_3m_return |
+|-------------:|----------:|----------------------:|----------------:|-------------------:|
+|            0 | 27959.000 |                 0.001 |          -0.005 |              0.009 |
+|            1 | 27959.000 |                 0.005 |           0.009 |              0.015 |
+|            2 | 27958.000 |                 0.010 |           0.015 |              0.018 |
+|            3 | 27959.000 |                 0.015 |           0.020 |              0.020 |
+|            4 | 27958.000 |                 0.026 |           0.026 |              0.024 |
+|            5 | 27959.000 |                 0.041 |           0.033 |              0.030 |
+|            6 | 27958.000 |                 0.063 |           0.041 |              0.034 |
+|            7 | 27959.000 |                 0.094 |           0.050 |              0.042 |
+|            8 | 27958.000 |                 0.152 |           0.064 |              0.045 |
+|            9 | 27959.000 |                 0.304 |           0.116 |              0.074 |
+
+What matters most (permutation importance, drop in OOS AUC):
+
+| feature       |   auc_drop |
+|:--------------|-----------:|
+| adr_pct       |     0.0920 |
+| above_52w_low |     0.0289 |
+| dist_52w_high |     0.0222 |
+| leg2_range    |     0.0052 |
+| atr_pct       |     0.0051 |
+| leg1_range    |     0.0050 |
+| mkt_above200  |     0.0044 |
+| tight_10      |     0.0024 |
+| base_count    |     0.0014 |
+| rs_rank       |     0.0009 |
+| dist_ema21    |     0.0007 |
+| sma150_slope  |     0.0007 |
+| range_pos_12m |     0.0005 |
+| sma200_slope  |     0.0004 |
+| base_depth_60 |     0.0004 |
+
+Profile: future superperformers vs everything else, at the moment of the sample:
+
+|               |   future superperformers (median) |   everything else (median) |
+|:--------------|----------------------------------:|---------------------------:|
+| adr_pct       |                             0.045 |                      0.026 |
+| above_52w_low |                             0.585 |                      0.340 |
+| dist_52w_high |                            -0.275 |                     -0.128 |
+| leg2_range    |                             0.193 |                      0.120 |
+| atr_pct       |                             0.046 |                      0.027 |
+| leg1_range    |                             0.184 |                      0.120 |
+| mkt_above200  |                             1.000 |                      1.000 |
+| tight_10      |                             0.153 |                      0.087 |
+| base_count    |                             0.000 |                      1.000 |
+| rs_rank       |                             0.503 |                      0.511 |
+| dist_ema21    |                            -0.002 |                      0.006 |
+| sma150_slope  |                             0.003 |                      0.008 |
+
+Readable rules (depth-3 tree fit before 2018, scored after):
+
+| rule                                                                 |   IS_n |   IS_rate |   OOS_n |   OOS_rate |
+|:---------------------------------------------------------------------|-------:|----------:|--------:|-----------:|
+| dist_52w_high <= -0.542 AND dist_52w_high <= -0.633                  |   2145 |     0.466 |     889 |      0.447 |
+| dist_52w_high <= -0.542 AND dist_52w_high > -0.633                   |   2655 |     0.297 |    1264 |      0.287 |
+| dist_52w_high > -0.542 AND adr_pct > 0.032 AND above_52w_low > 1.03  |   8679 |     0.143 |    6216 |      0.238 |
+| dist_52w_high > -0.542 AND adr_pct > 0.032 AND above_52w_low <= 1.03 |  37513 |     0.068 |   18792 |      0.126 |
+| dist_52w_high > -0.542 AND adr_pct <= 0.032 AND adr_pct > 0.025      |  35365 |     0.026 |   18929 |      0.038 |
+| dist_52w_high > -0.542 AND adr_pct <= 0.032 AND adr_pct <= 0.025     | 113643 |     0.005 |   33910 |      0.010 |
+
+Setup signals split by the model's score (OOS, exit oneil_20_8; last column sma50_close):
+
+| super_prob   |          n |   avgR |   win |   avgR_sma50 |
+|:-------------|-----------:|-------:|------:|-------------:|
+| low          | 100619.000 | -0.061 | 0.205 |       -0.102 |
+| mid          | 100618.000 | -0.031 | 0.226 |       -0.074 |
+| high         | 100618.000 |  0.107 | 0.267 |        0.188 |
+
 ## 9. Portfolio simulation, 2018 -> today ($100k, 1% risk/trade, max 10 positions, no leverage)
 
-| strategy                                                       |   CAGR |   max_DD |   max_DD_realized |   trades |    win |   avg_positions |   top2_years_share |
-|:---------------------------------------------------------------|-------:|---------:|------------------:|---------:|-------:|----------------:|-------------------:|
-| donchian_20 / all / oneil_20_8                                 |   0.08 |    -0.34 |             -0.31 |  1044.00 |   0.32 |            8.82 |               0.84 |
-| donchian_55 / all / oneil_20_8                                 |  -0.03 |    -0.53 |             -0.52 |  1075.00 |   0.28 |            8.75 |             nan    |
-| undercut / all / oneil_20_8                                    |   0.10 |    -0.45 |             -0.44 |  1404.00 |   0.19 |            7.27 |               0.86 |
-| ema_retest / all / oneil_20_8                                  |   0.01 |    -0.49 |             -0.47 |   880.00 |   0.25 |            7.07 |               9.88 |
-| tight_coil_7 / all / oneil_20_8                                |   0.01 |    -0.39 |             -0.37 |   672.00 |   0.31 |            8.10 |               7.25 |
-| All setups, ML-filtered (top third), ranked by ML / oneil_20_8 |   0.12 |    -0.26 |             -0.21 |   969.00 |   0.29 |            7.86 |               0.57 |
-| All setups, ranked by RS / oneil_20_8                          |   0.21 |    -0.46 |             -0.43 |  1661.00 |   0.27 |            8.69 |               0.56 |
-| All setups, random order / oneil_20_8                          |  -0.02 |    -0.42 |             -0.39 |   999.00 |   0.22 |            7.58 |             nan    |
-| All setups + rs80_early filter, ranked by RS / oneil_20_8      |   0.10 |    -0.27 |             -0.28 |  1335.00 |   0.26 |            8.48 |               0.80 |
-| BASELINE random entries, ranked by RS / oneil_20_8             |   0.04 |    -0.52 |             -0.49 |  1714.00 |   0.15 |            6.33 |               2.26 |
-| BASELINE random entries, random order / oneil_20_8             |  -0.01 |    -0.49 |             -0.47 |  1383.00 |   0.12 |            6.08 |             nan    |
-| IS-selected setups (17), ranked by RS / oneil_20_8             |   0.17 |    -0.52 |             -0.49 |  1464.00 |   0.29 |            8.94 |               0.64 |
-| IS-selected setups, only when SPY > 200d / oneil_20_8          |   0.15 |    -0.42 |             -0.39 |  1213.00 |   0.30 |            7.77 |               0.75 |
-| IS-selected setups (21), ranked by RS / sma50_close            |   0.12 |    -0.53 |             -0.45 |   917.00 |   0.25 |            8.79 |               0.66 |
-| IS-selected setups, only when SPY > 200d / sma50_close         |   0.12 |    -0.52 |             -0.47 |   786.00 |   0.24 |            7.64 |               0.79 |
-| All setups, ranked by RS / sma50_close                         |   0.06 |    -0.54 |             -0.49 |  1189.00 |   0.26 |            8.59 |               1.29 |
-| Top 5 strategies by IS expectancy (own exits), ranked by RS    |   0.10 |    -0.33 |             -0.25 |   444.00 |   0.31 |            5.63 |               0.68 |
-| Top 10 strategies by IS expectancy (own exits), ranked by RS   |   0.13 |    -0.28 |             -0.19 |   616.00 |   0.34 |            7.70 |               0.57 |
-| Top 20 strategies by IS expectancy (own exits), ranked by RS   |   0.14 |    -0.26 |             -0.18 |   620.00 |   0.34 |            7.84 |               0.62 |
-| Top 10 by IS expectancy, 1% risk, 10 slots, idle cash in SPY   |   0.15 |    -0.34 |             -0.27 |   610.00 |   0.34 |            7.63 |               0.52 |
-| Top 10 by IS expectancy, 2% risk, 10 slots, idle cash in SPY   |   0.13 |    -0.39 |             -0.32 |   479.00 |   0.34 |            5.98 |               0.64 |
-| Top 10 by IS expectancy, 2% risk, 15 slots, idle cash in SPY   |   0.13 |    -0.39 |             -0.32 |   479.00 |   0.34 |            5.98 |               0.64 |
-| SPY buy & hold                                                 |   0.15 |    -0.34 |            nan    |   nan    | nan    |          nan    |             nan    |
+| strategy                                                                 |   CAGR |   max_DD |   max_DD_realized |   trades |    win |   avg_positions |   top2_years_share |
+|:-------------------------------------------------------------------------|-------:|---------:|------------------:|---------:|-------:|----------------:|-------------------:|
+| donchian_20 / all / oneil_20_8                                           |   0.08 |    -0.34 |             -0.31 |  1044.00 |   0.32 |            8.82 |               0.84 |
+| donchian_55 / all / oneil_20_8                                           |  -0.03 |    -0.53 |             -0.52 |  1075.00 |   0.28 |            8.75 |             nan    |
+| undercut / all / oneil_20_8                                              |   0.10 |    -0.45 |             -0.44 |  1404.00 |   0.19 |            7.27 |               0.86 |
+| ema_retest / all / oneil_20_8                                            |   0.01 |    -0.49 |             -0.47 |   880.00 |   0.25 |            7.07 |               9.88 |
+| tight_coil_7 / all / oneil_20_8                                          |   0.01 |    -0.39 |             -0.37 |   672.00 |   0.31 |            8.10 |               7.25 |
+| All setups, ML-filtered (top third), ranked by ML / oneil_20_8           |   0.12 |    -0.26 |             -0.21 |   969.00 |   0.29 |            7.86 |               0.57 |
+| All setups, ranked by RS / oneil_20_8                                    |   0.21 |    -0.46 |             -0.43 |  1661.00 |   0.27 |            8.69 |               0.56 |
+| All setups, random order / oneil_20_8                                    |  -0.02 |    -0.42 |             -0.39 |   999.00 |   0.22 |            7.58 |             nan    |
+| All setups + rs80_early filter, ranked by RS / oneil_20_8                |   0.10 |    -0.27 |             -0.28 |  1335.00 |   0.26 |            8.48 |               0.80 |
+| BASELINE random entries, ranked by RS / oneil_20_8                       |   0.04 |    -0.52 |             -0.49 |  1714.00 |   0.15 |            6.33 |               2.26 |
+| BASELINE random entries, random order / oneil_20_8                       |  -0.01 |    -0.49 |             -0.47 |  1383.00 |   0.12 |            6.08 |             nan    |
+| IS-selected setups (17), ranked by RS / oneil_20_8                       |   0.17 |    -0.52 |             -0.49 |  1464.00 |   0.29 |            8.94 |               0.64 |
+| IS-selected setups, only when SPY > 200d / oneil_20_8                    |   0.15 |    -0.42 |             -0.39 |  1213.00 |   0.30 |            7.77 |               0.75 |
+| IS-selected setups (21), ranked by RS / sma50_close                      |   0.12 |    -0.53 |             -0.45 |   917.00 |   0.25 |            8.79 |               0.66 |
+| IS-selected setups, only when SPY > 200d / sma50_close                   |   0.12 |    -0.52 |             -0.47 |   786.00 |   0.24 |            7.64 |               0.79 |
+| All setups, ranked by RS / sma50_close                                   |   0.06 |    -0.54 |             -0.49 |  1189.00 |   0.26 |            8.59 |               1.29 |
+| Top 5 strategies by IS expectancy (own exits), ranked by RS              |   0.10 |    -0.33 |             -0.25 |   444.00 |   0.31 |            5.63 |               0.68 |
+| Top 10 strategies by IS expectancy (own exits), ranked by RS             |   0.13 |    -0.28 |             -0.19 |   616.00 |   0.34 |            7.70 |               0.57 |
+| Top 20 strategies by IS expectancy (own exits), ranked by RS             |   0.14 |    -0.26 |             -0.18 |   620.00 |   0.34 |            7.84 |               0.62 |
+| Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades) |   0.17 |    -0.24 |             -0.16 |   607.00 |   0.35 |            7.97 |               0.59 |
+| Top 20 by IS expectancy, ranked by superperformer model                  |   0.10 |    -0.26 |             -0.25 |   671.00 |   0.32 |            7.96 |               0.65 |
+| All setups, ranked by superperformer model / oneil_20_8                  |   0.22 |    -0.44 |             -0.39 |  2060.00 |   0.27 |            8.99 |               0.61 |
+| Only setups in the model's top 10% likely superperformers / sma50_close  |   0.28 |    -0.42 |             -0.36 |  1346.00 |   0.31 |            8.82 |               0.51 |
+| Top 10 by IS expectancy, 1% risk, 10 slots, idle cash in SPY             |   0.15 |    -0.34 |             -0.27 |   610.00 |   0.34 |            7.63 |               0.52 |
+| Top 10 by IS expectancy, 2% risk, 10 slots, idle cash in SPY             |   0.13 |    -0.39 |             -0.32 |   479.00 |   0.34 |            5.98 |               0.64 |
+| Top 10 by IS expectancy, 2% risk, 15 slots, idle cash in SPY             |   0.13 |    -0.39 |             -0.32 |   479.00 |   0.34 |            5.98 |               0.64 |
+| SPY buy & hold                                                           |   0.15 |    -0.34 |            nan    |   nan    | nan    |          nan    |             nan    |
 
 max_DD is from equity marked to market every day (open positions at the close); max_DD_realized only counts closed trades. Partial exits (trim plans) are approximated as held in full until the final exit.
 
@@ -404,17 +483,17 @@ Strategies in the 'Top 10 by IS expectancy' portfolio (chosen on pre-2018 data o
 
 Year-by-year returns (best 3 portfolios by CAGR vs SPY):
 
-|      |   All setups, ranked by RS / oneil_20_8 |   IS-selected setups (17), ranked by RS / oneil_20_8 |   Top 10 by IS expectancy, 1% risk, 10 slots, idle cash in SPY |   SPY |
-|-----:|----------------------------------------:|-----------------------------------------------------:|---------------------------------------------------------------:|------:|
-| 2018 |                                   -11.6 |                                                -13.3 |                                                           -3.4 |  -5.2 |
-| 2019 |                                    14.4 |                                                 22.1 |                                                           37.7 |  31.2 |
-| 2020 |                                    14.3 |                                                  0.7 |                                                           27.6 |  18.3 |
-| 2021 |                                    15.0 |                                                 24.1 |                                                           25.4 |  28.7 |
-| 2022 |                                     1.0 |                                                 -3.8 |                                                           -8.4 | -18.2 |
-| 2023 |                                    53.4 |                                                 32.3 |                                                           23.6 |  26.2 |
-| 2024 |                                    63.5 |                                                 84.8 |                                                           16.4 |  24.9 |
-| 2025 |                                    31.6 |                                                  4.3 |                                                          -11.9 |  17.7 |
-| 2026 |                                    16.4 |                                                 23.4 |                                                           36.5 |  14.9 |
+|      |   Only setups in the model's top 10% likely superperformers / sma50_close |   All setups, ranked by superperformer model / oneil_20_8 |   All setups, ranked by RS / oneil_20_8 |   SPY |
+|-----:|--------------------------------------------------------------------------:|----------------------------------------------------------:|----------------------------------------:|------:|
+| 2018 |                                                                       2.6 |                                                      -6.7 |                                   -11.6 |  -5.2 |
+| 2019 |                                                                      48.3 |                                                      78.6 |                                    14.4 |  31.2 |
+| 2020 |                                                                      71.7 |                                                      16.4 |                                    14.3 |  18.3 |
+| 2021 |                                                                       1.0 |                                                      46.7 |                                    15.0 |  28.7 |
+| 2022 |                                                                      -7.5 |                                                     -10.5 |                                     1.0 | -18.2 |
+| 2023 |                                                                      46.0 |                                                      29.3 |                                    53.4 |  26.2 |
+| 2024 |                                                                      -0.5 |                                                      -7.5 |                                    63.5 |  24.9 |
+| 2025 |                                                                      39.0 |                                                      57.5 |                                    31.6 |  17.7 |
+| 2026 |                                                                      71.4 |                                                      15.0 |                                    16.4 |  14.9 |
 
 ## Appendix: entries and exits
 
