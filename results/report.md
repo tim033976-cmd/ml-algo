@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-08 07:17 UTC in 10 min.
+Generated 2026-10-08 07:39 UTC in 11 min.
 Universe: 1488 stocks with data (sp600: 591, sp500: 499, sp400: 398; 0 former S&P 500 members). Signals 2006-01-03 -> 2026-10-06: 628,659.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
