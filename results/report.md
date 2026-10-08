@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-08 08:48 UTC in 18 min.
+Generated 2026-10-08 09:11 UTC in 16 min.
 Universe: 1488 stocks with data (sp600: 591, sp500: 499, sp400: 398; 0 former S&P 500 members). Signals 2006-01-03 -> 2026-10-06: 633,749.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
@@ -39,6 +39,7 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 | 2026-10-08 08:22 | inf      |      1488 |    633749 |        0.57 |        0.05 |          -0.07 | donchian_55, donchian_20, ema_retest, ep_gap5, ep_gap15, ep_gap10_vol5, ep_gap8_neglected, high52_fresh, ep_gap8_hold, ep_gap10, undercut, flag_60, flag_30_early, ep_gap10_vol2, vcp, base_50 | multi_touch, high52, stage2 | sma50_close | rs80_early, early_stage, rs80, rs80_mkt                   |     0.55 |           0.25 |          -0.07 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank | early_stage, rs80_early                   |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | nan                                                       |
 | 2026-10-08 08:22 | inf      |      1488 |    633749 |        0.57 |        0.05 |          -0.07 | donchian_55, donchian_20, ema_retest, ep_gap5, ep_gap15, ep_gap10_vol5, ep_gap8_neglected, high52_fresh, ep_gap8_hold, ep_gap10, undercut, flag_60, flag_30_early, ep_gap10_vol2, vcp, base_50 | multi_touch, high52, stage2 | sma50_close | rs80_early, early_stage, rs80, rs80_mkt                   |     0.55 |           0.25 |          -0.07 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank | early_stage, rs80_early                   |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | nan                                                       |
 | 2026-10-08 08:48 | 48a9d03  |      1488 |    633749 |        0.55 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, ep_gap10, ep_gap10_vol2, donchian_20, undercut, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh               | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80, rs80_mkt |     0.55 |           0.25 |          -0.13 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | All setups + rs80_early filter, ranked by RS / oneil_20_8 |
+| 2026-10-08 09:11 | fd50739  |      1488 |    633749 |        0.55 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, ep_gap10, ep_gap10_vol2, donchian_20, undercut, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh               | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80, rs80_mkt |     0.55 |           0.25 |          -0.13 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | All setups + rs80_early filter, ranked by RS / oneil_20_8 |
 
 ## 1. Did picking the best in-sample strategies work out-of-sample?
 
@@ -286,7 +287,8 @@ Per entry (OOS):
 | high52_fresh      |  8415.00 |       0.01 |   2237.00 |        -0.10 |           0.04 |
 | multi_touch       | 10634.00 |      -0.08 |   3143.00 |        -0.11 |          -0.07 |
 
-Same model on your trim plan (trim_ema): rank corr 0.128, taken avgR 0.018 vs skipped -0.061.
+- Same model on episodic pivots only / sma50_close: rank corr 0.003, taken avgR 0.354 (n=3,279) vs skipped 0.353 (n=4,102).
+- Same model on your trim plan (trim_ema): rank corr 0.128, taken avgR 0.018 (n=91,524) vs skipped -0.061 (n=198,196).
 
 What the model relies on (permutation importance: drop in OOS rank correlation when a feature is shuffled):
 
@@ -346,9 +348,41 @@ Readable rules (depth-3 tree fit in-sample, scored out-of-sample):
 | IS-selected setups (16), ranked by RS / sma50_close            |   0.13 |    -0.47 |             -0.40 |   916.00 |   0.24 |            8.73 |
 | IS-selected setups, only when SPY > 200d / sma50_close         |   0.13 |    -0.52 |             -0.47 |   774.00 |   0.24 |            7.68 |
 | All setups, ranked by RS / sma50_close                         |   0.06 |    -0.52 |             -0.48 |  1202.00 |   0.27 |            8.73 |
+| Top 5 strategies by IS expectancy (own exits), ranked by RS    |   0.10 |    -0.33 |             -0.25 |   444.00 |   0.31 |            5.63 |
+| Top 10 strategies by IS expectancy (own exits), ranked by RS   |   0.12 |    -0.32 |             -0.29 |   506.00 |   0.28 |            6.27 |
+| Top 20 strategies by IS expectancy (own exits), ranked by RS   |   0.08 |    -0.33 |             -0.29 |   524.00 |   0.28 |            6.36 |
 | SPY buy & hold                                                 |   0.15 |    -0.34 |            nan    |   nan    | nan    |          nan    |
 
 max_DD is from equity marked to market every day (open positions at the close); max_DD_realized only counts closed trades. Partial exits (trim plans) are approximated as held in full until the final exit.
+
+Strategies in the 'Top 10 by IS expectancy' portfolio (chosen on pre-2018 data only):
+
+| entry             | filter      | exit            |   IS_n |   IS_avgR |   OOS_n |   OOS_avgR |   OOS_t |
+|:------------------|:------------|:----------------|-------:|----------:|--------:|-----------:|--------:|
+| ep_gap10_vol2     | rs80_mkt    | sma50_close     |    209 |      0.61 |     394 |       0.64 |    2.53 |
+| ep_gap5           | rs80_early  | sma50_close     |    324 |      0.57 |     462 |       0.40 |    2.36 |
+| ep_gap8_hold      | rs80_mkt    | sma50_close     |    286 |      0.53 |     418 |       0.46 |    1.99 |
+| ep_gap10_vol2     | rs80_mkt    | chandelier_3atr |    211 |      0.52 |     394 |       0.24 |    1.84 |
+| ep_gap5           | rs80_mkt    | sma50_close     |    603 |      0.50 |     736 |       0.30 |    2.04 |
+| ep_gap8_neglected | rs80        | sma50_close     |    233 |      0.50 |     324 |       0.60 |    2.66 |
+| ep_gap10_vol2     | rs80_mkt    | donchian_10low  |    212 |      0.43 |     394 |       0.31 |    2.18 |
+| ep_gap8_hold      | early_stage | sma50_close     |    340 |      0.42 |     593 |       0.46 |    3.15 |
+| ep_gap10_vol5     | mkt_ok      | sma50_close     |    211 |      0.41 |     290 |       0.40 |    1.49 |
+| ep_gap8_hold      | rs80_mkt    | chandelier_3atr |    288 |      0.39 |     418 |       0.05 |    0.54 |
+
+Year-by-year returns (best 3 portfolios by CAGR vs SPY):
+
+|      |   All setups, ranked by RS / oneil_20_8 |   IS-selected setups (12), ranked by RS / oneil_20_8 |   IS-selected setups, only when SPY > 200d / oneil_20_8 |   SPY |
+|-----:|----------------------------------------:|-----------------------------------------------------:|--------------------------------------------------------:|------:|
+| 2018 |                                   -11.3 |                                                -15.0 |                                                    -0.5 |  -5.2 |
+| 2019 |                                    14.9 |                                                 26.0 |                                                     5.6 |  31.2 |
+| 2020 |                                     5.7 |                                                  1.5 |                                                     7.7 |  18.3 |
+| 2021 |                                     9.7 |                                                 24.5 |                                                    20.7 |  28.7 |
+| 2022 |                                     1.4 |                                                -17.6 |                                                   -24.4 | -18.2 |
+| 2023 |                                    68.5 |                                                 34.6 |                                                    13.5 |  26.2 |
+| 2024 |                                    73.7 |                                                 87.2 |                                                    84.9 |  24.9 |
+| 2025 |                                    31.3 |                                                  4.3 |                                                    31.6 |  17.7 |
+| 2026 |                                    14.6 |                                                 16.3 |                                                     7.1 |  14.9 |
 
 ## Appendix: entries and exits
 
