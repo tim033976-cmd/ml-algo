@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-08 09:33 UTC in 21 min.
+Generated 2026-10-08 09:57 UTC in 22 min.
 Universe: 1488 stocks with data (sp600: 591, sp500: 499, sp400: 398; 0 former S&P 500 members). Signals 2006-01-03 -> 2026-10-06: 659,965.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
@@ -40,6 +40,7 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 | 2026-10-08 08:48 | 48a9d03  |      1488 |    633749 |        0.55 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, ep_gap10, ep_gap10_vol2, donchian_20, undercut, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh                                             | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80, rs80_mkt |     0.55 |           0.25 |          -0.13 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank       | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | All setups + rs80_early filter, ranked by RS / oneil_20_8    |
 | 2026-10-08 09:11 | fd50739  |      1488 |    633749 |        0.55 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, ep_gap10, ep_gap10_vol2, donchian_20, undercut, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh                                             | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80, rs80_mkt |     0.55 |           0.25 |          -0.13 |     0.01 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, rs_rank       | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | All setups + rs80_early filter, ranked by RS / oneil_20_8    |
 | 2026-10-08 09:33 | 32c75da  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | Top 20 strategies by IS expectancy (own exits), ranked by RS |
+| 2026-10-08 09:57 | 54a58fb  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh | high52, multi_touch, stage2 | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80           |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low | early_stage, rs80_early, rs80_early_theme |            4 | All setups, ranked by RS / oneil_20_8 |        0.21 |       0.15 | Top 20 strategies by IS expectancy (own exits), ranked by RS |
 
 ## 1. Did picking the best in-sample strategies work out-of-sample?
 
@@ -358,28 +359,31 @@ Readable rules (depth-3 tree fit in-sample, scored out-of-sample):
 
 ## 9. Portfolio simulation, 2018 -> today ($100k, 1% risk/trade, max 10 positions, no leverage)
 
-| strategy                                                       |   CAGR |   max_DD |   max_DD_realized |   trades |    win |   avg_positions |
-|:---------------------------------------------------------------|-------:|---------:|------------------:|---------:|-------:|----------------:|
-| donchian_20 / all / oneil_20_8                                 |   0.08 |    -0.34 |             -0.31 |  1044.00 |   0.32 |            8.82 |
-| donchian_55 / all / oneil_20_8                                 |  -0.03 |    -0.53 |             -0.52 |  1075.00 |   0.28 |            8.75 |
-| undercut / all / oneil_20_8                                    |   0.10 |    -0.45 |             -0.44 |  1404.00 |   0.19 |            7.27 |
-| ema_retest / all / oneil_20_8                                  |   0.01 |    -0.49 |             -0.47 |   880.00 |   0.25 |            7.07 |
-| tight_coil_7 / all / oneil_20_8                                |   0.01 |    -0.39 |             -0.37 |   672.00 |   0.31 |            8.10 |
-| All setups, ML-filtered (top third), ranked by ML / oneil_20_8 |   0.12 |    -0.26 |             -0.21 |   969.00 |   0.29 |            7.86 |
-| All setups, ranked by RS / oneil_20_8                          |   0.21 |    -0.46 |             -0.43 |  1661.00 |   0.27 |            8.69 |
-| All setups, random order / oneil_20_8                          |  -0.02 |    -0.42 |             -0.39 |   999.00 |   0.22 |            7.58 |
-| All setups + rs80_early filter, ranked by RS / oneil_20_8      |   0.10 |    -0.27 |             -0.28 |  1335.00 |   0.26 |            8.48 |
-| BASELINE random entries, ranked by RS / oneil_20_8             |   0.04 |    -0.52 |             -0.49 |  1714.00 |   0.15 |            6.33 |
-| BASELINE random entries, random order / oneil_20_8             |  -0.01 |    -0.49 |             -0.47 |  1383.00 |   0.12 |            6.08 |
-| IS-selected setups (17), ranked by RS / oneil_20_8             |   0.17 |    -0.52 |             -0.49 |  1464.00 |   0.29 |            8.94 |
-| IS-selected setups, only when SPY > 200d / oneil_20_8          |   0.15 |    -0.42 |             -0.39 |  1213.00 |   0.30 |            7.77 |
-| IS-selected setups (21), ranked by RS / sma50_close            |   0.12 |    -0.53 |             -0.45 |   917.00 |   0.25 |            8.79 |
-| IS-selected setups, only when SPY > 200d / sma50_close         |   0.12 |    -0.52 |             -0.47 |   786.00 |   0.24 |            7.64 |
-| All setups, ranked by RS / sma50_close                         |   0.06 |    -0.54 |             -0.49 |  1189.00 |   0.26 |            8.59 |
-| Top 5 strategies by IS expectancy (own exits), ranked by RS    |   0.10 |    -0.33 |             -0.25 |   444.00 |   0.31 |            5.63 |
-| Top 10 strategies by IS expectancy (own exits), ranked by RS   |   0.13 |    -0.28 |             -0.19 |   616.00 |   0.34 |            7.70 |
-| Top 20 strategies by IS expectancy (own exits), ranked by RS   |   0.14 |    -0.26 |             -0.18 |   620.00 |   0.34 |            7.84 |
-| SPY buy & hold                                                 |   0.15 |    -0.34 |            nan    |   nan    | nan    |          nan    |
+| strategy                                                       |   CAGR |   max_DD |   max_DD_realized |   trades |    win |   avg_positions |   top2_years_share |
+|:---------------------------------------------------------------|-------:|---------:|------------------:|---------:|-------:|----------------:|-------------------:|
+| donchian_20 / all / oneil_20_8                                 |   0.08 |    -0.34 |             -0.31 |  1044.00 |   0.32 |            8.82 |               0.84 |
+| donchian_55 / all / oneil_20_8                                 |  -0.03 |    -0.53 |             -0.52 |  1075.00 |   0.28 |            8.75 |             nan    |
+| undercut / all / oneil_20_8                                    |   0.10 |    -0.45 |             -0.44 |  1404.00 |   0.19 |            7.27 |               0.86 |
+| ema_retest / all / oneil_20_8                                  |   0.01 |    -0.49 |             -0.47 |   880.00 |   0.25 |            7.07 |               9.88 |
+| tight_coil_7 / all / oneil_20_8                                |   0.01 |    -0.39 |             -0.37 |   672.00 |   0.31 |            8.10 |               7.25 |
+| All setups, ML-filtered (top third), ranked by ML / oneil_20_8 |   0.12 |    -0.26 |             -0.21 |   969.00 |   0.29 |            7.86 |               0.57 |
+| All setups, ranked by RS / oneil_20_8                          |   0.21 |    -0.46 |             -0.43 |  1661.00 |   0.27 |            8.69 |               0.56 |
+| All setups, random order / oneil_20_8                          |  -0.02 |    -0.42 |             -0.39 |   999.00 |   0.22 |            7.58 |             nan    |
+| All setups + rs80_early filter, ranked by RS / oneil_20_8      |   0.10 |    -0.27 |             -0.28 |  1335.00 |   0.26 |            8.48 |               0.80 |
+| BASELINE random entries, ranked by RS / oneil_20_8             |   0.04 |    -0.52 |             -0.49 |  1714.00 |   0.15 |            6.33 |               2.26 |
+| BASELINE random entries, random order / oneil_20_8             |  -0.01 |    -0.49 |             -0.47 |  1383.00 |   0.12 |            6.08 |             nan    |
+| IS-selected setups (17), ranked by RS / oneil_20_8             |   0.17 |    -0.52 |             -0.49 |  1464.00 |   0.29 |            8.94 |               0.64 |
+| IS-selected setups, only when SPY > 200d / oneil_20_8          |   0.15 |    -0.42 |             -0.39 |  1213.00 |   0.30 |            7.77 |               0.75 |
+| IS-selected setups (21), ranked by RS / sma50_close            |   0.12 |    -0.53 |             -0.45 |   917.00 |   0.25 |            8.79 |               0.66 |
+| IS-selected setups, only when SPY > 200d / sma50_close         |   0.12 |    -0.52 |             -0.47 |   786.00 |   0.24 |            7.64 |               0.79 |
+| All setups, ranked by RS / sma50_close                         |   0.06 |    -0.54 |             -0.49 |  1189.00 |   0.26 |            8.59 |               1.29 |
+| Top 5 strategies by IS expectancy (own exits), ranked by RS    |   0.10 |    -0.33 |             -0.25 |   444.00 |   0.31 |            5.63 |               0.68 |
+| Top 10 strategies by IS expectancy (own exits), ranked by RS   |   0.13 |    -0.28 |             -0.19 |   616.00 |   0.34 |            7.70 |               0.57 |
+| Top 20 strategies by IS expectancy (own exits), ranked by RS   |   0.14 |    -0.26 |             -0.18 |   620.00 |   0.34 |            7.84 |               0.62 |
+| Top 10 by IS expectancy, 1% risk, 10 slots, idle cash in SPY   |   0.15 |    -0.34 |             -0.27 |   610.00 |   0.34 |            7.63 |               0.52 |
+| Top 10 by IS expectancy, 2% risk, 10 slots, idle cash in SPY   |   0.13 |    -0.39 |             -0.32 |   479.00 |   0.34 |            5.98 |               0.64 |
+| Top 10 by IS expectancy, 2% risk, 15 slots, idle cash in SPY   |   0.13 |    -0.39 |             -0.32 |   479.00 |   0.34 |            5.98 |               0.64 |
+| SPY buy & hold                                                 |   0.15 |    -0.34 |            nan    |   nan    | nan    |          nan    |             nan    |
 
 max_DD is from equity marked to market every day (open positions at the close); max_DD_realized only counts closed trades. Partial exits (trim plans) are approximated as held in full until the final exit.
 
@@ -400,17 +404,17 @@ Strategies in the 'Top 10 by IS expectancy' portfolio (chosen on pre-2018 data o
 
 Year-by-year returns (best 3 portfolios by CAGR vs SPY):
 
-|      |   All setups, ranked by RS / oneil_20_8 |   IS-selected setups (17), ranked by RS / oneil_20_8 |   IS-selected setups, only when SPY > 200d / oneil_20_8 |   SPY |
-|-----:|----------------------------------------:|-----------------------------------------------------:|--------------------------------------------------------:|------:|
-| 2018 |                                   -11.6 |                                                -13.3 |                                                     2.1 |  -5.2 |
-| 2019 |                                    14.4 |                                                 22.1 |                                                     5.6 |  31.2 |
-| 2020 |                                    14.3 |                                                  0.7 |                                                     0.9 |  18.3 |
-| 2021 |                                    15.0 |                                                 24.1 |                                                    19.4 |  28.7 |
-| 2022 |                                     1.0 |                                                 -3.8 |                                                   -22.4 | -18.2 |
-| 2023 |                                    53.4 |                                                 32.3 |                                                    20.8 |  26.2 |
-| 2024 |                                    63.5 |                                                 84.8 |                                                    85.0 |  24.9 |
-| 2025 |                                    31.6 |                                                  4.3 |                                                    34.8 |  17.7 |
-| 2026 |                                    16.4 |                                                 23.4 |                                                    10.9 |  14.9 |
+|      |   All setups, ranked by RS / oneil_20_8 |   IS-selected setups (17), ranked by RS / oneil_20_8 |   Top 10 by IS expectancy, 1% risk, 10 slots, idle cash in SPY |   SPY |
+|-----:|----------------------------------------:|-----------------------------------------------------:|---------------------------------------------------------------:|------:|
+| 2018 |                                   -11.6 |                                                -13.3 |                                                           -3.4 |  -5.2 |
+| 2019 |                                    14.4 |                                                 22.1 |                                                           37.7 |  31.2 |
+| 2020 |                                    14.3 |                                                  0.7 |                                                           27.6 |  18.3 |
+| 2021 |                                    15.0 |                                                 24.1 |                                                           25.4 |  28.7 |
+| 2022 |                                     1.0 |                                                 -3.8 |                                                           -8.4 | -18.2 |
+| 2023 |                                    53.4 |                                                 32.3 |                                                           23.6 |  26.2 |
+| 2024 |                                    63.5 |                                                 84.8 |                                                           16.4 |  24.9 |
+| 2025 |                                    31.6 |                                                  4.3 |                                                          -11.9 |  17.7 |
+| 2026 |                                    16.4 |                                                 23.4 |                                                           36.5 |  14.9 |
 
 ## Appendix: entries and exits
 
