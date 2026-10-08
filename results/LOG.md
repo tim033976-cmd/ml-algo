@@ -1,5 +1,18 @@
 # Research log (newest first)
 
+## Run 5 — planned 2026-10-08
+**Changes, each driven by a run-4 finding:**
+1. Trade the expectancy-selected strategies as portfolios: the top 5/10/20 by IS avgR (min 200 IS trades), each keeping its own exit. Duplicates on the same stock and day keep the higher-ranked strategy. Signals are ranked by RS.
+2. Year-by-year returns of the best portfolios vs SPY, to check consistency rather than a single CAGR.
+3. ML trained on episodic pivots only (run 3: ML helped within EP but not in the pooled set).
+
+## Run 4 — 2026-10-08 (commit 48a9d03), 633,749 signals
+- **Selecting by expectancy works:** the top 20 strategies by IS avgR (n >= 200) averaged **+0.34R OOS**, vs +0.06R for all strategies. Top 20 by IS t-stat only made +0.05R, because t-stat favours frequent, thin-edge setups. All 20 are episodic pivots with RS/early filters, mostly with the sma50_close exit. Examples (OOS): ep_gap8_hold/rs80/sma50 +0.58R (PF 1.90, t 3.19, 624 trades), ep_gap10/early_stage/sma50 +0.58R (t 3.25), ep_gap5/rs80_early/sma50 +0.40R.
+- **Edge vs random in both periods (>= 0.05R):** all 7 EP variants, donchian_20/55, undercut, ema_retest, flag_60, flag_30_early, high52_fresh. **No edge:** high52, multi_touch, stage2.
+- **Theme (sub-industry RS) doesn't help:** theme alone +0.021R vs none +0.023R. rs80_early_theme was best IS (+0.12) but fell to +0.06 OOS, below rs80_early (+0.16). Negative result; keep the features in ML but not as a filter.
+- **Honest drawdowns are large:** mark-to-market max DD is −50% for all setups ranked by RS (20.9% CAGR), and −47% to −52% for IS-selected setup pools. SPY: 14.6% CAGR, −34%. The SPY > 200d overlay barely helped (−50 → −43% with the O'Neil exit, none with sma50). Portfolios are flooded with frequent thin-edge signals, while the high-expectancy EP strategies (~40-70 trades a year) were never traded on their own. Addressed in run 5.
+- **ML** still adds little in the pooled set: rank corr 0.25, flat deciles, risk_adr dominant.
+
 ## Run 4 — planned 2026-10-08
 **Changes, each driven by a run-3 finding:**
 1. *Survivorship:* the run-3 diagnostics showed Wikipedia's S&P 500 page no longer has a changes table, so former members can't be recovered there (and Yahoo serves few delisted tickers). Accepted as a caveat. The main metric (excess over random entries from the same universe) cancels much of this bias.

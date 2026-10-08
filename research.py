@@ -85,9 +85,15 @@ def main() -> None:
     d, cols = A.ml_walk_forward(sig, ref_exit)
     mlr = A.ml_report(d, ref_exit)
     ml_alt = {}
+    ep = sig[sig["entry_name"].str.startswith("ep_") | (sig["entry_name"] == A.BASELINE)]
+    try:
+        d_ep, _ = A.ml_walk_forward(ep, "sma50_close", min_train=1000)
+        ml_alt["episodic pivots only / sma50_close"] = A.ml_report(d_ep, "sma50_close")
+    except Exception as e:
+        print(f"[research] EP-only ML skipped: {e}")
     if ref_exit != "trim_ema":  # also score the user's own exit plan
         d2, _ = A.ml_walk_forward(sig, "trim_ema")
-        ml_alt["trim_ema"] = A.ml_report(d2, "trim_ema")
+        ml_alt["your trim plan (trim_ema)"] = A.ml_report(d2, "trim_ema")
     imp = A.ml_importance(d, cols, ref_exit)
     rules = A.rule_tree(d, cols, ref_exit)
     mlr["deciles"].to_csv(out / "ml_deciles.csv")
@@ -129,10 +135,27 @@ def main() -> None:
             port_rows.append((f"IS-selected setups, only when SPY > 200d / {ex}",
                               P(pool[pool["mkt_above200"] == 1], ex, "rs_rank")))
     port_rows.append(("All setups, ranked by RS / sma50_close", P(pooled, "sma50_close", "rs_rank")))
+    # run-4 lesson: ranking by in-sample EXPECTANCY (min 200 trades) selected strategies that held up
+    # out-of-sample (+0.34R avg) but they were never traded as a portfolio. Each keeps its own exit.
+    ranked = lb[(lb["IS_n"] >= 200) & (lb["entry"] != A.BASELINE)].sort_values("IS_avgR", ascending=False)
+    for k in (5, 10, 20):
+        picks = ranked.head(k)
+        pool = A.strategy_pool(sig, picks)
+        port_rows.append((f"Top {k} strategies by IS expectancy (own exits), ranked by RS",
+                          P(pool, "per_row", "rs_rank")))
+    top10_picks = ranked.head(10)[["entry", "filter", "exit", "IS_n", "IS_avgR", "OOS_n", "OOS_avgR", "OOS_t"]]
     spy = A.spy_stats(market["SPY"]) if "SPY" in market else {"CAGR": np.nan, "max_DD": np.nan}
     port = pd.DataFrame([{"strategy": k, **{m: v for m, v in res.items() if m != "curve"}} for k, res in port_rows])
     port.loc[len(port)] = {"strategy": "SPY buy & hold", "CAGR": spy["CAGR"], "max_DD": spy["max_DD"]}
     port.to_csv(out / "portfolio.csv", index=False)
+    # year-by-year for the best few portfolios vs SPY
+    best_names = port[~port["strategy"].str.startswith(("SPY", "BASELINE"))].nlargest(3, "CAGR")["strategy"].tolist()
+    curves_d = dict(port_rows)
+    yr = pd.DataFrame({k: A.yearly(curves_d[k]["curve"]) for k in best_names})
+    if "SPY" in market:
+        spy_c = market["SPY"]["close"]
+        yr["SPY"] = A.yearly(spy_c[spy_c.index >= A.IS_END])
+    yr.to_csv(out / "portfolio_yearly.csv")
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
 
     # ---------------- what this run tells us
@@ -215,8 +238,8 @@ def main() -> None:
         "",
         md(mlr["per_entry"], index=True),
         "",
-        *([f"Same model on your trim plan (trim_ema): rank corr {v['rank_corr_oos']:.3f}, taken avgR {v['taken']['avgR']:.3f} "
-           f"vs skipped {v['skipped']['avgR']:.3f}." for v in ml_alt.values()]),
+        *([f"- Same model on {k}: rank corr {v['rank_corr_oos']:.3f}, taken avgR {v['taken']['avgR']:.3f} "
+           f"(n={v['taken']['n']:,}) vs skipped {v['skipped']['avgR']:.3f} (n={v['skipped']['n']:,})." for k, v in ml_alt.items()]),
         "",
         "What the model relies on (permutation importance: drop in OOS rank correlation when a feature is shuffled):",
         "",
@@ -232,6 +255,14 @@ def main() -> None:
         "",
         "max_DD is from equity marked to market every day (open positions at the close); max_DD_realized only "
         "counts closed trades. Partial exits (trim plans) are approximated as held in full until the final exit.",
+        "",
+        "Strategies in the 'Top 10 by IS expectancy' portfolio (chosen on pre-2018 data only):",
+        "",
+        md(top10_picks),
+        "",
+        "Year-by-year returns (best 3 portfolios by CAGR vs SPY):",
+        "",
+        md((yr * 100).round(1), floatfmt=".1f", index=True),
         "",
         "## Appendix: entries and exits",
         "",

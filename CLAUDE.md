@@ -33,6 +33,9 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - Episodic pivots (gap >= 8-10% on 3x volume) are the most consistent edge vs random entries,
   robust across all tested variants (gap 5-15%, volume 2-5x).
 - Ranking same-day signals by RS is worth ~16 CAGR points vs random order (run 3).
+- Select strategies by in-sample expectancy (avgR, n >= 200), not t-stat (run 4).
+- Industry-group ("theme") RS did not help as a filter (run 4). Honest MTM drawdowns of pooled
+  portfolios are ~-50%: a portfolio must be judged on drawdown, not just CAGR.
 - Wikipedia no longer lists removed S&P 500 members; survivorship bias is a standing caveat.
 - Stock selection matters as much as the entry: rs80_early (RS top 20% + 1st/2nd staircase) lifts even random entries.
 - SPY-above-EMAs market filter adds nothing. Exit on a close below the 50 SMA is the most robust.

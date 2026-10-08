@@ -140,7 +140,7 @@ def ml_dataset(sig: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     return d, FEATURES + list(onehot.columns)
 
 
-def ml_walk_forward(sig: pd.DataFrame, exit_name: str, max_train: int = 250_000):
+def ml_walk_forward(sig: pd.DataFrame, exit_name: str, max_train: int = 250_000, min_train: int = 5000):
     d, cols = ml_dataset(sig)
     y = _target(d, exit_name)
     years = sorted(d["date"].dt.year.unique())
@@ -151,7 +151,7 @@ def ml_walk_forward(sig: pd.DataFrame, exit_name: str, max_train: int = 250_000)
         start = pd.Timestamp(f"{yr}-01-01")
         tr = np.flatnonzero((d[f"exit_{exit_name}"] < start).to_numpy())
         te = np.flatnonzero((d["date"].dt.year == yr).to_numpy())
-        if len(tr) < 5000 or len(te) == 0:
+        if len(tr) < min_train or len(te) == 0:
             continue
         if len(tr) > max_train:
             tr = rng.choice(tr, max_train, replace=False)
@@ -229,8 +229,16 @@ def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END,
     With `closes` (dates x tickers), open positions are marked to market every day, so the
     drawdown is honest; without it equity only moves when trades close (run 1-3 reports)."""
     t = trades[trades["date"] >= start].copy()
-    t["exit_date"] = t[f"exit_{exit_name}"]
-    t["ret"] = t[f"ret_{exit_name}"].astype(float)
+    if exit_name == "per_row":  # each row carries its own exit plan in `exit_choice`
+        t["exit_date"], t["ret"] = pd.NaT, np.nan
+        for ex in t["exit_choice"].unique():
+            m = t["exit_choice"] == ex
+            t.loc[m, "exit_date"] = t.loc[m, f"exit_{ex}"]
+            t.loc[m, "ret"] = t.loc[m, f"ret_{ex}"].astype(float)
+        t["exit_date"] = pd.to_datetime(t["exit_date"])
+    else:
+        t["exit_date"] = t[f"exit_{exit_name}"]
+        t["ret"] = t[f"ret_{exit_name}"].astype(float)
     t = t.sort_values(["date", priority], ascending=[True, False])
     by_day = {d: g for d, g in t.groupby("date", sort=True)}
     if closes is not None:
@@ -288,3 +296,21 @@ def spy_stats(spy: pd.DataFrame, start=IS_END) -> dict:
     c = spy["close"][spy.index >= start]
     years = (c.index[-1] - c.index[0]).days / 365.25
     return {"CAGR": (c.iloc[-1] / c.iloc[0]) ** (1 / years) - 1, "max_DD": (c / c.cummax() - 1).min()}
+
+
+def strategy_pool(sig: pd.DataFrame, picks: pd.DataFrame) -> pd.DataFrame:
+    """Signals of several (entry, filter, exit) strategies combined; when two strategies fire on
+    the same stock and day, keep the one ranked higher in `picks` (row order)."""
+    parts = []
+    for rank, r in enumerate(picks.itertuples()):
+        s = sig[sig["entry_name"] == r.entry]
+        s = s[FILTERS[r.filter](s)]
+        parts.append(s.assign(exit_choice=r.exit, strategy_rank=rank))
+    pool = pd.concat(parts).sort_values("strategy_rank")
+    return pool.drop_duplicates(["date", "ticker"], keep="first")
+
+
+def yearly(curve: pd.Series) -> pd.Series:
+    y = curve.groupby(curve.index.year).last()
+    first = curve.iloc[0]
+    return pd.concat([pd.Series([y.iloc[0] / first - 1], index=[y.index[0]]), y.pct_change().iloc[1:]])
