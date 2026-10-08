@@ -12,7 +12,8 @@ import pandas as pd
 from mlalgo.research.analyze import BASELINE
 
 
-def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup=None, sup_imp=None) -> tuple[list[str], list[str], dict]:
+def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup=None, sup_imp=None,
+             goals=None) -> tuple[list[str], list[str], dict]:
     f, nxt, key = [], [], {}
 
     # 1. does in-sample selection carry information?
@@ -116,6 +117,22 @@ def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup=None, s
         key.update(super_auc=sup["auc"], super_lift=lift, super_features=feats)
         if lift >= 2:
             nxt.append("Use the superperformer score in the daily scan to choose which stocks to watch for setups.")
+
+    # 6c. the user's goal: target before -10% stop, daily chart
+    for g, v in (goals or {}).items():
+        t = v["all"]
+        if t is None or not len(t):
+            continue
+        base = (t["hit_target"] * t["n"]).sum() / t["n"].sum()
+        top = t.iloc[-1]
+        line = (f"GOAL {v['name']}: all stocks hit it {base:.0%} of the time; the model's top 10% {top['hit_target']:.0%} "
+                f"(break-even ~{v['breakeven']:.0%}), avg net return per trade {top['avg_net_return']:+.1%}.")
+        if v.get("pit") is not None and len(v["pit"]):
+            tp = v["pit"].iloc[-1]
+            line += f" Point-in-time S&P 500 top 10%: {tp['hit_target']:.0%}, {tp['avg_net_return']:+.1%} per trade (n={int(tp['n'])})."
+        f.append(line)
+        key[f"goal_{g}_top_hit"] = float(top["hit_target"])
+        key[f"goal_{g}_top_ret"] = float(top["avg_net_return"])
 
     # 7. portfolio vs SPY
     strat = port[~port["strategy"].str.startswith(("SPY", "BASELINE"))]

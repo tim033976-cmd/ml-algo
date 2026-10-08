@@ -126,6 +126,23 @@ def main() -> None:
         sup_prof.to_csv(out / "super_profile.csv")
         print(f"[research] superperformer model done ({time.time() - t0:.0f}s)")
 
+        # ---------------- the user's goal: +10% / +20% before -10% on the daily chart
+        pit = None
+        if "date_added" in universe.columns:
+            added = pd.to_datetime(universe.set_index("ticker")["date_added"], errors="coerce")
+            sp500 = set(universe.loc[universe["index"] == "sp500", "ticker"])
+            pit = lambda d: d["ticker"].isin(sp500) & (d["date"] >= d["ticker"].map(added))
+        goal_tables = {}
+        for g, (gname, breakeven) in A.GOALS.items():
+            if f"{g}_hit" not in sample:
+                continue
+            sample, (sig,) = A.super_walk_forward(sample, [sig], label=g, col=f"p_{g}")
+            goal_tables[g] = {"all": A.goal_report(sample, g, f"p_{g}"),
+                              "pit": A.goal_report(sample, g, f"p_{g}", keep=pit(sample)) if pit else None,
+                              "name": gname, "breakeven": breakeven}
+            goal_tables[g]["all"].to_csv(out / f"goal_{g}_deciles.csv")
+        print(f"[research] goal models done ({time.time() - t0:.0f}s)")
+
     # ---------------- portfolio simulation, 2018 -> today (marked to market daily)
     closes = pd.DataFrame({t: df["close"] for t, df in prices.items()}).astype("float32").ffill()
     port_rows, curves = [], {}
@@ -197,6 +214,20 @@ def main() -> None:
             clean_sig = sig[(sig["entry_name"] != A.BASELINE) & sig["clean_prob"].notna()]
             port_rows.append(("Top 10% CLEAN model (+40% before -20%) / sma50_close",
                               A.portfolio(top10(clean_sig, "clean_prob"), "sma50_close", "clean_prob", closes=closes)))
+        # ---- user goal portfolios: +20% / +10% before -10%, daily chart
+        for g in [x for x in ("b20", "b10") if f"p_{x}" in sig]:
+            exit_g = "bracket_20_10" if g == "b20" else "bracket_10_10"
+            only_model = A.top_decile_trades(sample, g, f"p_{g}")
+            port_rows.append((f"GOAL {g}: model's top 10% stocks, no setup needed / {exit_g}",
+                              A.portfolio(only_model, "bracket", "priority", closes=closes)))
+            port_rows.append((f"GOAL {g}: model top 10% + adaptive sizing / {exit_g}",
+                              A.portfolio(only_model, "bracket", "priority", closes=closes, adaptive=True)))
+            gs = sig[(sig["entry_name"] != A.BASELINE) & sig[f"p_{g}"].notna()]
+            port_rows.append((f"GOAL {g}: setups in the model's top 10% / {exit_g}",
+                              A.portfolio(top10(gs, f"p_{g}"), exit_g, f"p_{g}", closes=closes)))
+            if pit is not None:
+                port_rows.append((f"GOAL {g}: model top 10%, S&P 500 point-in-time only / {exit_g}",
+                                  A.portfolio(only_model[pit(only_model).to_numpy()], "bracket", "priority", closes=closes)))
         if "date_added" in universe.columns:
             added = universe.set_index("ticker")["date_added"]
             added = pd.to_datetime(added, errors="coerce")
@@ -232,7 +263,7 @@ def main() -> None:
 
     # ---------------- what this run tells us
     found, nxt, key = findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup,
-                               sup_imp if sup else None)
+                               sup_imp if sup else None, goal_tables if sup else None)
     hist = append_history(out / "history.csv", key, len(prices), len(sig))
     (out / "insights.json").write_text(json.dumps({"findings": found, "next_steps": nxt, "key": key}, indent=2, default=str))
 
@@ -347,6 +378,14 @@ def main() -> None:
                f"{sup_clean['base_rate']:.1%}, model top 10% {sup_clean['top_decile_rate']:.1%} "
                f"({sup_clean['top_decile_rate'] / sup_clean['base_rate']:.1f}x), AUC {sup_clean['auc']:.3f}.", "",
                md(sup_clean["deciles"], index=True, floatfmt=".3f"), ""] if sup_clean else []),
+            *sum(([f"### Your goal: {v['name']} (daily chart, entry at the close, 63-day time limit)", "",
+                   f"Break-even hit rate is about {v['breakeven']:.0%} (before costs and timeouts). By decile of the model's "
+                   "probability, out-of-sample 2018+: how often the target came first, how often the -10% stop, and the "
+                   "average net return per trade (0.1% costs per side, timeouts included).", "",
+                   md(v["all"], index=True, floatfmt=".3f"), "",
+                   *(["S&P 500 stocks only, and only after they joined the index (survivorship check):", "",
+                      md(v["pit"], index=True, floatfmt=".3f"), ""] if v["pit"] is not None else [])]
+                  for g, v in goal_tables.items()), []),
             "Caution: the universe is today's index members, so beaten-down stocks in the sample are ones that "
             "survived. See the SURVIVORSHIP and CHECK rows in section 9.",
             "",

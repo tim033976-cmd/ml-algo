@@ -63,6 +63,36 @@ def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series) -> pd.Data
 
 
 SUPER_HORIZON, SUPER_GAIN, SAMPLE_EVERY = 63, 0.40, 10
+BRACKETS = {"b10": 0.10, "b20": 0.20}   # user goal: +10% / +20% before -10% (run 13)
+BRACKET_STOP = 0.10
+
+
+def bracket_outcome(o, h, l, c, idx, up, dn, horizon, cost=0.001):
+    """Enter at the close of each idx. Daily bars: +up (high) vs -dn (low), whichever comes first;
+    if both happen on the same day the stop is assumed first (conservative). Gaps fill at the open.
+    Returns hit (1 target, -1 stop, 0 neither), net return, exit index."""
+    n = len(c)
+    hit = np.zeros(len(idx))
+    ret = np.full(len(idx), np.nan)
+    xi = np.minimum(idx + horizon, n - 1)
+    done = np.zeros(len(idx), dtype=bool)
+    entry = c[idx]
+    for k in range(1, horizon + 1):
+        j = idx + k
+        live = ~done & (j < n)
+        if not live.any():
+            break
+        jj = np.minimum(j, n - 1)
+        stop_hit = live & (l[jj] <= entry * (1 - dn))
+        tgt_hit = live & ~stop_hit & (h[jj] >= entry * (1 + up))
+        hit[stop_hit], hit[tgt_hit] = -1, 1
+        ret[stop_hit] = np.minimum(o[jj], entry * (1 - dn))[stop_hit] / entry[stop_hit] - 1
+        ret[tgt_hit] = np.maximum(o[jj], entry * (1 + up))[tgt_hit] / entry[tgt_hit] - 1
+        xi[stop_hit | tgt_hit] = jj[stop_hit | tgt_hit]
+        done |= stop_hit | tgt_hit
+    rest = ~done
+    ret[rest] = c[xi[rest]] / entry[rest] - 1
+    return hit, ret - 2 * cost, xi
 
 
 def superperformer_sample(ticker, df, feats_all, rs_rank, grp, warmup=252) -> pd.DataFrame:
@@ -93,9 +123,17 @@ def superperformer_sample(ticker, df, feats_all, rs_rank, grp, warmup=252) -> pd
         first_up = np.where(h[j] >= 1.4 * c[idx], k, first_up)
         first_dn = np.where(l[j] <= 0.8 * c[idx], k, first_dn)
     out["clean_super"] = ((first_up < first_dn) & np.isfinite(first_up)).astype("float32")
+    o = df["open"].to_numpy(float)
+    for name, up in BRACKETS.items():
+        hit, bret, bxi = bracket_outcome(o, h, l, c, idx, up, BRACKET_STOP, SUPER_HORIZON)
+        out[f"{name}_hit"] = (hit == 1).astype("float32")
+        out[f"{name}_ret"] = bret
+        out[f"{name}_exit"] = df.index[bxi]
     out["fwd_ret_63"] = fwd_ret[idx]
     out["label_end"] = df.index[np.minimum(idx + SUPER_HORIZON, n - 1)]
-    out.loc[idx + SUPER_HORIZON > n - 1, ["fwd_max_gain", "fwd_ret_63", "clean_super"]] = np.nan
+    unknown = idx + SUPER_HORIZON > n - 1
+    out.loc[unknown, ["fwd_max_gain", "fwd_ret_63", "clean_super"] + [f"{b}_{x}" for b in BRACKETS for x in ("hit", "ret")]] = np.nan
+    out["close"] = c[idx]
     ok = (c[idx] >= 5) & (c[idx] * feats_all["avg_vol_50"].to_numpy()[idx] >= 5e6)
     return out[ok].astype({k: "float32" for k in out.select_dtypes("float64").columns})
 

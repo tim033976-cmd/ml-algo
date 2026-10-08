@@ -346,6 +346,9 @@ def concentration(curve: pd.Series) -> float:
 # directly: from every stock every 10 days, which chart / RS / market states preceded a >= 40%
 # gain within 3 months. Walk-forward by year; a row is only trained on once its 3-month label
 # window has ended before the test year starts.
+# user goal (run 13): daily chart, +10% / +20% before -10%. Break-even hit rates ignore the
+# trades that time out at 63 days, which the expected-return column includes.
+GOALS = {"b10": ("+10% before -10%", 0.50), "b20": ("+20% before -10%", 1 / 3)}
 SUPER_FEATURES = list(dict.fromkeys(ML_FEATURES + MARKET_COLS + GROUP_COLS + ["rs_rank"]))
 
 
@@ -357,6 +360,8 @@ def _super_model():
 def _label(d, label):
     if label == "clean" and "clean_super" in d:
         return (d["clean_super"] == 1).to_numpy()
+    if label in GOALS:
+        return (d[f"{label}_hit"] == 1).to_numpy() if f"{label}_hit" in d else None
     return (d["fwd_max_gain"] >= 0.40).to_numpy() if "fwd_max_gain" in d else None
 
 
@@ -456,3 +461,28 @@ def signals_by_super(sig: pd.DataFrame, exit_name: str) -> pd.DataFrame:
     return o.groupby(g, observed=True).agg(n=(f"R_{exit_name}", "size"), avgR=(f"R_{exit_name}", "mean"),
                                            win=(f"R_{exit_name}", lambda r: (r > 0).mean()),
                                            avgR_sma50=("R_sma50_close", "mean"))
+
+
+def goal_report(sample: pd.DataFrame, goal: str, col: str, keep: pd.Series | None = None) -> pd.DataFrame:
+    """Out-of-sample: by decile of the model's probability, how often did the stock hit the target
+    before the stop, how often the stop, and what was the net return per trade (incl. timeouts)?
+    `keep` restricts rows (e.g. point-in-time S&P 500 members); deciles use the full OOS cut-offs."""
+    o = sample[(sample["date"] >= IS_END) & sample[col].notna() & sample[f"{goal}_hit"].notna()]
+    edges = np.unique(np.quantile(o[col], np.linspace(0, 1, 11)))
+    if keep is not None:
+        o = o[keep.reindex(o.index).fillna(False).to_numpy()]
+    dec = pd.cut(o[col], edges, labels=False, include_lowest=True)
+    stop = o[f"{goal}_ret"] <= -(0.10 - 1e-6) - 0.002 + 1e-9
+    return o.assign(_stop=stop).groupby(dec).agg(
+        n=(col, "size"), predicted=(col, "mean"), hit_target=(f"{goal}_hit", "mean"),
+        hit_stop=("_stop", "mean"), avg_net_return=(f"{goal}_ret", "mean"), median_return=(f"{goal}_ret", "median"))
+
+
+def top_decile_trades(sample: pd.DataFrame, goal: str, col: str, q: float = 0.9) -> pd.DataFrame:
+    """Model-only entries: buy at the close of sample days where the score is in the top 10% of that
+    year's scores, exit with the bracket. Formatted for portfolio(..., exit_name='bracket')."""
+    o = sample[sample[col].notna() & sample[f"{goal}_ret"].notna()]
+    o = o[o[col] >= o.groupby(o["date"].dt.year)[col].transform(lambda p: p.quantile(q))]
+    return pd.DataFrame({"date": o["date"], "ticker": o["ticker"], "entry": o["close"], "risk_pct": 0.10,
+                         "exit_bracket": o[f"{goal}_exit"], "ret_bracket": o[f"{goal}_ret"].astype(float),
+                         "priority": o[col], "rs_rank": o["rs_rank"]})

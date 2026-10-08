@@ -1,5 +1,13 @@
 # Research log (newest first)
 
+## Run 13 — planned 2026-10-08: the user's goal, +10% / +20% before −10% on the daily chart
+User decision: daily chart only (no intraday). Goal: a model that gives a high probability of +10% to +20% before a −10% loss.
+- New exits `bracket_10_10` and `bracket_20_10`: fixed −10% stop, +10% / +20% target, 63-day time limit. Gaps fill at the open; target and stop in the same bar count as the stop. The engine matches the label logic exactly (unit test).
+- New labels on every stock every 10 days: did it hit +10% (b10) / +20% (b20) before −10%? Plus the net bracket return including timeouts and 0.2% round-trip costs.
+- Walk-forward classifiers for each goal. Report by probability decile: predicted vs actual hit rate (calibration), stop rate, avg net return per trade. Break-even ≈ 50% (b10) and 33% (b20) before costs and timeouts.
+- The survivorship check is built in: the same tables for S&P 500 names only after they joined the index.
+- Portfolios: model top-10% stocks with no setup needed, + adaptive sizing, setups in the top 10%, and point-in-time S&P 500 only.
+
 ## Run 10 — 2026-10-08 (commit 54a58fb): idle cash in SPY, bigger risk
 - **Top 10 by IS expectancy, 1% risk, idle cash in SPY:** 15.2% CAGR, −34% max DD. SPY: 14.6% / −34%. That is essentially SPY plus a little: it beat SPY in 2019, 2020, 2022 (−8% vs −18%) and 2026, and lagged in 2024 (+16 vs +25) and 2025 (−12 vs +18).
 - **2% risk is worse:** 13%, −39%. With 2% risk most positions hit the 20% size cap and cash runs out at ~5 positions, so 10 vs 15 slots made no difference (identical results). More risk per trade doesn't add return here, only drawdown.

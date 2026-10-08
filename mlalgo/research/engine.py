@@ -16,6 +16,9 @@ EXITS = {
     "donchian_10low": (6, "Turtle-style: exit on close below the prior 10-day low"),
     "ema21_close": (7, "exit on first close below the 21 EMA"),
     "sma50_close": (8, "position trade: exit on first close below the 50 SMA"),
+    # the user's goal (run 13): a fixed bracket on the daily chart
+    "bracket_10_10": (9, "stop -10%, target +10%, close after 63 days if neither"),
+    "bracket_20_10": (10, "stop -10%, target +20%, close after 63 days if neither"),
 }
 
 REASON = {0: "end", 1: "stop", 2: "rule", 3: "target"}
@@ -28,6 +31,8 @@ def _sim_one(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10pr
     stop = stop0
     if code == 3:
         stop = max(stop, entry * 0.92)
+    elif code == 9 or code == 10:
+        stop = entry * 0.90  # fixed -10% stop replaces the setup's stop
     risk = entry - stop
     remaining = 1.0
     pnl = 0.0
@@ -113,6 +118,17 @@ def _sim_one(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10pr
                 break
         elif code == 8:
             if c[d] < sma50[d]:
+                reason = 2
+                break
+        elif code == 9 or code == 10:
+            tgt = entry * (1.10 if code == 9 else 1.20)
+            if h[d] >= tgt:
+                px = max(o[d], tgt)
+                pnl += remaining * (px / entry - 1.0)
+                remaining = 0.0
+                reason = 3
+                break
+            if held >= 63:
                 reason = 2
                 break
     if remaining > 1e-9:

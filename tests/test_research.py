@@ -145,7 +145,7 @@ def test_superperformer_label_and_features_are_point_in_time():
     tampered = df.copy()
     tampered.iloc[t + 1:] *= 2
     s2 = superperformer_sample("T", tampered, structure_features(tampered), rs, None)
-    labels = ["fwd_max_gain", "fwd_ret_63", "clean_super"]
+    labels = ["fwd_max_gain", "fwd_ret_63", "clean_super"] + [c for c in s.columns if c[:3] in ("b10", "b20")]
     a = s[s["date"] == row["date"]].drop(columns=labels).reset_index(drop=True)
     b = s2[s2["date"] == row["date"]].drop(columns=labels).reset_index(drop=True)
     pd.testing.assert_frame_equal(a, b)
@@ -156,3 +156,34 @@ def test_superperformer_label_and_features_are_point_in_time():
     dn = np.flatnonzero(ls <= 0.8 * c0)
     expect_clean = len(up) > 0 and (len(dn) == 0 or up[0] < dn[0])
     assert row["clean_super"] == float(expect_clean)
+
+
+def test_bracket_outcome_target_stop_gap_and_timeout():
+    from mlalgo.research.run import bracket_outcome
+    #            day: 0    1    2    3    4
+    o = np.array([100, 101, 104, 108, 100.0])
+    h = np.array([100, 103, 111, 109, 101.0])
+    l = np.array([100,  99, 103, 107,  99.0])
+    c = np.array([100, 102, 108, 108, 100.0])
+    # entry day 0 at 100: day 2 high 111 >= 110 -> +10% target (open 104 < 110, so fills at 110)
+    hit, ret, xi = bracket_outcome(o, h, l, c, np.array([0]), 0.10, 0.10, 3, cost=0)
+    assert hit[0] == 1 and np.isclose(ret[0], 0.10) and xi[0] == 2
+    # +20% never reached within 3 days and no -10% -> closes at day 3 close (108)
+    hit, ret, xi = bracket_outcome(o, h, l, c, np.array([0]), 0.20, 0.10, 3, cost=0)
+    assert hit[0] == 0 and np.isclose(ret[0], 0.08) and xi[0] == 3
+    # gap down through the stop fills at the open; same-bar target+stop counts as the stop
+    o2, h2, l2, c2 = (np.array([100, 85.0]), np.array([100, 125.0]), np.array([100, 80.0]), np.array([100, 90.0]))
+    hit, ret, _ = bracket_outcome(o2, h2, l2, c2, np.array([0]), 0.20, 0.10, 3, cost=0)
+    assert hit[0] == -1 and np.isclose(ret[0], -0.15)
+
+
+def test_engine_bracket_exit_matches_label_logic():
+    from mlalgo.research.run import bracket_outcome
+    df = synthetic(900, seed=12)
+    b = bars(df)
+    for t in range(300, 800, 50):
+        e = b["c"][t]
+        for code, up in ((CODES["bracket_10_10"], 0.10), (CODES["bracket_20_10"], 0.20)):
+            ret, _, xidx, _ = _sim(df, t, e, e * 0.5, code, cost=0.001)
+            _, r2, x2 = bracket_outcome(b["o"], b["h"], b["l"], b["c"], np.array([t]), up, 0.10, 63)
+            assert np.isclose(ret, r2[0]) and xidx == x2[0]
