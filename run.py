@@ -4,7 +4,6 @@ Examples:
     python run.py --ticker SPY
     python run.py --ticker AAPL --model logreg --threshold 0.53 --cost-bps 10
     python run.py --csv my_prices.csv
-    python run.py --synthetic          # offline sanity check; should show NO edge
 """
 import argparse
 
@@ -22,7 +21,6 @@ def main() -> None:
     src = p.add_mutually_exclusive_group()
     src.add_argument("--ticker", default="SPY")
     src.add_argument("--csv")
-    src.add_argument("--synthetic", action="store_true")
     p.add_argument("--start", default="2005-01-01")
     p.add_argument("--model", choices=["gbm", "logreg"], default="gbm")
     p.add_argument("--horizon", type=int, default=1)
@@ -32,9 +30,7 @@ def main() -> None:
     p.add_argument("--out", help="optional path to save daily results CSV")
     a = p.parse_args()
 
-    if a.synthetic:
-        df, name = data.synthetic(), "synthetic random walk"
-    elif a.csv:
+    if a.csv:
         df, name = data.load_csv(a.csv), a.csv
     else:
         df, name = data.load_yahoo(a.ticker, start=a.start), a.ticker

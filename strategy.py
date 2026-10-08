@@ -4,7 +4,6 @@ Examples:
     python strategy.py --universe universes/sample.txt
     python strategy.py --universe universes/sample.txt --require-market --ml
     python strategy.py --tickers NVDA,AMD,MU,PANW --setups breakout,retest --target-r 3
-    python strategy.py --synthetic --ml           # offline: there should be NO edge on random data
 """
 import argparse
 
@@ -56,8 +55,6 @@ def main() -> None:
 
     prices, market = pipeline.load(a)
     cfg = PRESETS[a.filter]
-    if a.synthetic:  # synthetic volumes/prices aren't realistic; don't let liquidity filters drop everything
-        cfg = type(cfg)(**{**cfg.__dict__, "min_price": 0, "min_avg_volume": 0, "min_dollar_volume": 0})
     panel = pipeline.build(prices, market, cfg)
     which = tuple(s.strip() for s in a.setups.split(","))
     signals = pipeline.signals_for(prices, panel, SetupConfig(max_risk=a.max_risk), which, a.require_market)

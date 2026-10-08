@@ -4,7 +4,6 @@ Examples:
     python scan.py --universe universes/sample.txt
     python scan.py --universe universes/sample.txt --fundamentals          # + paper factors & theme
     python scan.py --universe universes/sample.txt --filter trend_template --evaluate
-    python scan.py --synthetic --evaluate                                   # offline pipeline check
 """
 import argparse
 
@@ -37,10 +36,7 @@ def main() -> None:
 
     prices, market = pipeline.load(a)
     cfg = PRESETS[a.filter]
-    overrides = {"min_rs_rank": a.min_rs}
-    if a.synthetic:
-        overrides.update(min_price=0, min_avg_volume=0, min_dollar_volume=0)
-    cfg = type(cfg)(**{**cfg.__dict__, **overrides})
+    cfg = type(cfg)(**{**cfg.__dict__, "min_rs_rank": a.min_rs})
     panel = pipeline.build(prices, market, cfg)
     panel = panel.join(label_panel(prices, target=a.target, stop=a.stop, horizon=a.horizon))
     pd.set_option("display.float_format", "{:.3f}".format)

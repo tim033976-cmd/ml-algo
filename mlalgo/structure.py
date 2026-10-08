@@ -16,6 +16,14 @@ import pandas as pd
 from mlalgo.indicators import adr_pct, atr as _atr, ema
 
 
+def _days_since_max(x: np.ndarray, n: int) -> np.ndarray:
+    out = np.full(len(x), np.nan)
+    if len(x) >= n:
+        w = np.lib.stride_tricks.sliding_window_view(x, n)
+        out[n - 1:] = n - 1 - np.argmax(w, axis=1)
+    return out
+
+
 def _staircase_count(c: pd.Series, h: pd.Series, sma200: pd.Series, min_base: int = 10, lookback: int = 20) -> np.ndarray:
     """How many 'steps' the current uptrend has made: breakouts to a new 20-day high after
     a rest of >= `min_base` days, counted since price was last below its 200-day SMA.
@@ -83,7 +91,7 @@ def structure_features(df: pd.DataFrame) -> pd.DataFrame:
     # --- pivot: top of the recent base
     pivot = h.rolling(40).max()
     f["dist_to_pivot"] = c / pivot - 1                     # 0 = at pivot, -0.03 = 3% below
-    f["days_since_pivot"] = h.rolling(40).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+    f["days_since_pivot"] = _days_since_max(h.to_numpy(float), 40)
     f["close_in_range_20"] = (c - l.rolling(20).min()) / (pivot - l.rolling(20).min())
 
     # --- EMA momentum gauge (8/21/50) and daily range

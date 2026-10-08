@@ -20,14 +20,10 @@ def add_source_args(p) -> None:
     src.add_argument("--universe", help="file with one ticker per line")
     src.add_argument("--tickers", help="comma-separated tickers")
     src.add_argument("--csv-dir", help="folder of <TICKER>.csv files")
-    src.add_argument("--synthetic", action="store_true", help="random-walk data for offline testing")
     p.add_argument("--start", default="2010-01-01")
 
 
 def load(a) -> tuple[dict[str, pd.DataFrame], pd.DataFrame]:
-    if a.synthetic:
-        prices = universe.synthetic_universe()
-        return prices, mkt.synthetic_market(prices)
     if a.csv_dir:
         prices = universe.load_csv_dir(a.csv_dir)
     else:

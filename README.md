@@ -3,12 +3,28 @@
 A small, honest starting point for machine-learning stock trading research:
 daily prices → features → walk-forward model → backtest with trading costs.
 
+## Strategy research on real data (runs on GitHub Actions)
+
+`research.py` tests ~20 published breakout entries (Turtle/Donchian, 52-week high, O'Neil/Darvas bases,
+Minervini VCP, Qullamaggie flags and episodic pivots, high tight flag, pocket pivot, Weinstein stage 2,
+plus your 8/21 retest, multi-touch breakout and undercut) against **a random-entry baseline**, each with
+9 exit plans and 6 filters, on the S&P 500/400/600 plus former S&P 500 members since 2005.
+
+* Strategies are **selected on 2006-2017** and **judged on 2018-today**, which they never saw.
+* An ML meta-labeling model is trained walk-forward (yearly) to decide which signals to take; permutation
+  importance and a shallow decision tree turn it into readable rules, each checked out-of-sample.
+* The best candidates run through a portfolio simulation ($100k, 1% risk per trade, max 10 positions) vs SPY.
+
+It runs automatically on GitHub Actions whenever the research code changes (or from the **Actions** tab →
+**research** → **Run workflow**). Results are committed to `results/`; start with `results/report.md`.
+Locally: `python research.py` (needs internet access to Yahoo; takes ~30-60 min).
+
 ## Getting started (no install, in your browser)
 
 1. On the GitHub repo page, switch the branch dropdown to this branch.
 2. Click the green **Code** button → **Codespaces** tab → **Create codespace on …**
 3. Wait for setup to finish (it installs the Python packages automatically). A terminal opens at the bottom.
-4. Run `python scan.py --synthetic` to check that everything works, then try the real commands below.
+4. Try the commands below.
 
 On your own computer, install Python 3.10+ instead, download the code, then run `pip install -r requirements.txt` in its folder.
 
@@ -32,7 +48,7 @@ python scan.py --universe universes/sample.txt --fundamentals       # today's si
 
 `strategy.py` reports win rate, average R (profit in multiples of initial risk), profit factor and share of 5R+ winners for each setup. It then prints a **"do the rules hold up?"** table that splits trades by market regime, staircase number, pullback volume, volatility contraction, RS rank, extension from the 8 EMA, 12-month range position and the rates regime. Every rule gets tested instead of trusted. `--ml` trains a model on the setup signals walk-forward, using only trades that had already closed, and checks whether its top third beats taking every signal.
 
-Limits of daily data: entries are at the signal day's close (not 5-minute "sniper" entries), a gap through a stop fills at the open, and if the stop and target fall inside the same bar the stop is assumed to hit first. The default cost is 0.1% per side. Sanity check: on zero-drift random data every setup loses money after costs, as it should.
+Limits of daily data: entries are at the signal day's close (not 5-minute "sniper" entries), a gap through a stop fills at the open, and if the stop and target fall inside the same bar the stop is assumed to hit first. The default cost is 0.1% per side.
 
 **Multibagger paper factors** (Yartseva 2025, `mlalgo/fundamentals.py`, `--fundamentals`): FCF yield, book-to-market, ROA, small size, and a flag for asset growth outpacing EBITDA growth. These are combined into `paper_score`, with an industry-level relative strength as the theme gauge. Yahoo only provides *current* fundamentals, so these columns rank today's candidates and are never used in backtests. Note that the paper studies a 1-year horizon and found that buying near 12-month *lows* after a decline worked best for 10-baggers. That's the opposite of the momentum playbook, so the claims table checks `range_pos_12m` on your own trades.
 
@@ -42,7 +58,6 @@ Limits of daily data: entries are at the signal day's close (not 5-minute "snipe
 python scan.py --universe universes/sample.txt               # today's ranked watchlist
 python scan.py --universe universes/sample.txt --evaluate    # does it actually work? (walk-forward)
 python scan.py --csv-dir prices/                             # folder of TICKER.csv files
-python scan.py --synthetic --evaluate                        # offline pipeline check
 ```
 
 **Stage 1: filter the universe** (`mlalgo/universe.py`). There are two presets: `--filter momentum` (the default, described above) and `--filter trend_template`:
@@ -81,7 +96,6 @@ pip install -r requirements.txt
 python run.py --ticker SPY                 # download from Yahoo Finance and run
 python run.py --ticker AAPL --model logreg --threshold 0.53 --cost-bps 10
 python run.py --csv my_prices.csv          # your own data (date, open, high, low, close, volume)
-python run.py --synthetic                  # offline sanity check on a random walk
 pytest                                     # leakage / correctness tests
 ```
 
@@ -89,7 +103,7 @@ pytest                                     # leakage / correctness tests
 
 | File | What it does |
 |---|---|
-| `mlalgo/data.py` | Loads OHLCV from Yahoo, a CSV, or synthetic random-walk data |
+| `mlalgo/data.py` | Loads OHLCV from Yahoo or a CSV (random-walk data is used only inside unit tests) |
 | `mlalgo/features.py` | Momentum, volatility, moving-average distance, RSI, volume, etc. Target = is tomorrow's return positive? |
 | `mlalgo/model.py` | **Walk-forward** training: refit every quarter on past data only, predict the next block |
 | `mlalgo/backtest.py` | Converts probabilities to positions, charges costs on every trade, and reports CAGR, Sharpe and max drawdown against buy & hold |
@@ -102,7 +116,7 @@ pytest                                     # leakage / correctness tests
 3. **Ignoring costs.** A strategy that trades daily can look great before costs and lose money after them. Use `--cost-bps` to test this.
 4. **Overfitting by tuning.** Every threshold or feature you try on the same history makes the backtest more optimistic. Keep a final holdout period you don't look at until the end.
 5. **Accuracy isn't profit.** 52% accuracy can lose money. Compare Sharpe and drawdown against buy & hold.
-6. **Sanity check.** `--synthetic` runs on pure noise, where no real edge exists. If you ever see a strong result there, you have a bug.
+6. **Sanity check.** The unit tests check for lookahead by changing future prices and confirming that past signals don't change.
 
 Realistic expectations: daily direction prediction on liquid large caps typically gives an AUC of about 0.50–0.53. A real edge usually comes from better data (cross-sectional ranking across many stocks, fundamentals, alternative data) rather than fancier models.
 

@@ -1,0 +1,81 @@
+name: research
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Only use the first N tickers (0 = all)"
+        default: "0"
+  push:
+    branches: [claude/ml-stock-algorithm-amym01]
+    paths:
+      - "mlalgo/**"
+      - "research.py"
+      - "requirements.txt"
+      - ".github/workflows/research.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research
+  cancel-in-progress: true
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Unit tests
+        run: python -m pytest -q
+
+      - name: Week key for the price cache
+        id: week
+        run: echo "key=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore price cache
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/
+          key: prices-${{ steps.week.outputs.key }}
+
+      - name: Download prices
+        run: python research.py --cache data --download-only
+
+      - name: Save price cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: data/
+          key: prices-${{ steps.week.outputs.key }}
+
+      - name: Run research
+        run: python research.py --cache data --out results --limit "${{ github.event.inputs.limit || '0' }}"
+
+      - name: Commit results
+        run: |
+          git config user.name "research-bot"
+          git config user.email "research-bot@users.noreply.github.com"
+          git add results/
+          git commit -m "Research results $(date -u +%Y-%m-%d) [skip ci]" || echo "no changes"
+          for i in 1 2 3; do git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break; sleep 5; done
+
+      - name: Upload signals (all trades with features)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signals
+          path: data/signals.parquet
+          if-no-files-found: ignore
+          retention-days: 14
