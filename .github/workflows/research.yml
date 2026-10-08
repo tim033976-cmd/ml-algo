@@ -28,6 +28,8 @@ jobs:
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}   # a queued run uses the newest code on the branch
 
       - uses: actions/setup-python@v5
         with:
@@ -49,7 +51,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data/
-          key: prices-v2-${{ steps.week.outputs.key }}
+          key: prices-v3-${{ steps.week.outputs.key }}
 
       - name: Download prices
         run: python research.py --cache data --download-only
@@ -59,18 +61,41 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data/
-          key: prices-v2-${{ steps.week.outputs.key }}
+          key: prices-v3-${{ steps.week.outputs.key }}
 
       - name: Run research
         run: python research.py --cache data --out results --limit "${{ github.event.inputs.limit || '0' }}"
 
       - name: Commit results
         run: |
+          set -euo pipefail
+          BR="${GITHUB_REF_NAME}"
           git config user.name "research-bot"
           git config user.email "research-bot@users.noreply.github.com"
-          git add results/
-          git commit -m "Research results $(date -u +%Y-%m-%d) [skip ci]" || echo "no changes"
-          for i in 1 2 3; do git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break; sleep 5; done
+          rm -rf /tmp/new && mkdir -p /tmp/new && cp -r results/. /tmp/new/
+          for i in 1 2 3 4 5; do
+            # always commit on top of the latest branch: never conflicts with other runs or edits
+            git fetch -q origin "$BR"
+            git reset -q --hard "origin/$BR"
+            mkdir -p results
+            for f in /tmp/new/*; do
+              b=$(basename "$f")
+              case "$b" in LOG.md|history.csv) ;; *) cp "$f" results/ ;; esac
+            done
+            python - <<'PY'
+          import pandas as pd, pathlib
+          new = pd.read_csv("/tmp/new/history.csv").tail(1)
+          p = pathlib.Path("results/history.csv")
+          old = pd.read_csv(p) if p.exists() else pd.DataFrame()
+          pd.concat([old, new], ignore_index=True).to_csv(p, index=False)
+          PY
+            git add results
+            git commit -q -m "Research results $(date -u +%Y-%m-%d) [skip ci]" || { echo "no changes"; exit 0; }
+            if git push -q origin "HEAD:$BR"; then echo "results pushed"; exit 0; fi
+            sleep $((i * 5))
+          done
+          echo "::error::could not push research results"
+          exit 1
 
       - name: Upload signals (all trades with features)
         if: always()

@@ -3,6 +3,7 @@ so every run feeds the next iteration of the strategy."""
 from __future__ import annotations
 
 import os
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -114,8 +115,12 @@ def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port) -> tuple[li
 
 
 def append_history(path: Path, key: dict, n_tickers: int, n_signals: int) -> pd.DataFrame:
+    try:
+        commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    except OSError:
+        commit = ""
     row = {"run_utc": pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%d %H:%M"),
-           "commit": os.environ.get("GITHUB_SHA", "local")[:7], "tickers": n_tickers, "signals": n_signals}
+           "commit": commit or os.environ.get("GITHUB_SHA", "local")[:7], "tickers": n_tickers, "signals": n_signals}
     row.update({k: (", ".join(v) if isinstance(v, list) else v) for k, v in key.items()})
     hist = pd.read_csv(path) if path.exists() else pd.DataFrame()
     hist = pd.concat([hist, pd.DataFrame([row])], ignore_index=True)

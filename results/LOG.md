@@ -1,5 +1,12 @@
 # Research log (newest first)
 
+## Run 2 — 2026-10-08: computed, results lost (infrastructure lessons)
+- Run 2 finished (633,789 signals, ML 13 min) but its results commit hit a merge conflict with a manual re-run's results and the push loop failed silently. **Fix:** the commit step now always commits on top of the latest branch, keeps LOG.md, merges history.csv, and fails loudly if it can't push. Tested locally against a simulated conflicting push.
+- A manual re-run of an old run re-uses that run's old commit, and new runs were cancelling in-progress ones. **Fix:** runs queue instead of cancelling, and they check out the newest branch code.
+- The removed S&P 500 members parser still found 0 (Wikipedia's table layout is unknown from the sandbox). **Fix:** broader detection plus diagnostics printed to the run log. Bumped the price cache (v3).
+- Reproducibility check: the manual re-run of the run-1 code reproduced run 1's numbers exactly.
+- Run 3 = run 2's experiments (R-regression ML, EP variants, ranking portfolios), re-done.
+
 ## Run 2 — planned 2026-10-08
 **Changes, each driven by a run-1 finding:**
 1. Survivorship: the removed-members parser found 0 tickers. Rewrote it to work with any Wikipedia header layout; bumped the price cache so the universe is rebuilt.

@@ -57,6 +57,18 @@ def _removed_from_changes(tables: list[pd.DataFrame]) -> list[str]:
             if score > best_score:
                 best, best_score = vals[vals.str.match(_TICKER)], score
     if best is None or best_score < 0.5:
+        # fallback: a changes table has a date column and two ticker columns (added, removed)
+        for t in tables:
+            if not any(("date" in str(c).lower()) or ("effective" in str(c).lower()) for c in t.columns):
+                continue
+            tick_cols = []
+            for col in t.columns:
+                vals = t[col].dropna().astype(str).str.strip()
+                if len(vals) >= 20 and vals.str.match(_TICKER).mean() > 0.6:
+                    tick_cols.append(col)
+            if len(tick_cols) >= 2:
+                vals = t[tick_cols[-1]].dropna().astype(str).str.strip()
+                return list(dict.fromkeys(_yahoo_symbol(v) for v in vals[vals.str.match(_TICKER)]))
         return []
     return list(dict.fromkeys(_yahoo_symbol(v) for v in best))
 
@@ -73,6 +85,10 @@ def index_members(name: str) -> tuple[list[str], list[str]]:
                 break
         if name == "sp500":
             removed = _removed_from_changes(tables)
+            if not removed:  # diagnostics for the run log
+                for i, t in enumerate(tables[:6]):
+                    print(f"[universe] sp500 table {i}: shape={t.shape} columns={[str(c) for c in t.columns][:8]}")
+                    print(f"[universe]   first row: {t.iloc[0].astype(str).tolist()[:8] if len(t) else []}")
     except Exception as e:  # network / layout change
         print(f"[universe] {name}: wikipedia failed ({e})")
     if not current and name == "sp500":
