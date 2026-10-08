@@ -18,11 +18,15 @@ def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port) -> tuple[li
     # 1. does in-sample selection carry information?
     rc = sel["rank_corr_IS_vs_OOS_avgR"]
     top, base, avg = sel["OOS_avgR_top20_by_IS"], sel["OOS_avgR_random_baseline"], sel["OOS_avgR_all_strategies"]
-    works = rc > 0.2 and top > max(base, avg)
-    f.append(f"Selection {'carries real information' if works else 'is mostly noise'}: IS-vs-OOS rank correlation "
-             f"{rc:.2f}; the 20 best in-sample strategies averaged {top:+.3f}R out-of-sample vs {avg:+.3f}R for all "
-             f"strategies and {base:+.3f}R for random entries.")
-    if not works:
+    top_avg = sel.get("OOS_avgR_top20_by_IS_avgR", np.nan)
+    persist = rc > 0.3
+    f.append(f"In-sample rankings {'persist' if persist else 'mostly do NOT persist'} out-of-sample (rank correlation {rc:.2f}). "
+             f"Top 20 by IS t-stat: {top:+.3f}R OOS; top 20 by IS avgR (n>=200): {top_avg:+.3f}R; all strategies {avg:+.3f}R; "
+             f"random entries {base:+.3f}R.")
+    if top < avg:
+        f.append("Ranking by t-stat favours very frequent, thin-edge strategies (e.g. 20-day breakouts on everything); "
+                 "rank by expectancy with a minimum trade count instead.")
+    if not persist:
         nxt.append("In-sample rankings don't persist: test fewer, more different ideas instead of fine-tuning parameters.")
     key.update(rank_corr=rc, top20_oos=top, baseline_oos=base)
 
@@ -34,12 +38,14 @@ def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port) -> tuple[li
         f.append("Too few signals to judge (need 100+ per period): " + ", ".join(f"{e} (IS {int(n_is.get(e, 0))}, OOS {int(n_oos.get(e, 0))})" for e in thin) + ".")
         nxt.append(f"Loosen the definitions of {', '.join(thin)} or widen the universe so they can be evaluated.")
     vsb, vsb_is = vsb.drop(index=thin), vsb_is.drop(index=thin)
-    both = ((vsb > 0) & (vsb_is > 0)).mean(axis=1).sort_values(ascending=False)
-    excess = vsb.mean(axis=1)
-    edge = [e for e in both.index if both[e] >= 0.6 and excess[e] > 0]
-    noedge = [e for e in both.index if both[e] <= 0.2]
-    f.append("Entries that beat random entries in both periods for most exits: "
-             + (", ".join(f"{e} ({excess[e]:+.2f}R OOS)" for e in edge) if edge else "none") + ".")
+    both = ((vsb > 0) & (vsb_is > 0)).mean(axis=1)
+    excess, excess_is = vsb.mean(axis=1), vsb_is.mean(axis=1)
+    # a real edge: >= +0.05R over random entries on average in BOTH periods, and for most exits
+    edge = sorted([e for e in vsb.index if both[e] >= 0.6 and excess[e] >= 0.05 and excess_is[e] >= 0.05],
+                  key=lambda e: -min(excess[e], excess_is[e]))
+    noedge = [e for e in vsb.index if both[e] <= 0.2 or (excess[e] <= 0 and excess_is[e] <= 0)]
+    f.append("Entries with a clear edge over random entries (>= +0.05R in both periods): "
+             + (", ".join(f"{e} (IS {excess_is[e]:+.2f}R, OOS {excess[e]:+.2f}R)" for e in edge) if edge else "none") + ".")
     if noedge:
         f.append("Entries with no edge over random entries: " + ", ".join(noedge) + ".")
         nxt.append(f"Drop or rework: {', '.join(noedge)}.")
@@ -93,8 +99,8 @@ def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port) -> tuple[li
         key["filters_lifting_baseline"] = list(strong.index)
 
     # 6. rules that held up
-    overall = rules["OOS_avgR"].mean()
-    held = rules[(rules["IS_avgR"] > 0) & (rules["OOS_avgR"] > 0) & (rules["OOS_n"] >= 200)]
+    overall = (rules["OOS_avgR"] * rules["OOS_n"]).sum() / rules["OOS_n"].sum()
+    held = rules[(rules["IS_avgR"] > 0) & (rules["OOS_avgR"] >= overall + 0.05) & (rules["OOS_n"] >= 500)]
     if len(held):
         r = held.iloc[0]
         f.append(f"Best readable rule that held OOS: `{r['rule']}` (IS {r['IS_avgR']:+.2f}R, OOS {r['OOS_avgR']:+.2f}R, n={int(r['OOS_n'])}).")
@@ -106,8 +112,15 @@ def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port) -> tuple[li
     spy = port.loc[port["strategy"] == "SPY buy & hold", "CAGR"]
     if len(strat) and len(spy):
         b = strat.loc[strat["CAGR"].idxmax()]
-        f.append(f"Best portfolio 2018->today: {b['strategy']} at {b['CAGR']:.1%} CAGR (max realized DD {b['max_DD_realized']:.1%}) "
+        dd_col = "max_DD" if "max_DD" in b and b["max_DD"] == b["max_DD"] else "max_DD_realized"
+        f.append(f"Best portfolio 2018->today: {b['strategy']} at {b['CAGR']:.1%} CAGR (max drawdown {b[dd_col]:.1%}) "
                  f"vs SPY {spy.iloc[0]:.1%}.")
+        if "max_DD" in strat:
+            ratio = (strat["CAGR"] / strat["max_DD"].abs()).replace([np.inf, -np.inf], np.nan)
+            if ratio.notna().any():
+                r = strat.loc[ratio.idxmax()]
+                f.append(f"Best return per unit of drawdown: {r['strategy']} ({r['CAGR']:.1%} CAGR, {r['max_DD']:.1%} max DD).")
+                key["best_calmar"] = r["strategy"]
         key.update(best_portfolio=b["strategy"], best_cagr=b["CAGR"], spy_cagr=spy.iloc[0])
         if b["CAGR"] < spy.iloc[0]:
             nxt.append("No strategy beat buy-and-hold after constraints: improve trade selection before adding complexity.")

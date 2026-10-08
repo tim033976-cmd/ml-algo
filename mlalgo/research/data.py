@@ -73,36 +73,43 @@ def _removed_from_changes(tables: list[pd.DataFrame]) -> list[str]:
     return list(dict.fromkeys(_yahoo_symbol(v) for v in best))
 
 
-def index_members(name: str) -> tuple[list[str], list[str]]:
-    """(current members, removed members). Removed members only for the S&P 500 changes table."""
-    current, removed = [], []
+def index_members(name: str) -> tuple[pd.DataFrame, list[str]]:
+    """(current members with GICS sector / sub-industry, removed members).
+    Note (run 3): Wikipedia's S&P 500 page no longer carries a changes table, so `removed` is
+    usually empty; survivorship bias is mitigated by always comparing against random entries
+    drawn from the same universe."""
+    current, removed = pd.DataFrame(columns=["ticker", "sector", "sub_industry"]), []
     try:
         tables = [_flatten(t) for t in _tables(WIKI[name])]
         for t in tables:
             col = next((c for c in t.columns if c in ("Symbol", "Ticker symbol", "Ticker")), None)
             if col is not None and len(t) > 100:
-                current = [_yahoo_symbol(s) for s in t[col].dropna()]
+                sec = next((c for c in t.columns if "sector" in str(c).lower()), None)
+                sub = next((c for c in t.columns if "industry" in str(c).lower()), None)
+                current = pd.DataFrame({"ticker": [_yahoo_symbol(s) for s in t[col]],
+                                        "sector": t[sec].astype(str).to_numpy() if sec else None,
+                                        "sub_industry": t[sub].astype(str).to_numpy() if sub else None})
                 break
         if name == "sp500":
             removed = _removed_from_changes(tables)
-            if not removed:  # diagnostics for the run log
-                for i, t in enumerate(tables[:6]):
-                    print(f"[universe] sp500 table {i}: shape={t.shape} columns={[str(c) for c in t.columns][:8]}")
-                    print(f"[universe]   first row: {t.iloc[0].astype(str).tolist()[:8] if len(t) else []}")
     except Exception as e:  # network / layout change
         print(f"[universe] {name}: wikipedia failed ({e})")
-    if not current and name == "sp500":
-        current = [_yahoo_symbol(s) for s in pd.read_csv(SP500_FALLBACK)["Symbol"]]
+    if current.empty and name == "sp500":
+        fb = pd.read_csv(SP500_FALLBACK)
+        current = pd.DataFrame({"ticker": [_yahoo_symbol(s) for s in fb["Symbol"]], "sector": fb.get("GICS Sector"),
+                                "sub_industry": fb.get("GICS Sub-Industry")})
     return current, removed
 
 
 def build_universe(indexes=("sp500", "sp400", "sp600")) -> pd.DataFrame:
-    rows = []
+    frames = []
     for name in indexes:
         cur, rem = index_members(name)
-        rows += [(t, name, "current") for t in cur] + [(t, name, "removed") for t in rem]
+        frames.append(cur.assign(index=name, status="current"))
+        if rem:
+            frames.append(pd.DataFrame({"ticker": rem, "index": name, "status": "removed"}))
         print(f"[universe] {name}: {len(cur)} current, {len(rem)} removed")
-    df = pd.DataFrame(rows, columns=["ticker", "index", "status"])
+    df = pd.concat(frames, ignore_index=True)
     return df.drop_duplicates("ticker", keep="first").reset_index(drop=True)
 
 
@@ -157,6 +164,10 @@ def load_all(cache_dir: str, start: str, indexes=("sp500", "sp400", "sp600"), ma
     fresh = pfile.exists() and (time.time() - pfile.stat().st_mtime) < max_age_days * 86400
     if fresh:
         universe = pd.read_csv(ufile)
+        if "sub_industry" not in universe.columns:  # older cache: refresh membership/sector info only
+            universe = universe[["ticker"]].merge(build_universe(indexes), on="ticker", how="left")
+            universe["status"] = universe["status"].fillna("current")
+            universe.to_csv(ufile, index=False)
         long = pd.read_parquet(pfile)
         print(f"[data] loaded cache: {long['ticker'].nunique()} tickers")
     else:

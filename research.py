@@ -35,6 +35,7 @@ def main() -> None:
     p.add_argument("--workers", type=int, default=0)
     p.add_argument("--signals", help="reuse a saved signals.parquet")
     p.add_argument("--prices-parquet", help="use this long-format price file instead of downloading")
+    p.add_argument("--universe-csv", help="with --prices-parquet: universe file with sector / sub_industry")
     p.add_argument("--download-only", action="store_true", help="fetch and cache prices, then stop")
     a = p.parse_args()
     out = Path(a.out)
@@ -45,7 +46,8 @@ def main() -> None:
     if a.prices_parquet:
         prices = D.from_long(pd.read_parquet(a.prices_parquet))
         market = {k: prices.pop(k) for k in ("SPY", "QQQ", "^IRX") if k in prices}
-        universe = pd.DataFrame({"ticker": list(prices), "index": "file", "status": "current"})
+        universe = (pd.read_csv(a.universe_csv) if a.universe_csv else
+                    pd.DataFrame({"ticker": list(prices), "index": "file", "status": "current"}))
     else:
         universe, prices, market = D.load_all(a.cache, a.start, tuple(a.indexes.split(",")))
     if a.download_only:
@@ -58,7 +60,7 @@ def main() -> None:
     if a.signals and Path(a.signals).exists():
         sig = pd.read_parquet(a.signals)
     else:
-        sig = run(prices, market, workers=a.workers or None)
+        sig = run(prices, market, workers=a.workers or None, universe=universe)
         sig.to_parquet(Path(a.cache) / "signals.parquet", index=False)
     print(f"[research] {len(sig):,} signals ({time.time() - t0:.0f}s)")
 
@@ -94,31 +96,42 @@ def main() -> None:
     rules.to_csv(out / "ml_rules.csv", index=False)
     print(f"[research] ML done ({time.time() - t0:.0f}s)")
 
-    # ---------------- portfolio simulation, 2018 -> today
+    # ---------------- portfolio simulation, 2018 -> today (marked to market daily)
+    closes = pd.DataFrame({t: df["close"] for t, df in prices.items()}).astype("float32").ffill()
     port_rows, curves = [], {}
     cands = lb[(lb["IS_n"] >= 100) & (lb["entry"] != A.BASELINE)].drop_duplicates("entry").head(5)
     for r in cands.itertuples():
         s = sig[(sig["entry_name"] == r.entry)]
         s = s[A.FILTERS[r.filter](s)]
-        port_rows.append((f"{r.entry} / {r.filter} / {r.exit}", A.portfolio(s, r.exit, "rs_rank")))
+        port_rows.append((f"{r.entry} / {r.filter} / {r.exit}", A.portfolio(s, r.exit, "rs_rank", closes=closes)))
     pooled = d[d["prob"].notna()].copy()
     pooled["random_priority"] = np.random.default_rng(0).random(len(pooled))
     early = pooled[A.FILTERS["rs80_early"](pooled)]
     base = sig[sig["entry_name"] == A.BASELINE].copy()
     base["random_priority"] = np.random.default_rng(1).random(len(base))
     # which way of choosing among many same-day signals works? (run-1 lesson: ranking mattered)
+    P = lambda df, ex, pr: A.portfolio(df, ex, pr, closes=closes)
     port_rows += [
-        (f"All setups, ML-filtered (top third), ranked by ML / {ref_exit}", A.portfolio(pooled[pooled["take"]], ref_exit, "prob")),
-        (f"All setups, ranked by ML prediction / {ref_exit}", A.portfolio(pooled, ref_exit, "prob")),
-        (f"All setups, ranked by RS / {ref_exit}", A.portfolio(pooled, ref_exit, "rs_rank")),
-        (f"All setups, random order / {ref_exit}", A.portfolio(pooled, ref_exit, "random_priority")),
-        (f"All setups + rs80_early filter, ranked by RS / {ref_exit}", A.portfolio(early, ref_exit, "rs_rank")),
-        (f"BASELINE random entries, ranked by RS / {ref_exit}", A.portfolio(base, ref_exit, "rs_rank")),
-        (f"BASELINE random entries, random order / {ref_exit}", A.portfolio(base, ref_exit, "random_priority")),
+        (f"All setups, ML-filtered (top third), ranked by ML / {ref_exit}", P(pooled[pooled["take"]], ref_exit, "prob")),
+        (f"All setups, ranked by RS / {ref_exit}", P(pooled, ref_exit, "rs_rank")),
+        (f"All setups, random order / {ref_exit}", P(pooled, ref_exit, "random_priority")),
+        (f"All setups + rs80_early filter, ranked by RS / {ref_exit}", P(early, ref_exit, "rs_rank")),
+        (f"BASELINE random entries, ranked by RS / {ref_exit}", P(base, ref_exit, "rs_rank")),
+        (f"BASELINE random entries, random order / {ref_exit}", P(base, ref_exit, "random_priority")),
     ]
+    # setups chosen on IN-SAMPLE data only: beat random entries by >= 0.05R before 2018
+    is_n = lb[lb["filter"] == "all"].groupby("entry")["IS_n"].max()
+    for ex in dict.fromkeys([ref_exit, "sma50_close"]):
+        chosen = [e for e in vsb_is.index[vsb_is[ex] >= 0.05] if is_n.get(e, 0) >= 100]
+        pool = pooled[pooled["entry_name"].isin(chosen)]
+        if len(pool):
+            port_rows.append((f"IS-selected setups ({len(chosen)}), ranked by RS / {ex}", P(pool, ex, "rs_rank")))
+            port_rows.append((f"IS-selected setups, only when SPY > 200d / {ex}",
+                              P(pool[pool["mkt_above200"] == 1], ex, "rs_rank")))
+    port_rows.append(("All setups, ranked by RS / sma50_close", P(pooled, "sma50_close", "rs_rank")))
     spy = A.spy_stats(market["SPY"]) if "SPY" in market else {"CAGR": np.nan, "max_DD": np.nan}
     port = pd.DataFrame([{"strategy": k, **{m: v for m, v in res.items() if m != "curve"}} for k, res in port_rows])
-    port.loc[len(port)] = {"strategy": "SPY buy & hold", "CAGR": spy["CAGR"], "max_DD_realized": spy["max_DD"]}
+    port.loc[len(port)] = {"strategy": "SPY buy & hold", "CAGR": spy["CAGR"], "max_DD": spy["max_DD"]}
     port.to_csv(out / "portfolio.csv", index=False)
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
 
@@ -217,7 +230,8 @@ def main() -> None:
         "",
         md(port.drop(columns=["final_equity"], errors="ignore")),
         "",
-        "Equity is marked on closed trades only, so drawdowns are understated vs. daily mark-to-market.",
+        "max_DD is from equity marked to market every day (open positions at the close); max_DD_realized only "
+        "counts closed trades. Partial exits (trim plans) are approximated as held in full until the final exit.",
         "",
         "## Appendix: entries and exits",
         "",

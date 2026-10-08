@@ -14,6 +14,7 @@ from mlalgo.structure import ML_FEATURES, setup_score, structure_features
 
 EXIT_NAMES = list(engine.EXITS)
 EXIT_CODES = np.array([engine.EXITS[k][0] for k in EXIT_NAMES], dtype=np.int64)
+GROUP_COLS = ["industry_rs", "industry_rank", "sector_rs"]
 SIGNAL_EXTRAS = ["risk_pct", "risk_adr", "vol_ratio", "gap", "close_strength",
                  "prior_move", "flag_depth", "flag_days", "base_depth", "contraction"]
 MARKET_COLS = ["mkt_ok", "mkt_ema_stack", "mkt_ret_21", "mkt_above200", "qqq_ok", "qqq_ret_21",
@@ -23,6 +24,16 @@ MARKET_COLS = ["mkt_ok", "mkt_ema_stack", "mkt_ret_21", "mkt_above200", "qqq_ok"
 def _rs_composite(df: pd.DataFrame) -> pd.Series:
     c = df["close"]
     return 0.4 * (c / c.shift(63) - 1) + 0.3 * (c / c.shift(126) - 1) + 0.3 * (c / c.shift(252) - 1)
+
+
+def group_strength(rank: pd.DataFrame, groups: pd.Series, min_members: int = 3) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Median RS rank of each group (sector / sub-industry) per day, and the group's percentile
+    among groups. Groups with fewer than `min_members` stocks trading that day are left NaN."""
+    g = groups.reindex(rank.columns)
+    med = rank.T.groupby(g).median().T
+    cnt = rank.T.groupby(g).count().T
+    med = med.where(cnt >= min_members)
+    return med.astype("float32"), med.rank(axis=1, pct=True).astype("float32")
 
 
 def cross_section(prices: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.Series]:
@@ -51,7 +62,7 @@ def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series) -> pd.Data
 
 
 def process_ticker(args) -> pd.DataFrame | None:
-    ticker, df, rs_rank, max_days, cost, seed = args
+    ticker, df, rs_rank, grp, max_days, cost, seed = args
     b = bars(df)
     sig = all_signals(df, b, seed=seed)
     if sig.empty:
@@ -67,6 +78,8 @@ def process_ticker(args) -> pd.DataFrame | None:
     for col in SIGNAL_EXTRAS:
         out[col] = sig[col].to_numpy() if col in sig else np.nan
     out["rs_rank"] = rs_rank.reindex(df.index).to_numpy()[idx]
+    for col in GROUP_COLS:
+        out[col] = grp[col].reindex(df.index).to_numpy()[idx] if grp is not None and col in grp else np.nan
     out = pd.concat([out, feats[[c for c in ML_FEATURES + ["trend_template", "dollar_vol_50"] if c in feats]]], axis=1)
     dates = df.index.to_numpy()
     for j, name in enumerate(EXIT_NAMES):
@@ -80,10 +93,22 @@ def process_ticker(args) -> pd.DataFrame | None:
 
 
 def run(prices: dict[str, pd.DataFrame], market: dict[str, pd.DataFrame], max_days: int = 250,
-        cost: float = 0.001, workers: int | None = None) -> pd.DataFrame:
+        cost: float = 0.001, workers: int | None = None, universe: pd.DataFrame | None = None) -> pd.DataFrame:
     rank, breadth = cross_section(prices)
     mkt = market_frame(market, breadth)
-    tasks = [(t, df, rank[t], max_days, cost, i) for i, (t, df) in enumerate(prices.items())]
+    grp = {}
+    if universe is not None and "sub_industry" in universe:
+        u = universe.set_index("ticker")
+        ind_rs, ind_rank = group_strength(rank, u["sub_industry"].replace("nan", np.nan))
+        sec_rs, _ = group_strength(rank, u["sector"].replace("nan", np.nan))
+        for t in prices:
+            if t in u.index:
+                sub, sec = u.at[t, "sub_industry"], u.at[t, "sector"]
+                grp[t] = pd.DataFrame({
+                    "industry_rs": ind_rs[sub] if sub in ind_rs else np.nan,
+                    "industry_rank": ind_rank[sub] if sub in ind_rank else np.nan,
+                    "sector_rs": sec_rs[sec] if sec in sec_rs else np.nan}, index=rank.index)
+    tasks = [(t, df, rank[t], grp.get(t), max_days, cost, i) for i, (t, df) in enumerate(prices.items())]
     workers = workers or os.cpu_count() or 1
     frames = []
     if workers > 1:

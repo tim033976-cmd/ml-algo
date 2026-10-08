@@ -12,7 +12,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.tree import DecisionTreeRegressor
 
 from mlalgo.research.entries import ENTRIES
-from mlalgo.research.run import EXIT_NAMES, MARKET_COLS, SIGNAL_EXTRAS
+from mlalgo.research.run import EXIT_NAMES, GROUP_COLS, MARKET_COLS, SIGNAL_EXTRAS
 from mlalgo.structure import ML_FEATURES
 
 IS_END = pd.Timestamp("2018-01-01")
@@ -24,8 +24,12 @@ FILTERS = {
     "early_stage": lambda s: s["base_count"].between(1, 2).to_numpy(),
     "rs80_mkt": lambda s: ((s["rs_rank"] >= 0.8) & (s["mkt_ok"] == 1)).to_numpy(),
     "rs80_early": lambda s: ((s["rs_rank"] >= 0.8) & s["base_count"].between(1, 2)).to_numpy(),
+    # "hot theme": the stock's sub-industry is in the top 30% of sub-industries by median RS
+    "theme": lambda s: (s["industry_rank"] >= 0.7).to_numpy(),
+    "rs80_theme": lambda s: ((s["rs_rank"] >= 0.8) & (s["industry_rank"] >= 0.7)).to_numpy(),
+    "rs80_early_theme": lambda s: ((s["rs_rank"] >= 0.8) & s["base_count"].between(1, 2) & (s["industry_rank"] >= 0.7)).to_numpy(),
 }
-FEATURES = list(dict.fromkeys(ML_FEATURES + SIGNAL_EXTRAS + MARKET_COLS + ["rs_rank"]))
+FEATURES = list(dict.fromkeys(ML_FEATURES + SIGNAL_EXTRAS + MARKET_COLS + GROUP_COLS + ["rs_rank"]))
 
 
 def _stats(R: np.ndarray, ret: np.ndarray, years: float) -> dict:
@@ -67,6 +71,7 @@ def leaderboard(sig: pd.DataFrame) -> pd.DataFrame:
 def selection_check(lb: pd.DataFrame, min_is: int = 100, min_oos: int = 50) -> dict:
     v = lb[(lb["IS_n"] >= min_is) & (lb["OOS_n"] >= min_oos) & (lb["entry"] != BASELINE)]
     top = v.nlargest(20, "IS_t")
+    top_avg = v[v["IS_n"] >= 200].nlargest(20, "IS_avgR")
     base = lb[lb["entry"] == BASELINE]
     return {
         "strategies_tested": int(len(lb)),
@@ -75,6 +80,7 @@ def selection_check(lb: pd.DataFrame, min_is: int = 100, min_oos: int = 50) -> d
         "rank_corr_IS_vs_OOS_t": float(v["IS_t"].corr(v["OOS_t"], method="spearman")),
         "OOS_avgR_all_strategies": float(v["OOS_avgR"].mean()),
         "OOS_avgR_top20_by_IS": float(top["OOS_avgR"].mean()),
+        "OOS_avgR_top20_by_IS_avgR": float(top_avg["OOS_avgR"].mean()),
         "OOS_avgR_random_baseline": float(base["OOS_avgR"].mean()),
         "share_top20_positive_OOS": float((top["OOS_avgR"] > 0).mean()),
     }
@@ -218,24 +224,30 @@ def rule_tree(d: pd.DataFrame, cols: list[str], exit_name: str, depth: int = 3) 
 
 # ------------------------------------------------------------------ portfolio simulation
 def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END, capital=100_000.0,
-              risk=0.01, max_pos=10, pos_cap=0.20) -> dict:
+              risk=0.01, max_pos=10, pos_cap=0.20, closes: pd.DataFrame | None = None) -> dict:
     """Fixed-fractional sizing (1% equity at risk per trade), max 10 positions, no leverage.
-    Equity is marked at realized P&L (closed trades), so intra-trade drawdowns are understated."""
+    With `closes` (dates x tickers), open positions are marked to market every day, so the
+    drawdown is honest; without it equity only moves when trades close (run 1-3 reports)."""
     t = trades[trades["date"] >= start].copy()
     t["exit_date"] = t[f"exit_{exit_name}"]
     t["ret"] = t[f"ret_{exit_name}"].astype(float)
     t = t.sort_values(["date", priority], ascending=[True, False])
     by_day = {d: g for d, g in t.groupby("date", sort=True)}
-    days = sorted(set(t["date"]) | set(t["exit_date"]))
-    cash, equity = capital, capital
-    open_pos: list[tuple] = []
+    if closes is not None:
+        days = list(closes.index[closes.index >= start])
+        px = closes
+    else:
+        days = sorted(set(t["date"]) | set(t["exit_date"]))
+        px = None
+    cash, realized = capital, capital
+    open_pos: list[tuple] = []          # (exit_date, alloc, ret, ticker, entry_price)
     curve, taken = [], []
     for day in days:
         still = []
         for pos in open_pos:
             if pos[0] <= day:
                 cash += pos[1] * (1 + pos[2])
-                equity += pos[1] * pos[2]
+                realized += pos[1] * pos[2]
                 taken.append(pos[2])
             else:
                 still.append(pos)
@@ -248,18 +260,26 @@ def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END,
                     break
                 if r.ticker in held or r.exit_date <= day:
                     continue
-                alloc = min(equity * risk / max(r.risk_pct, 1e-4), equity * pos_cap, cash)
-                if alloc < equity * 0.02:
+                alloc = min(realized * risk / max(r.risk_pct, 1e-4), realized * pos_cap, cash)
+                if alloc < realized * 0.02:
                     continue
                 cash -= alloc
-                open_pos.append((r.exit_date, alloc, r.ret, r.ticker))
+                open_pos.append((r.exit_date, alloc, r.ret, r.ticker, r.entry))
                 held.add(r.ticker)
-        curve.append((day, equity, len(open_pos)))
-    eq = pd.DataFrame(curve, columns=["date", "equity", "positions"]).set_index("date")
+        if px is not None:
+            mtm = cash
+            for pos in open_pos:
+                c = px.at[day, pos[3]] if pos[3] in px.columns else np.nan
+                mtm += pos[1] * (c / pos[4]) if c == c else pos[1]
+        else:
+            mtm = realized
+        curve.append((day, realized, mtm, len(open_pos)))
+    eq = pd.DataFrame(curve, columns=["date", "realized", "equity", "positions"]).set_index("date")
     years = (eq.index[-1] - eq.index[0]).days / 365.25
-    dd = (eq["equity"] / eq["equity"].cummax() - 1).min()
+    dd = lambda x: (x / x.cummax() - 1).min()
     taken = np.array(taken)
-    return {"CAGR": (eq["equity"].iloc[-1] / capital) ** (1 / years) - 1, "max_DD_realized": dd,
+    return {"CAGR": (eq["equity"].iloc[-1] / capital) ** (1 / years) - 1,
+            "max_DD": dd(eq["equity"]), "max_DD_realized": dd(eq["realized"]),
             "trades": len(taken), "win": (taken > 0).mean() if len(taken) else np.nan,
             "avg_positions": eq["positions"].mean(), "final_equity": eq["equity"].iloc[-1], "curve": eq["equity"]}
 
