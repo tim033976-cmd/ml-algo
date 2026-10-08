@@ -65,18 +65,31 @@ def findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port) -> tuple[li
 
     # 5. ML
     auc = mlr["auc_oos"]
+    rc_ml = mlr.get("rank_corr_oos", np.nan)
     dec = mlr["deciles"]["avgR"]
     mono = pd.Series(dec.values).corr(pd.Series(range(len(dec))), method="spearman")
     gap = mlr["taken"]["avgR"] - mlr["skipped"]["avgR"]
-    useful = auc >= 0.53 and mono >= 0.6 and gap > 0.05
-    f.append(f"ML filter {'adds value' if useful else 'adds little'}: OOS AUC {auc:.3f}, decile monotonicity {mono:.2f}, "
+    useful = mono >= 0.6 and gap > 0.05
+    f.append(f"ML filter {'adds value' if useful else 'adds little'}: OOS rank corr {rc_ml:.3f}, AUC {auc:.3f}, decile monotonicity {mono:.2f}, "
              f"taken {mlr['taken']['avgR']:+.3f}R vs skipped {mlr['skipped']['avgR']:+.3f}R.")
     top_feats = list(imp["feature"].head(5))
     f.append("Features the model relies on most: " + ", ".join(top_feats) + ".")
     nxt.append(f"Inspect {top_feats[0]} and {top_feats[1]}: plot avgR by bucket and consider a hard rule.")
     if not useful:
         nxt.append("ML is weak here: prefer simple rules, or add new information (fundamentals, sector/theme, earnings dates).")
-    key.update(ml_auc=auc, ml_monotonic=mono, ml_gap=gap, top_features=top_feats)
+    key.update(ml_auc=auc, ml_rank_corr=rc_ml, ml_monotonic=mono, ml_gap=gap, top_features=top_feats)
+
+    # 5b. is the edge in the filter itself? (random entries inside the filter)
+    base = lb[lb["entry"] == BASELINE]
+    bf = base.groupby("filter")[["IS_avgR", "OOS_avgR"]].mean()
+    if "all" in bf.index:
+        lift = bf.sub(bf.loc["all"]).drop("all")
+        strong = lift[(lift["IS_avgR"] > 0.03) & (lift["OOS_avgR"] > 0.03)]
+        if len(strong):
+            f.append("Filters that improve even RANDOM entries in both periods (the stock selection itself is the edge): "
+                     + ", ".join(f"{k} (IS {r.IS_avgR:+.2f}R, OOS {r.OOS_avgR:+.2f}R)" for k, r in strong.iterrows()) + ".")
+            nxt.append(f"Build the scan around {strong['OOS_avgR'].idxmax()} first; entries are the second layer.")
+        key["filters_lifting_baseline"] = list(strong.index)
 
     # 6. rules that held up
     overall = rules["OOS_avgR"].mean()

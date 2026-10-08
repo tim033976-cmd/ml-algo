@@ -5,7 +5,8 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingClassifier
+from scipy.stats import spearmanr
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import roc_auc_score
 from sklearn.tree import DecisionTreeRegressor
@@ -102,9 +103,22 @@ def exit_summary(lb: pd.DataFrame) -> pd.DataFrame:
 
 
 # ------------------------------------------------------------------ ML meta-labeling
+# Run 1 lesson: a classifier on "R > 0" learned that wider stops win more often (higher win rate,
+# same avg R). The model now predicts R itself (clipped so one 30R outlier can't dominate).
+R_CLIP = (-2.0, 8.0)
+
+
 def _model():
-    return HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, max_leaf_nodes=31,
-                                          min_samples_leaf=200, l2_regularization=1.0, random_state=0)
+    return HistGradientBoostingRegressor(max_iter=300, learning_rate=0.05, max_leaf_nodes=31,
+                                         min_samples_leaf=300, l2_regularization=1.0, random_state=0)
+
+
+def _target(d, exit_name):
+    return d[f"R_{exit_name}"].clip(*R_CLIP).to_numpy()
+
+
+def _rank_corr(estimator, X, y):
+    return spearmanr(estimator.predict(X), y).statistic
 
 
 def ml_dataset(sig: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
@@ -122,7 +136,7 @@ def ml_dataset(sig: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
 
 def ml_walk_forward(sig: pd.DataFrame, exit_name: str, max_train: int = 250_000):
     d, cols = ml_dataset(sig)
-    y = (d[f"R_{exit_name}"] > 0).to_numpy()
+    y = _target(d, exit_name)
     years = sorted(d["date"].dt.year.unique())
     prob = pd.Series(np.nan, index=d.index)
     take = pd.Series(False, index=d.index)
@@ -136,8 +150,8 @@ def ml_walk_forward(sig: pd.DataFrame, exit_name: str, max_train: int = 250_000)
         if len(tr) > max_train:
             tr = rng.choice(tr, max_train, replace=False)
         m = _model().fit(d.iloc[tr][cols], y[tr])
-        thr = np.quantile(m.predict_proba(d.iloc[tr][cols])[:, 1], 2 / 3)  # causal top-third cut
-        p = m.predict_proba(d.iloc[te][cols])[:, 1]
+        thr = np.quantile(m.predict(d.iloc[tr][cols]), 2 / 3)  # causal top-third cut
+        p = m.predict(d.iloc[te][cols])
         prob.iloc[te], take.iloc[te] = p, p >= thr
     d["prob"], d["take"] = prob, take
     return d, cols
@@ -152,7 +166,8 @@ def ml_report(d: pd.DataFrame, exit_name: str) -> dict:
         "n_all": len(g), "avgR_all": g[f"R_{exit_name}"].mean(),
         "n_taken": int(g["take"].sum()), "avgR_taken": g.loc[g["take"], f"R_{exit_name}"].mean(),
         "avgR_skipped": g.loc[~g["take"], f"R_{exit_name}"].mean()}), include_groups=False)
-    return {"auc_oos": roc_auc_score(R > 0, o["prob"]), "deciles": deciles,
+    return {"auc_oos": roc_auc_score(R > 0, o["prob"]), "rank_corr_oos": spearmanr(o["prob"], R).statistic,
+            "deciles": deciles,
             "per_entry": per_entry.sort_values("avgR_taken", ascending=False),
             "taken": {"n": int(o["take"].sum()), "avgR": R[o["take"]].mean(), "win": (R[o["take"]] > 0).mean()},
             "skipped": {"n": int((~o["take"]).sum()), "avgR": R[~o["take"]].mean(), "win": (R[~o["take"]] > 0).mean()}}
@@ -163,9 +178,9 @@ def ml_importance(d: pd.DataFrame, cols: list[str], exit_name: str, n_eval: int 
     tr = d[is_m].sample(min(250_000, int(is_m.sum())), random_state=0)
     te = d[d["date"] >= IS_END]
     te = te.sample(min(n_eval, len(te)), random_state=0)
-    m = _model().fit(tr[cols], tr[f"R_{exit_name}"] > 0)
-    pi = permutation_importance(m, te[cols], te[f"R_{exit_name}"] > 0, scoring="roc_auc", n_repeats=3, random_state=0)
-    return pd.DataFrame({"feature": cols, "auc_drop": pi.importances_mean}).sort_values("auc_drop", ascending=False)
+    m = _model().fit(tr[cols], _target(tr, exit_name))
+    pi = permutation_importance(m, te[cols], _target(te, exit_name), scoring=_rank_corr, n_repeats=3, random_state=0)
+    return pd.DataFrame({"feature": cols, "rank_corr_drop": pi.importances_mean}).sort_values("rank_corr_drop", ascending=False)
 
 
 def rule_tree(d: pd.DataFrame, cols: list[str], exit_name: str, depth: int = 3) -> pd.DataFrame:

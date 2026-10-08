@@ -28,3 +28,9 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - `mlalgo/research/insights.py` findings / next steps / history
 - `scan.py`, `strategy.py` user-facing daily scan and playbook backtest
 - Tests: `python -m pytest -q`
+
+## Known findings (update as runs come in; details in results/LOG.md)
+- Episodic pivots (gap >= 8-10% on 3x volume) are the most consistent edge vs random entries.
+- Stock selection matters as much as the entry: rs80_early (RS top 20% + 1st/2nd staircase) lifts even random entries.
+- SPY-above-EMAs market filter adds nothing. Exit on a close below the 50 SMA is the most robust.
+- ML must predict R (not win/loss); a win/loss classifier just learns stop width.

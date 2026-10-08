@@ -82,6 +82,10 @@ def main() -> None:
     ref_exit = exs["IS_avgR"].idxmax()
     d, cols = A.ml_walk_forward(sig, ref_exit)
     mlr = A.ml_report(d, ref_exit)
+    ml_alt = {}
+    if ref_exit != "trim_ema":  # also score the user's own exit plan
+        d2, _ = A.ml_walk_forward(sig, "trim_ema")
+        ml_alt["trim_ema"] = A.ml_report(d2, "trim_ema")
     imp = A.ml_importance(d, cols, ref_exit)
     rules = A.rule_tree(d, cols, ref_exit)
     mlr["deciles"].to_csv(out / "ml_deciles.csv")
@@ -97,11 +101,21 @@ def main() -> None:
         s = sig[(sig["entry_name"] == r.entry)]
         s = s[A.FILTERS[r.filter](s)]
         port_rows.append((f"{r.entry} / {r.filter} / {r.exit}", A.portfolio(s, r.exit, "rs_rank")))
-    pooled = d[d["prob"].notna()]
-    port_rows.append((f"ML-selected, all setups / {ref_exit}", A.portfolio(pooled[pooled["take"]], ref_exit, "prob")))
-    port_rows.append((f"All setups, no ML / {ref_exit}", A.portfolio(pooled, ref_exit, "rs_rank")))
-    base = sig[sig["entry_name"] == A.BASELINE]
-    port_rows.append((f"BASELINE random entries / {ref_exit}", A.portfolio(base, ref_exit, "rs_rank")))
+    pooled = d[d["prob"].notna()].copy()
+    pooled["random_priority"] = np.random.default_rng(0).random(len(pooled))
+    early = pooled[A.FILTERS["rs80_early"](pooled)]
+    base = sig[sig["entry_name"] == A.BASELINE].copy()
+    base["random_priority"] = np.random.default_rng(1).random(len(base))
+    # which way of choosing among many same-day signals works? (run-1 lesson: ranking mattered)
+    port_rows += [
+        (f"All setups, ML-filtered (top third), ranked by ML / {ref_exit}", A.portfolio(pooled[pooled["take"]], ref_exit, "prob")),
+        (f"All setups, ranked by ML prediction / {ref_exit}", A.portfolio(pooled, ref_exit, "prob")),
+        (f"All setups, ranked by RS / {ref_exit}", A.portfolio(pooled, ref_exit, "rs_rank")),
+        (f"All setups, random order / {ref_exit}", A.portfolio(pooled, ref_exit, "random_priority")),
+        (f"All setups + rs80_early filter, ranked by RS / {ref_exit}", A.portfolio(early, ref_exit, "rs_rank")),
+        (f"BASELINE random entries, ranked by RS / {ref_exit}", A.portfolio(base, ref_exit, "rs_rank")),
+        (f"BASELINE random entries, random order / {ref_exit}", A.portfolio(base, ref_exit, "random_priority")),
+    ]
     spy = A.spy_stats(market["SPY"]) if "SPY" in market else {"CAGR": np.nan, "max_DD": np.nan}
     port = pd.DataFrame([{"strategy": k, **{m: v for m, v in res.items() if m != "curve"}} for k, res in port_rows])
     port.loc[len(port)] = {"strategy": "SPY buy & hold", "CAGR": spy["CAGR"], "max_DD_realized": spy["max_DD"]}
@@ -175,7 +189,8 @@ def main() -> None:
         "",
         f"## 8. ML meta-labeling (exit: {ref_exit}, chosen in-sample; walk-forward, yearly retrain)",
         "",
-        f"Out-of-sample AUC: {mlr['auc_oos']:.3f} (0.5 = no skill). "
+        f"The model predicts R (clipped {A.R_CLIP}). Out-of-sample rank correlation with realized R: {mlr['rank_corr_oos']:.3f}; "
+        f"AUC for R > 0: {mlr['auc_oos']:.3f} (0.5 = no skill). "
         f"Taken (model's top third, causal threshold): n={mlr['taken']['n']:,}, avgR={mlr['taken']['avgR']:.3f}, win={mlr['taken']['win']:.3f}. "
         f"Skipped: n={mlr['skipped']['n']:,}, avgR={mlr['skipped']['avgR']:.3f}, win={mlr['skipped']['win']:.3f}.",
         "",
@@ -187,7 +202,10 @@ def main() -> None:
         "",
         md(mlr["per_entry"], index=True),
         "",
-        "What the model relies on (permutation importance, OOS AUC drop):",
+        *([f"Same model on your trim plan (trim_ema): rank corr {v['rank_corr_oos']:.3f}, taken avgR {v['taken']['avgR']:.3f} "
+           f"vs skipped {v['skipped']['avgR']:.3f}." for v in ml_alt.values()]),
+        "",
+        "What the model relies on (permutation importance: drop in OOS rank correlation when a feature is shuffled):",
         "",
         md(imp.head(20), floatfmt=".4f"),
         "",

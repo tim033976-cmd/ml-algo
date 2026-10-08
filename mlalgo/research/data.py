@@ -38,6 +38,29 @@ def _flatten(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+_TICKER = r"^[A-Z][A-Z.\-]{0,6}$"
+
+
+def _removed_from_changes(tables: list[pd.DataFrame]) -> list[str]:
+    """Find the 'Removed' ticker column of the S&P 500 changes table, whatever its header layout
+    (multi-row header, 'Removed', 'Removed Ticker', 'Removed.1', ...)."""
+    best, best_score = None, 0.0
+    for t in tables:
+        for col in t.columns:
+            if "removed" not in str(col).lower():
+                continue
+            vals = t[col].dropna().astype(str).str.strip()
+            vals = vals[~vals.str.lower().isin(["ticker", "symbol", "nan", ""])]
+            if len(vals) < 20:
+                continue
+            score = vals.str.match(_TICKER).mean()
+            if score > best_score:
+                best, best_score = vals[vals.str.match(_TICKER)], score
+    if best is None or best_score < 0.5:
+        return []
+    return list(dict.fromkeys(_yahoo_symbol(v) for v in best))
+
+
 def index_members(name: str) -> tuple[list[str], list[str]]:
     """(current members, removed members). Removed members only for the S&P 500 changes table."""
     current, removed = [], []
@@ -49,11 +72,7 @@ def index_members(name: str) -> tuple[list[str], list[str]]:
                 current = [_yahoo_symbol(s) for s in t[col].dropna()]
                 break
         if name == "sp500":
-            for t in tables:
-                rcol = next((c for c in t.columns if c.startswith("Removed") and ("Ticker" in c or "Symbol" in c)), None)
-                if rcol is not None:
-                    removed = [_yahoo_symbol(s) for s in t[rcol].dropna() if str(s).strip() and str(s) != "nan"]
-                    break
+            removed = _removed_from_changes(tables)
     except Exception as e:  # network / layout change
         print(f"[universe] {name}: wikipedia failed ({e})")
     if not current and name == "sp500":

@@ -12,6 +12,9 @@ from mlalgo.indicators import ema
 from mlalgo.research import engine
 
 
+np.seterr(divide="ignore", invalid="ignore")  # zero-volume days produce inf/nan ratios; cleaned below
+
+
 def bars(df: pd.DataFrame) -> dict[str, np.ndarray]:
     o, h, l, c, v = (df[k] for k in ("open", "high", "low", "close", "volume"))
     prev = c.shift()
@@ -109,12 +112,14 @@ def flag(b, min_move, run_window=60, max_flag=40, early=False):
     return _frame(t, b["l"][t], prior_move=move, flag_depth=depth, flag_days=days)
 
 
-def episodic_pivot(b, gap, neglected=False):
+def episodic_pivot(b, gap, neglected=False, vol_mult=3.0, hold=False):
     """Episodic pivot / gap-and-go: gap up >= gap on >= 3x volume, closing in the upper half.
     neglected=True: stock hadn't already run (<= +20% over the prior 6 months)."""
     c_prev = _shift(b["c"], 1)
     g = b["o"] / c_prev - 1
-    sig = (g >= gap) & (b["v"] >= 3 * b["vol50prev"]) & (_strength(b) >= 0.5)
+    sig = (g >= gap) & (b["v"] >= vol_mult * b["vol50prev"]) & (_strength(b) >= 0.5)
+    if hold:  # closed above the open: buyers held the gap all day
+        sig &= b["c"] > b["o"]
     if neglected:
         sig &= (c_prev / _shift(b["c"], 127) - 1) <= 0.2
     t = np.flatnonzero(sig)
@@ -178,6 +183,10 @@ ENTRIES = {
     "ep_gap5": (episodic_pivot, {"gap": 0.05}, False, "Gap up >= 5% on 3x volume"),
     "ep_gap10": (episodic_pivot, {"gap": 0.10}, False, "Episodic pivot: gap >= 10% on 3x volume"),
     "ep_gap8_neglected": (episodic_pivot, {"gap": 0.08, "neglected": True}, False, "Episodic pivot from neglect (Qullamaggie)"),
+    "ep_gap15": (episodic_pivot, {"gap": 0.15}, False, "Episodic pivot: gap >= 15% on 3x volume"),
+    "ep_gap10_vol2": (episodic_pivot, {"gap": 0.10, "vol_mult": 2.0}, False, "EP variant: gap >= 10% on only 2x volume"),
+    "ep_gap10_vol5": (episodic_pivot, {"gap": 0.10, "vol_mult": 5.0}, False, "EP variant: gap >= 10% on 5x volume"),
+    "ep_gap8_hold": (episodic_pivot, {"gap": 0.08, "hold": True}, False, "EP variant: gap >= 8%, closes above the open"),
     "pocket_pivot": (pocket_pivot, {}, False, "Morales & Kacher pocket pivot"),
     "stage2": (stage2, {}, False, "Weinstein stage 2 breakout"),
     "ema_retest": (_playbook(playbook.retests), {}, True, "8/21 EMA cross -> break -> retest (your playbook)"),
@@ -218,6 +227,7 @@ def all_signals(df: pd.DataFrame, b: dict, cooldown: int = 10, max_risk: float =
     s["vol_ratio"] = b["v"][t] / b["vol50prev"][t]
     s["gap"] = b["o"][t] / b["c"][t - 1] - 1
     s["close_strength"] = _strength(b)[t]
+    s = s.replace([np.inf, -np.inf], np.nan)
     ok = ((s["risk_pct"] > 0) & (s["risk_pct"] <= max_risk) & (c >= min_price)
           & (c * b["vol50"][t] >= min_dollar_vol))
     return s[ok.to_numpy()].reset_index(drop=True)
