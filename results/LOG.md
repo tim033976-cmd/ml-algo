@@ -1,5 +1,11 @@
 # Research log (newest first)
 
+## Run 10 — 2026-10-08 (commit 54a58fb): idle cash in SPY, bigger risk
+- **Top 10 by IS expectancy, 1% risk, idle cash in SPY:** 15.2% CAGR, −34% max DD. SPY: 14.6% / −34%. That is essentially SPY plus a little: it beat SPY in 2019, 2020, 2022 (−8% vs −18%) and 2026, and lagged in 2024 (+16 vs +25) and 2025 (−12 vs +18).
+- **2% risk is worse:** 13%, −39%. With 2% risk most positions hit the 20% size cap and cash runs out at ~5 positions, so 10 vs 15 slots made no difference (identical results). More risk per trade doesn't add return here, only drawdown.
+- **Without idle cash:** the top 20 by IS expectancy is still the best risk-adjusted (13.8%, −26%).
+- **Conclusion:** the mechanical setups give SPY-like returns with different timing. Beating SPY decisively needs something the setups alone don't provide (stock selection / sizing), which is what run 11 tests.
+
 ## Run 11 — planned 2026-10-08: "how do top traders consistently beat the S&P?"
 Six runs show our setups have a real per-trade edge, but as portfolios they roughly match SPY with lumpy years (2023-24). What pros do that we haven't modelled:
 1. **They hunt for future superperformers, not setups.** O'Neil and Minervini studied hundreds of big winners to see what they looked like *before* the move. New: a model trained on every stock every 10 days (~600k rows) to predict a >= 40% gain within 3 months. Walk-forward by year; rows only train once their 3-month label window has closed. Reports lift over the base rate, permutation importance, a profile of future winners vs everything else, readable rules, and whether setups in high-score stocks pay more. Portfolios are ranked by this score.
