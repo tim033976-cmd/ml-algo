@@ -25,7 +25,7 @@ def md(df: pd.DataFrame, floatfmt=".2f", index=False) -> str:
     return df.to_markdown(index=index, floatfmt=floatfmt)
 
 
-def _menu_section(menu, menu_ports, menu_choice, regime, skipped, md):
+def _menu_section(menu, menu_ports, menu_choice, regime, regime_pit, gates, md):
     """Section 13 (run 17): which bracket, and which market regimes, for the goal model's top picks."""
     piv = lambda d, v: d.pivot_table(index="bracket", columns="period", values=v, sort=False)
     top = menu[menu["tier"] == "top 10%"]
@@ -36,7 +36,7 @@ def _menu_section(menu, menu_ports, menu_choice, regime, skipped, md):
     oos_r = menu[menu["period"] == "OOS"].pivot_table(index="bracket", columns="tier", values="avg_net_return", sort=False)
     port = menu_ports.set_index("bracket").drop(columns="key") if menu_ports is not None and len(menu_ports) else None
     return [
-        "## 13. Bracket menu and market regime for the +20/-10 model's picks (run 17)",
+        "## 13. Bracket menu and market regime for the +20/-10 model's picks (runs 17-18)",
         "",
         "Every stock every 10 days, entry at the close, 63-day limit, 0.1% costs per side. Stocks ranked by the "
         "+20/-10 goal model (walk-forward, so pre-2018 scores are also out-of-sample for their year). Top 10% = top "
@@ -62,8 +62,16 @@ def _menu_section(menu, menu_ports, menu_choice, regime, skipped, md):
         "",
         md(regime.reset_index(), floatfmt=".3f"),
         "",
-        f"Regime gate (section 9, REGIME row) skips buckets that were below break-even in-sample (hit < 33% or "
-        f"negative return): {skipped or 'none'}.",
+        *(["Same, S&P 500 stocks only after they joined the index (point-in-time survivorship check):", "",
+           md(regime_pit.reset_index(), floatfmt=".3f"), ""] if regime_pit is not None and len(regime_pit) else []),
+        "Regime gates, one family at a time: skip the buckets of that family that were below break-even in-sample "
+        "(hit < 33% or negative return), then trade the model's top 10% with +20/-10. Portfolio 2018+:",
+        "",
+        md(pd.DataFrame([{"gate": f, "skipped (chosen IS)": ", ".join(map(str, sk)) or "nothing",
+                          "CAGR": a["CAGR"] if a else np.nan, "max_DD": a["max_DD"] if a else np.nan,
+                          "trades": a["trades"] if a else np.nan,
+                          "PIT CAGR": p["CAGR"] if p else np.nan, "PIT max_DD": p["max_DD"] if p else np.nan}
+                         for f, sk, a, p in gates]), floatfmt=".3f") if gates else "",
         "",
     ]
 
@@ -152,7 +160,8 @@ def main() -> None:
     # ---------------- superperformer model: learn what future big winners look like beforehand
     sup = sup_clean = None
     short, goal_ext, short_imp = {}, {}, None
-    menu = regime = menu_choice = menu_ports = regime_skipped = None
+    menu = regime = regime_pit = menu_choice = menu_ports = regime_skipped = None
+    regime_gates = []
     if len(sample):
         sample, (sig,) = A.super_walk_forward(sample, [sig])
         sup = A.super_report(sample)
@@ -218,6 +227,7 @@ def main() -> None:
                            if len(is_top) else {"return per month": "n/a (no IS scores)", "return per trade": "n/a"})
             regime = A.regime_report(sample, score_col)
             regime.to_csv(out / "regime_top10.csv")
+            regime_pit = A.regime_report(sample, score_col, keep=pit) if pit else None
         print(f"[research] bracket menu + regime done ({time.time() - t0:.0f}s)")
 
     # ---------------- portfolio simulation, 2018 -> today (marked to market daily)
@@ -317,10 +327,25 @@ def main() -> None:
                     port_rows.append((f"MENU top 10% model / +{up:.0%} -{dn:.0%}" + (f" (IS best {tag})" if tag else ""), res))
             menu_ports = pd.DataFrame(menu_ports)
             menu_ports.to_csv(out / "bracket_menu_portfolio.csv", index=False)
-            gated, regime_skipped = A.regime_gate(sample, score_col, regime)
-            if (gated["date"] >= A.IS_END).sum() >= 50:
-                port_rows.append((f"REGIME top 10% model, skipping {len(regime_skipped)} IS-below-break-even regimes / +20% -10%",
-                                  A.portfolio(A.menu_trades(gated, "m20_10", 0.10, score_col, cal, q=0), "bracket", "priority", closes=closes)))
+            # run 18: one regime family at a time (run 17's combined gate skipped nearly everything);
+            # within a family, skip the buckets that were below break-even in-sample
+            fams = list(dict.fromkeys(regime.index.get_level_values(0)))
+            for fam in fams:
+                gated, skipped = A.regime_gate(sample, score_col, regime[regime.index.get_level_values(0) == fam])
+                if not skipped or (gated["date"] >= A.IS_END).sum() < 50:
+                    regime_gates.append((fam, [b for _, b in skipped], None, None))
+                    continue
+                tr = A.menu_trades(gated, "m20_10", 0.10, score_col, cal, q=0)
+                full = A.portfolio(tr, "bracket", "priority", closes=closes)
+                pt = A.portfolio(tr[pit(tr).to_numpy()], "bracket", "priority", closes=closes) if pit else None
+                regime_gates.append((fam, [b for _, b in skipped], full, pt))
+                port_rows.append((f"REGIME {fam}: skip {[b for _, b in skipped]} / +20% -10%", full))
+                if pt is not None:
+                    port_rows.append((f"REGIME {fam}, S&P 500 point-in-time only / +20% -10%", pt))
+            if pit:
+                base_tr = A.menu_trades(sample, "m20_10", 0.10, score_col, cal)
+                regime_gates.append(("(no gate)", [], A.portfolio(base_tr, "bracket", "priority", closes=closes),
+                                     A.portfolio(base_tr[pit(base_tr).to_numpy()], "bracket", "priority", closes=closes)))
         # ---- Qullamaggie replication: his scan, his setups (flag breakouts via buy-stop, EPs),
         #      his exits, and his Nasdaq-trend exposure rule
         qull_entries = ["qull_breakout", "qull_breakout_60", "ep_gap10", "ep_gap8_hold"]
@@ -383,7 +408,10 @@ def main() -> None:
                          f"{r['return_per_month']:+.2%} per month held, vs +20/-10: hit {b['hit_target']:.1%}, "
                          f"{b['avg_net_return']:+.2%}, {b['return_per_month']:+.2%}/month.")
             key["menu_choice"], key["menu_choice_oos_ret"] = r["bracket"], float(r["avg_net_return"])
-        found.append(f"Regime gate skipped (chosen in-sample): {regime_skipped or 'none'}.")
+        for f, sk, a, p in regime_gates:
+            if a:
+                found.append(f"Regime gate {f} (skip {', '.join(map(str, sk)) or 'nothing'}): {a['CAGR']:.1%} CAGR, "
+                             f"{a['max_DD']:.0%} DD" + (f"; point-in-time S&P 500 {p['CAGR']:.1%}, {p['max_DD']:.0%}" if p else "") + ".")
     hist = append_history(out / "history.csv", key, len(prices), len(sig))
     (out / "insights.json").write_text(json.dumps({"findings": found, "next_steps": nxt, "key": key}, indent=2, default=str))
 
@@ -543,7 +571,7 @@ def main() -> None:
             "",
             *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
         ] if short else []),
-        *(_menu_section(menu, menu_ports, menu_choice, regime, regime_skipped, md) if menu is not None else []),
+        *(_menu_section(menu, menu_ports, menu_choice, regime, regime_pit, regime_gates, md) if menu is not None else []),
         "## 11. Qullamaggie replication (per trade, out-of-sample 2018+; IS in brackets)",
         "",
         "Scan = top 3% performer over 1, 3 or 6 months with ADR >= 4%. Regime = QQQ above its 10- and 20-day SMAs. "

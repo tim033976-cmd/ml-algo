@@ -613,10 +613,13 @@ def regime_splits(d: pd.DataFrame, ref: pd.DataFrame) -> dict[str, pd.Series]:
     return out
 
 
-def regime_report(sample: pd.DataFrame, col: str, key: str = "b20", q: float = 0.9) -> pd.DataFrame:
+def regime_report(sample: pd.DataFrame, col: str, key: str = "b20", q: float = 0.9, keep=None) -> pd.DataFrame:
     """For the model's top 10% (+20/-10 by default): hit rate and net return by market regime,
-    in-sample and out-of-sample side by side."""
+    in-sample and out-of-sample side by side. `keep(df)` restricts rows after the top-10% cut
+    (e.g. point-in-time S&P 500 members)."""
     o = _top(sample[sample[col].notna() & sample[f"{key}_ret"].notna()], col, q)
+    if keep is not None:
+        o = o[keep(o).to_numpy()]
     ref = sample[sample["date"] < IS_END]
     hit = f"{key}_hit" if f"{key}_hit" in o else None
     rows = []
