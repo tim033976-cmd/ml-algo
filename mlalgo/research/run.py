@@ -78,6 +78,11 @@ def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series) -> pd.Data
 SUPER_HORIZON, SUPER_GAIN, SAMPLE_EVERY = 63, 0.40, 10
 BRACKETS = {"b10": 0.10, "b20": 0.20}   # user goal: +10% / +20% before -10% (run 13)
 BRACKET_STOP = 0.10
+# run 17: the bracket menu. Hit rate is mostly set by where the target and stop sit; which
+# bracket gives the best return per month of capital, and the best portfolio?
+MENU_TARGETS = (0.05, 0.10, 0.15, 0.20, 0.30)
+MENU_STOPS = (0.05, 0.08, 0.10, 0.15)
+MENU = {f"m{int(round(u * 100))}_{int(round(d * 100))}": (u, d) for u in MENU_TARGETS for d in MENU_STOPS}
 
 
 def bracket_outcome(o, h, l, c, idx, up, dn, horizon, cost=0.001):
@@ -142,10 +147,17 @@ def superperformer_sample(ticker, df, feats_all, rs_rank, grp, warmup=252) -> pd
         out[f"{name}_hit"] = (hit == 1).astype("float32")
         out[f"{name}_ret"] = bret
         out[f"{name}_exit"] = df.index[bxi]
+    menu = {}
+    for name, (up, dn) in MENU.items():
+        _, mret, mxi = bracket_outcome(o, h, l, c, idx, up, dn, SUPER_HORIZON)
+        menu[f"{name}_ret"] = mret
+        menu[f"{name}_days"] = (mxi - idx).astype("int16")
+    out = pd.concat([out, pd.DataFrame(menu)], axis=1)
     out["fwd_ret_63"] = fwd_ret[idx]
     out["label_end"] = df.index[np.minimum(idx + SUPER_HORIZON, n - 1)]
     unknown = idx + SUPER_HORIZON > n - 1
-    out.loc[unknown, ["fwd_max_gain", "fwd_ret_63", "clean_super"] + [f"{b}_{x}" for b in BRACKETS for x in ("hit", "ret")]] = np.nan
+    out.loc[unknown, ["fwd_max_gain", "fwd_ret_63", "clean_super"] + [f"{b}_{x}" for b in BRACKETS for x in ("hit", "ret")]
+            + [f"{m}_ret" for m in MENU]] = np.nan
     out["close"] = c[idx]
     # short-horizon features (concrete daily/weekly data only) and next 1/3/5-day labels
     from mlalgo.research.shortterm import short_features, short_labels

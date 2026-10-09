@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -147,7 +149,8 @@ def test_superperformer_label_and_features_are_point_in_time():
     tampered.iloc[t + 1:] *= 2
     s2 = superperformer_sample("T", tampered, structure_features(tampered), rs, None)
     labels = (["fwd_max_gain", "fwd_ret_63", "clean_super"] + [c for c in s.columns if c[:3] in ("b10", "b20")]
-              + [c for c in s.columns if c.startswith(("y_", "r_"))])
+              + [c for c in s.columns if c.startswith(("y_", "r_"))]
+              + [c for c in s.columns if re.fullmatch(r"m\d+_\d+_(ret|days)", c)])
     a = s[s["date"] == row["date"]].drop(columns=labels).reset_index(drop=True)
     b = s2[s2["date"] == row["date"]].drop(columns=labels).reset_index(drop=True)
     pd.testing.assert_frame_equal(a, b)
@@ -259,3 +262,27 @@ def test_short_features_point_in_time_and_labels():
     assert lab["y_up1"].iloc[t] == float(c[t + 1] > c[t])
     assert lab["y_green1"].iloc[t] == float(c[t + 1] > o[t + 1])
     assert np.isclose(lab["r_up5"].iloc[t], c[t + 5] / c[t] - 1, rtol=1e-5)
+
+
+def test_bracket_menu_columns_match_bracket_outcome_and_portfolio_exit_dates():
+    from mlalgo.research import analyze as A
+    from mlalgo.research.run import MENU, bracket_outcome, superperformer_sample
+    from mlalgo.structure import structure_features
+    df = synthetic(1200, seed=21)
+    df["volume"] *= 5
+    s = superperformer_sample("T", df, structure_features(df), pd.Series(0.5, index=df.index), None)
+    o, h, l, c = (df[k].to_numpy(float) for k in ("open", "high", "low", "close"))
+    known = s[s["fwd_max_gain"].notna()]
+    idx = np.array([df.index.get_loc(d) for d in known["date"]])
+    for key, (up, dn) in MENU.items():
+        _, ret, xi = bracket_outcome(o, h, l, c, idx, up, dn, 63)
+        assert np.allclose(known[f"{key}_ret"], ret, rtol=1e-5)
+        assert (known[f"{key}_days"].to_numpy() == xi - idx).all()
+    # +20/-10 in the menu is the goal label
+    assert np.allclose(known["m20_10_ret"], known["b20_ret"])
+    # exit dates rebuilt from days held land on the real exit bar
+    s2 = known.assign(score=np.arange(len(known), dtype=float))
+    tr = A.menu_trades(s2, "m15_8", 0.08, "score", df.index, q=0)
+    j = np.array([df.index.get_loc(d) for d in tr["date"]]) + s2["m15_8_days"].to_numpy()
+    assert (tr["exit_bracket"].to_numpy() == df.index[j].to_numpy()).all()
+    assert (tr["risk_pct"] == 0.08).all()

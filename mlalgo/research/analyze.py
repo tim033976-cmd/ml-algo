@@ -542,3 +542,109 @@ def short_importance(sample: pd.DataFrame, label: str, features: list[str], n_ev
     m = _super_model().fit(Xtr, ytr)
     pi = permutation_importance(m, Xte, yte, scoring="roc_auc", n_repeats=3, random_state=0)
     return pd.DataFrame({"feature": features, "auc_drop": pi.importances_mean}).sort_values("auc_drop", ascending=False)
+
+
+# ------------------------------------------------------------------ run 17: bracket menu + regime
+# Hit rate is mostly a property of the bracket (a far target and a near stop must hit less
+# often), so compare brackets on what they earn: net return per trade and per month held.
+# The bracket is chosen on the walk-forward years before 2018 and judged on 2018+.
+def _top(o: pd.DataFrame, col: str, q: float) -> pd.DataFrame:
+    """Rows whose score is in the top (1-q) of their calendar year (same cut as top_decile_trades)."""
+    if q <= 0:
+        return o
+    return o[o[col] >= o.groupby(o["date"].dt.year)[col].transform(lambda p: p.quantile(q))]
+
+
+def bracket_menu(sample: pd.DataFrame, col: str, menu: dict, tiers=(("all stocks", 0.0), ("top 10%", 0.9), ("top 2%", 0.98))) -> pd.DataFrame:
+    rows = []
+    base = sample[sample[col].notna()]
+    for period, m in (("IS", base["date"] < IS_END), ("OOS", base["date"] >= IS_END)):
+        o = base[m]
+        for tier, q in tiers:
+            g = _top(o, col, q)
+            for key, (up, dn) in menu.items():
+                r = g[f"{key}_ret"].dropna().astype(float)
+                if r.empty:
+                    continue
+                days = g.loc[r.index, f"{key}_days"].astype(float)
+                rows.append({"period": period, "tier": tier, "bracket": f"+{up:.0%} / -{dn:.0%}", "key": key,
+                             "n": len(r), "hit_target": (r >= up - 0.0021).mean(), "hit_stop": (r <= -dn - 0.0019).mean(),
+                             "avg_net_return": r.mean(), "avg_days": days.mean(),
+                             "return_per_month": r.mean() / max(days.mean(), 1) * 21,
+                             "breakeven_hit": dn / (up + dn)})
+    return pd.DataFrame(rows)
+
+
+def menu_trades(sample: pd.DataFrame, key: str, stop: float, col: str, calendar: pd.DatetimeIndex, q: float = 0.9) -> pd.DataFrame:
+    """Top-decile model entries exited with bracket `key`; exit date from days held on `calendar`."""
+    o = _top(sample[sample[col].notna() & sample[f"{key}_ret"].notna()], col, q)
+    pos = np.searchsorted(calendar.values, o["date"].values) + o[f"{key}_days"].to_numpy(int)
+    exit_date = calendar[np.minimum(pos, len(calendar) - 1)]
+    return pd.DataFrame({"date": o["date"].values, "ticker": o["ticker"].values, "entry": o["close"].values,
+                         "risk_pct": stop, "exit_bracket": exit_date, "ret_bracket": o[f"{key}_ret"].astype(float).values,
+                         "priority": o[col].values, "rs_rank": o["rs_rank"].values})
+
+
+def regime_splits(d: pd.DataFrame, ref: pd.DataFrame) -> dict[str, pd.Series]:
+    """Market-state buckets known at the close of the entry day. Breadth terciles use in-sample
+    cut-offs from `ref` so nothing is fitted on 2018+."""
+    b1, b2 = ref["breadth_50"].quantile([1 / 3, 2 / 3]) if "breadth_50" in ref else (np.nan, np.nan)
+    out = {}
+    if "breadth_50" in d:
+        out["breadth (stocks above 50d)"] = pd.cut(d["breadth_50"], [-np.inf, b1, b2, np.inf],
+                                                    labels=[f"low (< {b1:.0%})", "mid", f"high (> {b2:.0%})"])
+    if "vix" in d:
+        out["VIX level"] = pd.cut(d["vix"], [0, 15, 20, 30, np.inf], labels=["< 15", "15-20", "20-30", "> 30"])
+    if "vix_term" in d:
+        out["VIX / VIX3M"] = pd.cut(d["vix_term"], [0, 0.9, 1.0, np.inf], labels=["< 0.9 (calm)", "0.9-1.0", "> 1.0 (stress)"])
+    if "mkt_above200" in d:
+        out["SPY above 200d"] = d["mkt_above200"].map({1.0: "yes", 0.0: "no"})
+    if "qqq_trend" in d:
+        out["QQQ above 10 & 20 SMA"] = d["qqq_trend"].map({1.0: "yes", 0.0: "no"})
+    if "mkt_ret_21" in d:
+        out["SPY 1-month return"] = pd.cut(d["mkt_ret_21"], [-np.inf, -0.03, 0.0, 0.03, np.inf],
+                                           labels=["< -3%", "-3..0%", "0..3%", "> 3%"])
+    if "m_up3" in d:
+        cut = ref["m_up3"].quantile(0.1) if "m_up3" in ref and ref["m_up3"].notna().any() else np.nan
+        if cut == cut:
+            out["3-day market model"] = np.where(d["m_up3"].isna(), None,
+                                                 np.where(d["m_up3"] <= cut, "bottom 10% (skip?)", "rest"))
+            out["3-day market model"] = pd.Series(out["3-day market model"], index=d.index)
+    return out
+
+
+def regime_report(sample: pd.DataFrame, col: str, key: str = "b20", q: float = 0.9) -> pd.DataFrame:
+    """For the model's top 10% (+20/-10 by default): hit rate and net return by market regime,
+    in-sample and out-of-sample side by side."""
+    o = _top(sample[sample[col].notna() & sample[f"{key}_ret"].notna()], col, q)
+    ref = sample[sample["date"] < IS_END]
+    hit = f"{key}_hit" if f"{key}_hit" in o else None
+    rows = []
+    for name, grp in regime_splits(o, ref).items():
+        for period, pm in (("IS", o["date"] < IS_END), ("OOS", o["date"] >= IS_END)):
+            g = o[pm]
+            for lvl, x in g.groupby(grp[pm.to_numpy()].to_numpy(), observed=True):
+                rows.append({"regime": name, "bucket": lvl, "period": period, "n": len(x),
+                             "hit_target": x[hit].mean() if hit else np.nan, "avg_net_return": x[f"{key}_ret"].mean()})
+    if not rows:
+        return pd.DataFrame()
+    t = pd.DataFrame(rows).pivot_table(index=["regime", "bucket"], columns="period",
+                                       values=["n", "hit_target", "avg_net_return"], sort=False)
+    t.columns = [f"{p}_{m}" for m, p in t.columns]
+    return t[[c for c in ("IS_n", "IS_hit_target", "IS_avg_net_return", "OOS_n", "OOS_hit_target", "OOS_avg_net_return") if c in t]]
+
+
+def regime_gate(sample: pd.DataFrame, col: str, table: pd.DataFrame, key: str = "b20", q: float = 0.9,
+                min_n: int = 200, breakeven: float = 1 / 3):
+    """Model top 10% minus the regime buckets that were below break-even IN-SAMPLE (hit rate under
+    `breakeven` or a negative average return, n >= min_n). Returns the kept rows and the skipped
+    buckets; nothing about the rule is fitted on 2018+."""
+    o = _top(sample[sample[col].notna() & sample[f"{key}_ret"].notna()], col, q)
+    bad = ([(r, b) for (r, b), x in table.iterrows()
+           if x.get("IS_n", 0) >= min_n and (x.get("IS_avg_net_return", 0) < 0 or x.get("IS_hit_target", 1) < breakeven)]
+           if len(table) else [])
+    splits = regime_splits(o, sample[sample["date"] < IS_END])
+    skip = np.zeros(len(o), dtype=bool)
+    for r, b in bad:
+        skip |= (pd.Series(splits[r], index=o.index).astype(object) == b).to_numpy()
+    return o[~skip], bad

@@ -18,11 +18,54 @@ from mlalgo.research import data as D
 from mlalgo.research import engine
 from mlalgo.research.entries import ENTRIES
 from mlalgo.research.insights import append_history, findings
-from mlalgo.research.run import EXIT_NAMES, run
+from mlalgo.research.run import EXIT_NAMES, MENU, run
 
 
 def md(df: pd.DataFrame, floatfmt=".2f", index=False) -> str:
     return df.to_markdown(index=index, floatfmt=floatfmt)
+
+
+def _menu_section(menu, menu_ports, menu_choice, regime, skipped, md):
+    """Section 13 (run 17): which bracket, and which market regimes, for the goal model's top picks."""
+    piv = lambda d, v: d.pivot_table(index="bracket", columns="period", values=v, sort=False)
+    top = menu[menu["tier"] == "top 10%"]
+    t = piv(top, "hit_target").add_prefix("hit_").join(piv(top, "avg_net_return").add_prefix("ret_")) \
+        .join(piv(top, "return_per_month").add_prefix("per_month_")).join(piv(top, "avg_days").add_prefix("days_"))
+    t.insert(0, "breakeven_hit", top.drop_duplicates("bracket").set_index("bracket")["breakeven_hit"])
+    oos = menu[menu["period"] == "OOS"].pivot_table(index="bracket", columns="tier", values="hit_target", sort=False)
+    oos_r = menu[menu["period"] == "OOS"].pivot_table(index="bracket", columns="tier", values="avg_net_return", sort=False)
+    port = menu_ports.set_index("bracket").drop(columns="key") if menu_ports is not None and len(menu_ports) else None
+    return [
+        "## 13. Bracket menu and market regime for the +20/-10 model's picks (run 17)",
+        "",
+        "Every stock every 10 days, entry at the close, 63-day limit, 0.1% costs per side. Stocks ranked by the "
+        "+20/-10 goal model (walk-forward, so pre-2018 scores are also out-of-sample for their year). Top 10% = top "
+        "10% of scores within each year. Brackets are chosen on IS (walk-forward years before 2018) and judged on 2018+. "
+        f"IS choice: best return per month = {menu_choice['return per month']}, best return per trade = "
+        f"{menu_choice['return per trade']}.",
+        "",
+        "Model top 10%: hit rate, net return per trade, return per month held, days held (IS vs OOS):",
+        "",
+        md(t, index=True, floatfmt=".3f"),
+        "",
+        "OOS hit rate by tier (all stocks = no model):",
+        "",
+        md(oos, index=True, floatfmt=".3f"),
+        "",
+        "OOS net return per trade by tier:",
+        "",
+        md(oos_r, index=True, floatfmt=".4f"),
+        "",
+        *(["Portfolio 2018+ (top 10% model, 1% risk per trade = position size 1%/stop, max 10 positions, 20% cap):", "",
+           md(port, index=True, floatfmt=".3f"), ""] if port is not None else []),
+        "Model top 10%, +20/-10, by market regime at entry (breadth terciles and the 3-day market model cut use IS data):",
+        "",
+        md(regime.reset_index(), floatfmt=".3f"),
+        "",
+        f"Regime gate (section 9, REGIME row) skips buckets that were below break-even in-sample (hit < 33% or "
+        f"negative return): {skipped or 'none'}.",
+        "",
+    ]
 
 
 def main() -> None:
@@ -109,6 +152,7 @@ def main() -> None:
     # ---------------- superperformer model: learn what future big winners look like beforehand
     sup = sup_clean = None
     short, goal_ext, short_imp = {}, {}, None
+    menu = regime = menu_choice = menu_ports = regime_skipped = None
     if len(sample):
         sample, (sig,) = A.super_walk_forward(sample, [sig])
         sup = A.super_report(sample)
@@ -162,6 +206,19 @@ def main() -> None:
             sample, _ = A.super_walk_forward(sample, [], label="b20", col="p_b20_ext", features=A.SHORT_ALL)
             goal_ext = {"original": A.goal_tiers(sample, "b20", "p_b20"), "with new features": A.goal_tiers(sample, "b20", "p_b20_ext")}
         print(f"[research] short-horizon models done ({time.time() - t0:.0f}s)")
+
+        # ---------------- run 17: bracket menu and market regime for the goal model's top picks
+        score_col = "p_b20_ext" if "p_b20_ext" in sample else "p_b20"
+        if f"{next(iter(MENU))}_ret" in sample and score_col in sample:
+            menu = A.bracket_menu(sample, score_col, MENU)
+            menu.to_csv(out / "bracket_menu.csv", index=False)
+            is_top = menu[(menu["period"] == "IS") & (menu["tier"] == "top 10%")]
+            menu_choice = ({"return per month": is_top.loc[is_top["return_per_month"].idxmax(), "key"],
+                            "return per trade": is_top.loc[is_top["avg_net_return"].idxmax(), "key"]}
+                           if len(is_top) else {"return per month": "n/a (no IS scores)", "return per trade": "n/a"})
+            regime = A.regime_report(sample, score_col)
+            regime.to_csv(out / "regime_top10.csv")
+        print(f"[research] bracket menu + regime done ({time.time() - t0:.0f}s)")
 
     # ---------------- portfolio simulation, 2018 -> today (marked to market daily)
     closes = pd.DataFrame({t: df["close"] for t, df in prices.items()}).astype("float32").ffill()
@@ -248,6 +305,22 @@ def main() -> None:
             if pit is not None:
                 port_rows.append((f"GOAL {g}: model top 10%, S&P 500 point-in-time only / {exit_g}",
                                   A.portfolio(only_model[pit(only_model).to_numpy()], "bracket", "priority", closes=closes)))
+        # ---- run 17: every bracket on the goal model's top 10%, and a regime gate chosen in-sample
+        if menu is not None:
+            menu_ports = []
+            cal = closes.index
+            for key, (up, dn) in MENU.items():
+                res = A.portfolio(A.menu_trades(sample, key, dn, score_col, cal), "bracket", "priority", closes=closes)
+                menu_ports.append({"bracket": f"+{up:.0%} / -{dn:.0%}", "key": key, **{m: res[m] for m in ("CAGR", "max_DD", "trades", "win")}})
+                if key in menu_choice.values() or key in ("m20_10", "m10_10"):
+                    tag = ", ".join(k for k, v in menu_choice.items() if v == key)
+                    port_rows.append((f"MENU top 10% model / +{up:.0%} -{dn:.0%}" + (f" (IS best {tag})" if tag else ""), res))
+            menu_ports = pd.DataFrame(menu_ports)
+            menu_ports.to_csv(out / "bracket_menu_portfolio.csv", index=False)
+            gated, regime_skipped = A.regime_gate(sample, score_col, regime)
+            if (gated["date"] >= A.IS_END).sum() >= 50:
+                port_rows.append((f"REGIME top 10% model, skipping {len(regime_skipped)} IS-below-break-even regimes / +20% -10%",
+                                  A.portfolio(A.menu_trades(gated, "m20_10", 0.10, score_col, cal, q=0), "bracket", "priority", closes=closes)))
         # ---- Qullamaggie replication: his scan, his setups (flag breakouts via buy-stop, EPs),
         #      his exits, and his Nasdaq-trend exposure rule
         qull_entries = ["qull_breakout", "qull_breakout_60", "ep_gap10", "ep_gap8_hold"]
@@ -300,6 +373,17 @@ def main() -> None:
     # ---------------- what this run tells us
     found, nxt, key = findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup,
                                sup_imp if sup else None, goal_tables if sup else None)
+    if menu is not None:  # run 17: bracket menu
+        oos = menu[(menu["period"] == "OOS") & (menu["tier"] == "top 10%")].set_index("key")
+        ch = menu_choice["return per month"]
+        if ch in oos.index:
+            r, b = oos.loc[ch], oos.loc["m20_10"]
+            found.append(f"Bracket menu: in-sample best (return per month) is {r['bracket']}. OOS top 10%: hit "
+                         f"{r['hit_target']:.1%} (break-even {r['breakeven_hit']:.0%}), {r['avg_net_return']:+.2%} per trade, "
+                         f"{r['return_per_month']:+.2%} per month held, vs +20/-10: hit {b['hit_target']:.1%}, "
+                         f"{b['avg_net_return']:+.2%}, {b['return_per_month']:+.2%}/month.")
+            key["menu_choice"], key["menu_choice_oos_ret"] = r["bracket"], float(r["avg_net_return"])
+        found.append(f"Regime gate skipped (chosen in-sample): {regime_skipped or 'none'}.")
     hist = append_history(out / "history.csv", key, len(prices), len(sig))
     (out / "insights.json").write_text(json.dumps({"findings": found, "next_steps": nxt, "key": key}, indent=2, default=str))
 
@@ -459,6 +543,7 @@ def main() -> None:
             "",
             *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
         ] if short else []),
+        *(_menu_section(menu, menu_ports, menu_choice, regime, regime_skipped, md) if menu is not None else []),
         "## 11. Qullamaggie replication (per trade, out-of-sample 2018+; IS in brackets)",
         "",
         "Scan = top 3% performer over 1, 3 or 6 months with ADR >= 4%. Regime = QQQ above its 10- and 20-day SMAs. "
