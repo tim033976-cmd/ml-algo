@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-09 15:34 UTC in 60 min.
+Generated 2026-10-09 16:26 UTC in 51 min.
 Universe: 1488 stocks with data (sp600: 590, sp500: 499, sp400: 399; 0 former S&P 500 members). Signals 2006-01-03 -> 2026-10-07: 880,290.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
@@ -23,8 +23,10 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 - Best portfolio 2018->today: SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close at 43.4% CAGR (max drawdown -38.2%) vs SPY 14.5%.
 - Best return per unit of drawdown: SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close (43.4% CAGR, -38.2% max DD).
 - Workflow PDF rockets as written (regime sizing) / wf_rocket: 1.7% CAGR, -10% DD, 189 trades.
+- Workflow PDF rockets, QQQ 21/50 regime / wf_rocket: 0.2% CAGR, -12% DD, 203 trades.
 - Workflow PDF rockets as written, S&P 500 point-in-time only / wf_rocket: -0.2% CAGR, -8% DD, 147 trades.
 - Workflow PDF scanner as written, S&P 500 point-in-time (NDX proxy) / wf_weekly10: 1.0% CAGR, -17% DD, 349 trades.
+- Workflow PDF scanner PIT, QQQ 21/50 regime / wf_weekly10: -1.6% CAGR, -22% DD, 372 trades.
 - Workflow PDF scanner as written, full universe / wf_weekly10: 0.3% CAGR, -23% DD, 379 trades.
 - Workflow PDF split (40/25/15/20 cash): 6.3% CAGR, -17% DD vs SPY 14.6%, -34%.
 - Bracket menu: in-sample best (return per month) is +20% / -15%. OOS top 10%: hit 45.9% (break-even 43%), +3.98% per trade, +2.70% per month held, vs +20/-10: hit 38.3%, +2.63%, +2.34%/month.
@@ -34,11 +36,30 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 - Regime gate SPY above 200d (skip yes): 9.2% CAGR, -31% DD; point-in-time S&P 500 5.9%, -22%.
 - Regime gate QQQ above 10 & 20 SMA (skip yes): 16.3% CAGR, -46% DD; point-in-time S&P 500 12.0%, -29%.
 - Regime gate SPY 1-month return (skip -3..0%, > 3%): 17.6% CAGR, -40% DD; point-in-time S&P 500 16.8%, -28%.
+- Regime gate SPY vs 21/50 SMA (skip above 21 & 50, above 50 only): 11.6% CAGR, -41% DD; point-in-time S&P 500 8.5%, -36%.
+- Regime gate QQQ vs 21/50 SMA (skip above 21 & 50): 15.9% CAGR, -47% DD; point-in-time S&P 500 5.6%, -32%.
+- Regime gate A/D line vs its 21/50 MA (skip above 21 & 50, above 50 only): 7.9% CAGR, -40% DD; point-in-time S&P 500 3.7%, -33%.
+- Regime gate % of stocks above 20d (skip 40-60%, > 60%): 15.2% CAGR, -44% DD; point-in-time S&P 500 9.4%, -25%.
+- Regime gate % above 50d, 10-day change (skip flat, rising (> +5 pts)): 9.4% CAGR, -49% DD; point-in-time S&P 500 12.2%, -25%.
+- Regime gate A/D line, 10-day change (skip flat, rising): 14.0% CAGR, -33% DD; point-in-time S&P 500 7.4%, -29%.
+- Regime gate sector & sub-industry today green (skip both, one of the two): 29.0% CAGR, -44% DD; point-in-time S&P 500 14.6%, -23%.
+- Regime gate sector & sub-industry up over 5 days (skip both): 16.2% CAGR, -43% DD; point-in-time S&P 500 13.7%, -27%.
+- Regime gate sector & sub-industry above 21 EMA (skip both, one of the two): 27.9% CAGR, -36% DD; point-in-time S&P 500 10.8%, -27%.
 - Regime gate sub-industry (by median RS) (skip middle, top 30% (leading)): 21.1% CAGR, -34% DD; point-in-time S&P 500 16.4%, -27%.
 - Regime gate 3-day market model (skip rest): 7.5% CAGR, -16% DD; point-in-time S&P 500 1.0%, -5%.
-- Filter LEADING: top 3 sectors only: 12.4% CAGR, -34% DD; point-in-time S&P 500 11.4%, -21%.
-- Filter LEADING: top 30% sub-industries only: 23.2% CAGR, -31% DD; point-in-time S&P 500 11.2%, -27%.
-- Filter LEADING: top 3 sectors AND top 30% sub-industries: 18.1% CAGR, -37% DD; point-in-time S&P 500 4.7%, -25%.
+- Filter RULE: top 3 sectors only: 12.4% CAGR, -34% DD; point-in-time S&P 500 11.4%, -21%.
+- Filter RULE: top 30% sub-industries only: 23.2% CAGR, -31% DD; point-in-time S&P 500 11.2%, -27%.
+- Filter RULE: top 3 sectors AND top 30% sub-industries: 18.1% CAGR, -37% DD; point-in-time S&P 500 4.7%, -25%.
+- Filter RULE: SPY above its 21 & 50 SMA: 21.3% CAGR, -35% DD; point-in-time S&P 500 14.5%, -26%.
+- Filter RULE: QQQ above its 21 & 50 SMA: 24.0% CAGR, -30% DD; point-in-time S&P 500 17.3%, -22%.
+- Filter RULE: SPY above its 50 SMA (21 either way): 17.2% CAGR, -41% DD; point-in-time S&P 500 15.1%, -33%.
+- Filter RULE: A/D line above its 21 & 50 MA: 13.8% CAGR, -55% DD; point-in-time S&P 500 20.9%, -20%.
+- Filter RULE: > 50% of stocks above their 50d: 13.2% CAGR, -38% DD; point-in-time S&P 500 13.8%, -27%.
+- Filter RULE: % above 50d rising over 10 days: 19.5% CAGR, -33% DD; point-in-time S&P 500 17.7%, -26%.
+- Filter RULE: sector AND sub-industry green today: 22.3% CAGR, -46% DD; point-in-time S&P 500 20.1%, -24%.
+- Filter RULE: sector AND sub-industry up over 5 days: 11.9% CAGR, -52% DD; point-in-time S&P 500 17.6%, -39%.
+- Filter RULE: sector AND sub-industry above 21 EMA: 15.2% CAGR, -49% DD; point-in-time S&P 500 18.1%, -26%.
+- Filter RULE: SPY > 21 & 50 + sector & sub-industry up 5 days: 15.0% CAGR, -36% DD; point-in-time S&P 500 16.1%, -17%.
 - Regime gate (no gate) (skip nothing): 25.3% CAGR, -45% DD; point-in-time S&P 500 21.3%, -30%.
 
 **Next steps for the strategy:**
@@ -57,7 +78,6 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 
 | run_utc          | commit   |   tickers |   signals |   rank_corr |   top20_oos |   baseline_oos | edge_entries                                                                                                                                                                                                                                          | no_edge_entries                                                            | best_exit   | helpful_filters                                                                                        |   ml_auc |   ml_rank_corr |   ml_monotonic |   ml_gap | top_features                                                     | filters_lifting_baseline                  |   rules_held | best_portfolio                                                                    |   best_cagr |   spy_cagr | best_calmar                                                                       |   super_auc |   super_lift | super_features                                                  |   goal_b10_top_hit |   goal_b10_top_ret |   goal_b20_top_hit |   goal_b20_top_ret | menu_choice   |   menu_choice_oos_ret |
 |:-----------------|:---------|----------:|----------:|------------:|------------:|---------------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|:------------|:-------------------------------------------------------------------------------------------------------|---------:|---------------:|---------------:|---------:|:-----------------------------------------------------------------|:------------------------------------------|-------------:|:----------------------------------------------------------------------------------|------------:|-----------:|:----------------------------------------------------------------------------------|------------:|-------------:|:----------------------------------------------------------------|-------------------:|-------------------:|-------------------:|-------------------:|:--------------|----------------------:|
-| 2026-10-08 10:25 | d8d63d9  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh                          | high52, multi_touch, stage2                                                | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80                                                        |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low        | early_stage, rs80_early, rs80_early_theme |            4 | Only setups in the model's top 10% likely superperformers / sma50_close           |        0.28 |       0.15 | Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades)          |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct      |             nan    |             nan    |             nan    |             nan    | nan           |                nan    |
 | 2026-10-08 10:53 | d8399f4  |      1488 |    659965 |        0.49 |        0.05 |          -0.07 | ep_gap15, ep_gap8_hold, desc_triangle, ep_gap10_vol5, ep_gap8_neglected, ep_gap5, falling_wedge, ep_gap10, ep_gap10_vol2, donchian_20, undercut, sym_triangle, flag_60, ema_retest, donchian_55, flag_30_early, high52_fresh                          | high52, multi_touch, stage2                                                | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80                                                        |     0.56 |           0.25 |           0.26 |     0.02 | risk_adr, risk_pct, mkt_ret_21, qqq_ret_21, above_52w_low        | early_stage, rs80_early, rs80_early_theme |            4 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct      |             nan    |             nan    |             nan    |             nan    | nan           |                nan    |
 | 2026-10-08 14:02 | 749e984  |      1488 |    659965 |        0.54 |        0.06 |          -0.04 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, falling_wedge, ep_gap5, ep_gap10, undercut, donchian_20, ep_gap10_vol2, ema_retest, sym_triangle, donchian_55                                                                | high52, multi_touch, pocket_pivot, stage2                                  | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80                                                        |     0.51 |           0.00 |          -0.30 |     0.02 | rates_rising, sma200_slope, above_52w_low, sector_rs, adr_pct    | early_stage, rs80_early, rs80_early_theme |            2 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct      |               0.56 |               0.02 |               0.38 |               0.03 | nan           |                nan    |
 | 2026-10-08 14:27 | e7af2f7  |      1488 |    659965 |        0.54 |        0.06 |          -0.04 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, falling_wedge, ep_gap5, ep_gap10, undercut, donchian_20, ep_gap10_vol2, ema_retest, sym_triangle, donchian_55                                                                | high52, multi_touch, pocket_pivot, stage2                                  | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80                                                        |     0.51 |           0.00 |          -0.30 |     0.02 | rates_rising, sma200_slope, above_52w_low, sector_rs, adr_pct    | early_stage, rs80_early, rs80_early_theme |            2 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct      |               0.56 |               0.02 |               0.38 |               0.03 | nan           |                nan    |
@@ -67,6 +87,7 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 | 2026-10-09 12:54 | 5ce3166  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                    | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                 |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok            | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 | 2026-10-09 14:16 | e1db28d  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                    | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                 |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok            | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 | 2026-10-09 15:34 | 246a119  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs  | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
+| 2026-10-09 16:26 | c39a032  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs  | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 
 ## 1. Did picking the best in-sample strategies work out-of-sample?
 
@@ -746,20 +767,36 @@ Per trade vs random entries with the same filter and exit (R multiples):
 
 Per trade by Nasdaq-100 regime at entry (the PDF's own exits):
 
-| part                    | regime   |      IS_n |   IS_avgR |   IS_win |     OOS_n |   OOS_avgR |   OOS_win |
-|:------------------------|:---------|----------:|----------:|---------:|----------:|-----------:|----------:|
-| rockets                 | red      |   153.000 |    -0.262 |    0.281 |   256.000 |     -0.013 |     0.328 |
-| rockets                 | yellow   |   105.000 |    -0.222 |    0.229 |   108.000 |     -0.041 |     0.250 |
-| rockets                 | green    |   901.000 |     0.192 |    0.378 |  1651.000 |      0.214 |     0.333 |
-| scanner                 | red      |  6903.000 |     0.459 |    0.383 |  7596.000 |     -0.198 |     0.251 |
-| scanner                 | yellow   |  4624.000 |     0.459 |    0.361 |  2974.000 |      0.062 |     0.278 |
-| scanner                 | green    | 87345.000 |     0.118 |    0.316 | 75319.000 |      0.022 |     0.289 |
-| random (rocket filter)  | red      |   702.000 |     0.276 |    0.192 |  1193.000 |     -0.304 |     0.137 |
-| random (rocket filter)  | yellow   |   427.000 |    -0.529 |    0.101 |   431.000 |      0.532 |     0.174 |
-| random (rocket filter)  | green    |  4546.000 |     0.006 |    0.144 |  6966.000 |     -0.058 |     0.139 |
-| random (scanner filter) | red      |  1431.000 |     0.523 |    0.173 |  1753.000 |     -0.371 |     0.120 |
-| random (scanner filter) | yellow   |  1073.000 |     0.305 |    0.156 |   793.000 |      0.344 |     0.140 |
-| random (scanner filter) | green    | 19886.000 |     0.055 |    0.142 | 19506.000 |     -0.061 |     0.129 |
+| part                    | regime           |      IS_n |   IS_avgR |   IS_win |     OOS_n |   OOS_avgR |   OOS_win |
+|:------------------------|:-----------------|----------:|----------:|---------:|----------:|-----------:|----------:|
+| rockets                 | PDF red          |   153.000 |    -0.262 |    0.281 |   256.000 |     -0.013 |     0.328 |
+| rockets                 | PDF yellow       |   105.000 |    -0.222 |    0.229 |   108.000 |     -0.041 |     0.250 |
+| rockets                 | PDF green (200d) |   901.000 |     0.192 |    0.378 |  1651.000 |      0.214 |     0.333 |
+| rockets                 | QQQ < both       |   191.000 |     0.186 |    0.382 |   297.000 |      0.053 |     0.306 |
+| rockets                 | QQQ > 50 only    |   107.000 |     0.095 |    0.299 |   171.000 |      0.256 |     0.322 |
+| rockets                 | QQQ > 21 only    |    69.000 |    -0.096 |    0.391 |    96.000 |      0.182 |     0.323 |
+| rockets                 | QQQ > 21 & 50    |   792.000 |     0.089 |    0.348 |  1451.000 |      0.185 |     0.333 |
+| scanner                 | PDF red          |  6903.000 |     0.459 |    0.383 |  7596.000 |     -0.198 |     0.251 |
+| scanner                 | PDF yellow       |  4624.000 |     0.459 |    0.361 |  2974.000 |      0.062 |     0.278 |
+| scanner                 | PDF green (200d) | 87345.000 |     0.118 |    0.316 | 75319.000 |      0.022 |     0.289 |
+| scanner                 | QQQ < both       | 14169.000 |     0.279 |    0.363 | 14749.000 |      0.048 |     0.306 |
+| scanner                 | QQQ > 50 only    | 11292.000 |     0.168 |    0.306 |  8688.000 |     -0.064 |     0.272 |
+| scanner                 | QQQ > 21 only    |  5096.000 |     0.361 |    0.403 |  3948.000 |      0.099 |     0.336 |
+| scanner                 | QQQ > 21 & 50    | 68315.000 |     0.116 |    0.312 | 58504.000 |     -0.004 |     0.279 |
+| random (rocket filter)  | PDF red          |   702.000 |     0.276 |    0.192 |  1193.000 |     -0.304 |     0.137 |
+| random (rocket filter)  | PDF yellow       |   427.000 |    -0.529 |    0.101 |   431.000 |      0.532 |     0.174 |
+| random (rocket filter)  | PDF green (200d) |  4546.000 |     0.006 |    0.144 |  6966.000 |     -0.058 |     0.139 |
+| random (rocket filter)  | QQQ < both       |   978.000 |     0.383 |    0.182 |  1687.000 |     -0.267 |     0.141 |
+| random (rocket filter)  | QQQ > 50 only    |   673.000 |     0.155 |    0.156 |   829.000 |     -0.101 |     0.148 |
+| random (rocket filter)  | QQQ > 21 only    |   287.000 |     0.249 |    0.216 |   375.000 |      0.321 |     0.173 |
+| random (rocket filter)  | QQQ > 21 & 50    |  3737.000 |    -0.148 |    0.131 |  5699.000 |     -0.022 |     0.137 |
+| random (scanner filter) | PDF red          |  1431.000 |     0.523 |    0.173 |  1753.000 |     -0.371 |     0.120 |
+| random (scanner filter) | PDF yellow       |  1073.000 |     0.305 |    0.156 |   793.000 |      0.344 |     0.140 |
+| random (scanner filter) | PDF green (200d) | 19886.000 |     0.055 |    0.142 | 19506.000 |     -0.061 |     0.129 |
+| random (scanner filter) | QQQ < both       |  3133.000 |     0.458 |    0.181 |  3829.000 |     -0.295 |     0.130 |
+| random (scanner filter) | QQQ > 50 only    |  2634.000 |     0.246 |    0.147 |  2208.000 |     -0.080 |     0.132 |
+| random (scanner filter) | QQQ > 21 only    |   899.000 |     0.442 |    0.202 |   821.000 |      0.208 |     0.152 |
+| random (scanner filter) | QQQ > 21 & 50    | 15724.000 |    -0.020 |    0.134 | 15194.000 |     -0.029 |     0.127 |
 
 Portfolios 2018+ (marked to market daily):
 
@@ -767,12 +804,14 @@ Portfolios 2018+ (marked to market daily):
 |:--------------------------------------------------------------------|-------:|---------:|---------:|------:|----------------:|
 | rockets as written (regime sizing) / wf_rocket                      |  0.017 |   -0.098 |      189 | 0.323 |           2.347 |
 | rockets, no regime rule / wf_rocket                                 |  0.014 |   -0.098 |      233 | 0.322 |           2.725 |
+| rockets, QQQ 21/50 regime / wf_rocket                               |  0.002 |   -0.123 |      203 | 0.300 |           2.404 |
 | rockets / sma50_close                                               |  0.019 |   -0.088 |      188 | 0.319 |           2.348 |
 | rockets / bracket_20_10                                             |  0.027 |   -0.088 |      175 | 0.434 |           2.409 |
 | BASELINE random entries, rocket filter + regime / wf_rocket         |  0.003 |   -0.256 |      478 | 0.165 |           2.465 |
 | rockets as written, S&P 500 point-in-time only / wf_rocket          | -0.002 |   -0.079 |      147 | 0.272 |           1.899 |
 | scanner as written, S&P 500 point-in-time (NDX proxy) / wf_weekly10 |  0.010 |   -0.173 |      349 | 0.281 |           3.440 |
 | scanner PIT, no regime rule / wf_weekly10                           |  0.001 |   -0.177 |      409 | 0.296 |           3.930 |
+| scanner PIT, QQQ 21/50 regime / wf_weekly10                         | -0.016 |   -0.223 |      372 | 0.274 |           3.482 |
 | scanner PIT / sma50_close                                           |  0.013 |   -0.172 |      374 | 0.291 |           3.388 |
 | BASELINE random entries, scanner filter + regime, PIT / wf_weekly10 |  0.026 |   -0.166 |      539 | 0.148 |           3.299 |
 | scanner as written, full universe / wf_weekly10                     |  0.003 |   -0.226 |      379 | 0.248 |           3.404 |
@@ -891,114 +930,223 @@ Portfolio 2018+ (top 10% model, 1% risk per trade = position size 1%/stop, max 1
 
 Model top 10%, +20/-10, by market regime at entry (breadth terciles and the 3-day market model cut use IS data):
 
-| regime                         | bucket             |      IS_n |   IS_hit_target |   IS_avg_net_return |     OOS_n |   OOS_hit_target |   OOS_avg_net_return |
-|:-------------------------------|:-------------------|----------:|----------------:|--------------------:|----------:|-----------------:|---------------------:|
-| breadth (stocks above 50d)     | high (> 71%)       |  7011.000 |           0.327 |               0.024 |  5531.000 |            0.398 |                0.031 |
-| breadth (stocks above 50d)     | low (< 53%)        |  6930.000 |           0.351 |               0.019 | 14349.000 |            0.368 |                0.023 |
-| breadth (stocks above 50d)     | mid                |  6934.000 |           0.293 |               0.004 |  8175.000 |            0.402 |                0.030 |
-| VIX level                      | 15-20              |  6610.000 |           0.279 |               0.001 |  9426.000 |            0.344 |                0.013 |
-| VIX level                      | 20-30              |  4250.000 |           0.437 |               0.044 | 12342.000 |            0.428 |                0.043 |
-| VIX level                      | < 15               |  7593.000 |           0.296 |               0.015 |  5214.000 |            0.320 |                0.002 |
-| VIX level                      | > 30               |  2422.000 |           0.335 |               0.009 |  1073.000 |            0.536 |                0.069 |
-| VIX / VIX3M                    | 0.9-1.0            |  6617.000 |           0.367 |               0.030 | 11802.000 |            0.374 |                0.026 |
-| VIX / VIX3M                    | < 0.9 (calm)       | 11491.000 |           0.299 |               0.010 | 13526.000 |            0.394 |                0.026 |
-| VIX / VIX3M                    | > 1.0 (stress)     |  2767.000 |           0.322 |               0.003 |  2727.000 |            0.376 |                0.027 |
-| SPY above 200d                 | no                 |  5876.000 |           0.352 |               0.016 |  6175.000 |            0.413 |                0.037 |
-| SPY above 200d                 | yes                | 14999.000 |           0.313 |               0.016 | 21880.000 |            0.376 |                0.023 |
-| QQQ above 10 & 20 SMA          | no                 |  9230.000 |           0.346 |               0.021 | 15391.000 |            0.373 |                0.025 |
-| QQQ above 10 & 20 SMA          | yes                | 11645.000 |           0.306 |               0.012 | 12664.000 |            0.397 |                0.028 |
-| SPY 1-month return             | -3..0%             |  3540.000 |           0.274 |              -0.002 |  5226.000 |            0.352 |                0.020 |
-| SPY 1-month return             | 0..3%              |  6844.000 |           0.334 |               0.023 |  7708.000 |            0.388 |                0.024 |
-| SPY 1-month return             | < -3%              |  3839.000 |           0.390 |               0.028 |  7549.000 |            0.367 |                0.024 |
-| SPY 1-month return             | > 3%               |  6652.000 |           0.301 |               0.011 |  7572.000 |            0.419 |                0.036 |
-| sector (11 GICS, by median RS) | bottom 3           |  5204.000 |           0.331 |               0.015 |  6436.000 |            0.374 |                0.024 |
-| sector (11 GICS, by median RS) | middle 5           |  9815.000 |           0.326 |               0.018 | 14741.000 |            0.389 |                0.028 |
-| sector (11 GICS, by median RS) | top 3 (leading)    |  5856.000 |           0.313 |               0.012 |  6878.000 |            0.383 |                0.024 |
-| sub-industry (by median RS)    | bottom 30%         |  5973.000 |           0.342 |               0.021 |  9478.000 |            0.382 |                0.025 |
-| sub-industry (by median RS)    | middle             |  6513.000 |           0.330 |               0.018 |  9464.000 |            0.385 |                0.028 |
-| sub-industry (by median RS)    | top 30% (leading)  |  6909.000 |           0.307 |               0.011 |  8220.000 |            0.387 |                0.027 |
-| 3-day market model             | bottom 10% (skip?) |  1626.000 |           0.409 |               0.035 |   201.000 |            0.478 |                0.057 |
-| 3-day market model             | rest               | 19249.000 |           0.317 |               0.014 | 27854.000 |            0.383 |                0.026 |
+| regime                               | bucket             |      IS_n |   IS_hit_target |   IS_avg_net_return |     OOS_n |   OOS_hit_target |   OOS_avg_net_return |
+|:-------------------------------------|:-------------------|----------:|----------------:|--------------------:|----------:|-----------------:|---------------------:|
+| breadth (stocks above 50d)           | high (> 71%)       |  7011.000 |           0.327 |               0.024 |  5531.000 |            0.398 |                0.031 |
+| breadth (stocks above 50d)           | low (< 53%)        |  6930.000 |           0.351 |               0.019 | 14349.000 |            0.368 |                0.023 |
+| breadth (stocks above 50d)           | mid                |  6934.000 |           0.293 |               0.004 |  8175.000 |            0.402 |                0.030 |
+| VIX level                            | 15-20              |  6610.000 |           0.279 |               0.001 |  9426.000 |            0.344 |                0.013 |
+| VIX level                            | 20-30              |  4250.000 |           0.437 |               0.044 | 12342.000 |            0.428 |                0.043 |
+| VIX level                            | < 15               |  7593.000 |           0.296 |               0.015 |  5214.000 |            0.320 |                0.002 |
+| VIX level                            | > 30               |  2422.000 |           0.335 |               0.009 |  1073.000 |            0.536 |                0.069 |
+| VIX / VIX3M                          | 0.9-1.0            |  6617.000 |           0.367 |               0.030 | 11802.000 |            0.374 |                0.026 |
+| VIX / VIX3M                          | < 0.9 (calm)       | 11491.000 |           0.299 |               0.010 | 13526.000 |            0.394 |                0.026 |
+| VIX / VIX3M                          | > 1.0 (stress)     |  2767.000 |           0.322 |               0.003 |  2727.000 |            0.376 |                0.027 |
+| SPY above 200d                       | no                 |  5876.000 |           0.352 |               0.016 |  6175.000 |            0.413 |                0.037 |
+| SPY above 200d                       | yes                | 14999.000 |           0.313 |               0.016 | 21880.000 |            0.376 |                0.023 |
+| QQQ above 10 & 20 SMA                | no                 |  9230.000 |           0.346 |               0.021 | 15391.000 |            0.373 |                0.025 |
+| QQQ above 10 & 20 SMA                | yes                | 11645.000 |           0.306 |               0.012 | 12664.000 |            0.397 |                0.028 |
+| SPY 1-month return                   | -3..0%             |  3540.000 |           0.274 |              -0.002 |  5226.000 |            0.352 |                0.020 |
+| SPY 1-month return                   | 0..3%              |  6844.000 |           0.334 |               0.023 |  7708.000 |            0.388 |                0.024 |
+| SPY 1-month return                   | < -3%              |  3839.000 |           0.390 |               0.028 |  7549.000 |            0.367 |                0.024 |
+| SPY 1-month return                   | > 3%               |  6652.000 |           0.301 |               0.011 |  7572.000 |            0.419 |                0.036 |
+| SPY vs 21/50 SMA                     | above 21 & 50      | 12471.000 |           0.313 |               0.013 | 13439.000 |            0.387 |                0.024 |
+| SPY vs 21/50 SMA                     | above 21 only      |   519.000 |           0.347 |               0.024 |  1781.000 |            0.403 |                0.034 |
+| SPY vs 21/50 SMA                     | above 50 only      |  2419.000 |           0.231 |              -0.004 |  2923.000 |            0.360 |                0.021 |
+| SPY vs 21/50 SMA                     | below both         |  5466.000 |           0.387 |               0.029 |  9912.000 |            0.383 |                0.030 |
+| QQQ vs 21/50 SMA                     | above 21 & 50      | 12426.000 |           0.288 |               0.006 | 13117.000 |            0.384 |                0.024 |
+| QQQ vs 21/50 SMA                     | above 21 only      |   870.000 |           0.385 |               0.034 |  1392.000 |            0.394 |                0.026 |
+| QQQ vs 21/50 SMA                     | above 50 only      |  1907.000 |           0.341 |               0.026 |  3545.000 |            0.368 |                0.021 |
+| QQQ vs 21/50 SMA                     | below both         |  5672.000 |           0.387 |               0.030 | 10001.000 |            0.388 |                0.031 |
+| A/D line vs its 21/50 MA             | above 21 & 50      | 12709.000 |           0.292 |               0.008 | 12961.000 |            0.400 |                0.030 |
+| A/D line vs its 21/50 MA             | above 21 only      |   871.000 |           0.413 |               0.032 |  1298.000 |            0.320 |                0.005 |
+| A/D line vs its 21/50 MA             | above 50 only      |  2673.000 |           0.305 |               0.017 |  4338.000 |            0.365 |                0.024 |
+| A/D line vs its 21/50 MA             | below both         |  4622.000 |           0.404 |               0.034 |  9458.000 |            0.380 |                0.025 |
+| % of stocks above 20d                | 40-60%             |  5076.000 |           0.314 |               0.012 |  6022.000 |            0.342 |                0.011 |
+| % of stocks above 20d                | < 40%              |  5286.000 |           0.348 |               0.019 | 11468.000 |            0.378 |                0.026 |
+| % of stocks above 20d                | > 60%              | 10513.000 |           0.316 |               0.016 | 10565.000 |            0.415 |                0.035 |
+| % above 50d, 10-day change           | falling (< -5 pts) |  8402.000 |           0.346 |               0.024 | 13323.000 |            0.385 |                0.029 |
+| % above 50d, 10-day change           | flat               |  4433.000 |           0.270 |              -0.003 |  7154.000 |            0.363 |                0.018 |
+| % above 50d, 10-day change           | rising (> +5 pts)  |  8040.000 |           0.330 |               0.017 |  7578.000 |            0.401 |                0.030 |
+| A/D line, 10-day change              | flat               |  5576.000 |           0.280 |              -0.001 |  7267.000 |            0.389 |                0.028 |
+| A/D line, 10-day change              | falling            |  5957.000 |           0.382 |               0.034 | 10862.000 |            0.385 |                0.029 |
+| A/D line, 10-day change              | rising             |  9342.000 |           0.312 |               0.014 |  9926.000 |            0.379 |                0.023 |
+| sector & sub-industry today green    | both               |  7741.000 |           0.308 |               0.011 | 10583.000 |            0.380 |                0.024 |
+| sector & sub-industry today green    | neither            |  8529.000 |           0.340 |               0.021 | 12091.000 |            0.398 |                0.032 |
+| sector & sub-industry today green    | one of the two     |  3171.000 |           0.327 |               0.015 |  4527.000 |            0.358 |                0.017 |
+| sector & sub-industry up over 5 days | both               |  8974.000 |           0.294 |               0.007 | 10707.000 |            0.396 |                0.029 |
+| sector & sub-industry up over 5 days | neither            |  7230.000 |           0.360 |               0.026 | 12007.000 |            0.381 |                0.027 |
+| sector & sub-industry up over 5 days | one of the two     |  3235.000 |           0.336 |               0.018 |  4487.000 |            0.367 |                0.019 |
+| sector & sub-industry above 21 EMA   | both               |  9511.000 |           0.304 |               0.010 | 10377.000 |            0.398 |                0.030 |
+| sector & sub-industry above 21 EMA   | neither            |  6624.000 |           0.353 |               0.023 | 12170.000 |            0.384 |                0.028 |
+| sector & sub-industry above 21 EMA   | one of the two     |  3306.000 |           0.330 |               0.018 |  4654.000 |            0.355 |                0.016 |
+| sector (11 GICS, by median RS)       | bottom 3           |  5204.000 |           0.331 |               0.015 |  6436.000 |            0.374 |                0.024 |
+| sector (11 GICS, by median RS)       | middle 5           |  9815.000 |           0.326 |               0.018 | 14741.000 |            0.389 |                0.028 |
+| sector (11 GICS, by median RS)       | top 3 (leading)    |  5856.000 |           0.313 |               0.012 |  6878.000 |            0.383 |                0.024 |
+| sub-industry (by median RS)          | bottom 30%         |  5973.000 |           0.342 |               0.021 |  9478.000 |            0.382 |                0.025 |
+| sub-industry (by median RS)          | middle             |  6513.000 |           0.330 |               0.018 |  9464.000 |            0.385 |                0.028 |
+| sub-industry (by median RS)          | top 30% (leading)  |  6909.000 |           0.307 |               0.011 |  8220.000 |            0.387 |                0.027 |
+| 3-day market model                   | bottom 10% (skip?) |  1626.000 |           0.409 |               0.035 |   201.000 |            0.478 |                0.057 |
+| 3-day market model                   | rest               | 19249.000 |           0.317 |               0.014 | 27854.000 |            0.383 |                0.026 |
 
 Same, S&P 500 stocks only after they joined the index (point-in-time survivorship check):
 
-| regime                         | bucket             |     IS_n |   IS_hit_target |   IS_avg_net_return |    OOS_n |   OOS_hit_target |   OOS_avg_net_return |
-|:-------------------------------|:-------------------|---------:|----------------:|--------------------:|---------:|-----------------:|---------------------:|
-| breadth (stocks above 50d)     | high (> 71%)       |  949.000 |           0.325 |               0.034 |  568.000 |            0.442 |                0.051 |
-| breadth (stocks above 50d)     | low (< 53%)        | 1074.000 |           0.324 |               0.021 | 2132.000 |            0.360 |                0.028 |
-| breadth (stocks above 50d)     | mid                | 1008.000 |           0.275 |               0.002 | 1059.000 |            0.428 |                0.042 |
-| VIX level                      | 15-20              |  953.000 |           0.225 |              -0.008 | 1051.000 |            0.356 |                0.021 |
-| VIX level                      | 20-30              |  691.000 |           0.444 |               0.059 | 2086.000 |            0.413 |                0.048 |
-| VIX level                      | < 15               |  717.000 |           0.254 |               0.019 |  429.000 |            0.310 |               -0.004 |
-| VIX level                      | > 30               |  670.000 |           0.343 |               0.016 |  193.000 |            0.534 |                0.073 |
-| VIX / VIX3M                    | 0.9-1.0            | 1025.000 |           0.390 |               0.046 | 1802.000 |            0.372 |                0.035 |
-| VIX / VIX3M                    | < 0.9 (calm)       | 1433.000 |           0.273 |               0.012 | 1510.000 |            0.421 |                0.038 |
-| VIX / VIX3M                    | > 1.0 (stress)     |  573.000 |           0.248 |              -0.014 |  447.000 |            0.369 |                0.030 |
-| SPY above 200d                 | no                 | 1237.000 |           0.346 |               0.019 | 1200.000 |            0.417 |                0.047 |
-| SPY above 200d                 | yes                | 1794.000 |           0.281 |               0.018 | 2559.000 |            0.380 |                0.030 |
-| QQQ above 10 & 20 SMA          | no                 | 1330.000 |           0.327 |               0.024 | 2289.000 |            0.375 |                0.032 |
-| QQQ above 10 & 20 SMA          | yes                | 1701.000 |           0.293 |               0.014 | 1470.000 |            0.417 |                0.040 |
-| SPY 1-month return             | -3..0%             |  413.000 |           0.184 |              -0.018 |  605.000 |            0.337 |                0.024 |
-| SPY 1-month return             | 0..3%              |  879.000 |           0.349 |               0.033 |  858.000 |            0.427 |                0.044 |
-| SPY 1-month return             | < -3%              |  741.000 |           0.347 |               0.023 | 1332.000 |            0.365 |                0.030 |
-| SPY 1-month return             | > 3%               |  998.000 |           0.294 |               0.018 |  964.000 |            0.432 |                0.043 |
-| sector (11 GICS, by median RS) | bottom 3           | 1000.000 |           0.317 |               0.016 | 1027.000 |            0.382 |                0.035 |
-| sector (11 GICS, by median RS) | middle 5           | 1286.000 |           0.313 |               0.024 | 1959.000 |            0.398 |                0.037 |
-| sector (11 GICS, by median RS) | top 3 (leading)    |  745.000 |           0.286 |               0.012 |  773.000 |            0.389 |                0.033 |
-| sub-industry (by median RS)    | bottom 30%         | 1035.000 |           0.335 |               0.028 | 1472.000 |            0.417 |                0.043 |
-| sub-industry (by median RS)    | middle             |  864.000 |           0.309 |               0.018 | 1254.000 |            0.382 |                0.032 |
-| sub-industry (by median RS)    | top 30% (leading)  |  874.000 |           0.283 |               0.015 |  878.000 |            0.378 |                0.034 |
-| 3-day market model             | bottom 10% (skip?) |  293.000 |           0.382 |               0.032 |   18.000 |            0.444 |                0.050 |
-| 3-day market model             | rest               | 2738.000 |           0.300 |               0.017 | 3741.000 |            0.391 |                0.035 |
+| regime                               | bucket             |     IS_n |   IS_hit_target |   IS_avg_net_return |    OOS_n |   OOS_hit_target |   OOS_avg_net_return |
+|:-------------------------------------|:-------------------|---------:|----------------:|--------------------:|---------:|-----------------:|---------------------:|
+| breadth (stocks above 50d)           | high (> 71%)       |  949.000 |           0.325 |               0.034 |  568.000 |            0.442 |                0.051 |
+| breadth (stocks above 50d)           | low (< 53%)        | 1074.000 |           0.324 |               0.021 | 2132.000 |            0.360 |                0.028 |
+| breadth (stocks above 50d)           | mid                | 1008.000 |           0.275 |               0.002 | 1059.000 |            0.428 |                0.042 |
+| VIX level                            | 15-20              |  953.000 |           0.225 |              -0.008 | 1051.000 |            0.356 |                0.021 |
+| VIX level                            | 20-30              |  691.000 |           0.444 |               0.059 | 2086.000 |            0.413 |                0.048 |
+| VIX level                            | < 15               |  717.000 |           0.254 |               0.019 |  429.000 |            0.310 |               -0.004 |
+| VIX level                            | > 30               |  670.000 |           0.343 |               0.016 |  193.000 |            0.534 |                0.073 |
+| VIX / VIX3M                          | 0.9-1.0            | 1025.000 |           0.390 |               0.046 | 1802.000 |            0.372 |                0.035 |
+| VIX / VIX3M                          | < 0.9 (calm)       | 1433.000 |           0.273 |               0.012 | 1510.000 |            0.421 |                0.038 |
+| VIX / VIX3M                          | > 1.0 (stress)     |  573.000 |           0.248 |              -0.014 |  447.000 |            0.369 |                0.030 |
+| SPY above 200d                       | no                 | 1237.000 |           0.346 |               0.019 | 1200.000 |            0.417 |                0.047 |
+| SPY above 200d                       | yes                | 1794.000 |           0.281 |               0.018 | 2559.000 |            0.380 |                0.030 |
+| QQQ above 10 & 20 SMA                | no                 | 1330.000 |           0.327 |               0.024 | 2289.000 |            0.375 |                0.032 |
+| QQQ above 10 & 20 SMA                | yes                | 1701.000 |           0.293 |               0.014 | 1470.000 |            0.417 |                0.040 |
+| SPY 1-month return                   | -3..0%             |  413.000 |           0.184 |              -0.018 |  605.000 |            0.337 |                0.024 |
+| SPY 1-month return                   | 0..3%              |  879.000 |           0.349 |               0.033 |  858.000 |            0.427 |                0.044 |
+| SPY 1-month return                   | < -3%              |  741.000 |           0.347 |               0.023 | 1332.000 |            0.365 |                0.030 |
+| SPY 1-month return                   | > 3%               |  998.000 |           0.294 |               0.018 |  964.000 |            0.432 |                0.043 |
+| SPY vs 21/50 SMA                     | above 21 & 50      | 1766.000 |           0.297 |               0.015 | 1486.000 |            0.415 |                0.036 |
+| SPY vs 21/50 SMA                     | above 21 only      |   79.000 |           0.354 |               0.047 |  268.000 |            0.474 |                0.070 |
+| SPY vs 21/50 SMA                     | above 50 only      |  290.000 |           0.186 |              -0.008 |  366.000 |            0.287 |                0.006 |
+| SPY vs 21/50 SMA                     | below both         |  896.000 |           0.365 |               0.032 | 1639.000 |            0.380 |                0.036 |
+| QQQ vs 21/50 SMA                     | above 21 & 50      | 1755.000 |           0.267 |               0.007 | 1501.000 |            0.410 |                0.038 |
+| QQQ vs 21/50 SMA                     | above 21 only      |  168.000 |           0.357 |               0.029 |  161.000 |            0.391 |                0.028 |
+| QQQ vs 21/50 SMA                     | above 50 only      |  214.000 |           0.308 |               0.027 |  477.000 |            0.327 |                0.015 |
+| QQQ vs 21/50 SMA                     | below both         |  894.000 |           0.378 |               0.038 | 1620.000 |            0.394 |                0.040 |
+| A/D line vs its 21/50 MA             | above 21 & 50      | 1739.000 |           0.264 |               0.006 | 1522.000 |            0.442 |                0.050 |
+| A/D line vs its 21/50 MA             | above 21 only      |  171.000 |           0.444 |               0.048 |  149.000 |            0.282 |               -0.009 |
+| A/D line vs its 21/50 MA             | above 50 only      |  343.000 |           0.283 |               0.023 |  547.000 |            0.329 |                0.020 |
+| A/D line vs its 21/50 MA             | below both         |  778.000 |           0.387 |               0.038 | 1541.000 |            0.374 |                0.031 |
+| % of stocks above 20d                | 40-60%             |  658.000 |           0.284 |               0.007 |  632.000 |            0.324 |                0.008 |
+| % of stocks above 20d                | < 40%              |  798.000 |           0.318 |               0.023 | 1827.000 |            0.368 |                0.031 |
+| % of stocks above 20d                | > 60%              | 1575.000 |           0.312 |               0.021 | 1300.000 |            0.457 |                0.055 |
+| % above 50d, 10-day change           | falling (< -5 pts) | 1141.000 |           0.316 |               0.028 | 1894.000 |            0.388 |                0.036 |
+| % above 50d, 10-day change           | flat               |  558.000 |           0.224 |              -0.015 |  916.000 |            0.348 |                0.021 |
+| % above 50d, 10-day change           | rising (> +5 pts)  | 1332.000 |           0.336 |               0.025 |  949.000 |            0.440 |                0.049 |
+| A/D line, 10-day change              | flat               |  738.000 |           0.222 |              -0.015 |  893.000 |            0.414 |                0.040 |
+| A/D line, 10-day change              | falling            |  925.000 |           0.366 |               0.039 | 1707.000 |            0.374 |                0.033 |
+| A/D line, 10-day change              | rising             | 1368.000 |           0.314 |               0.023 | 1159.000 |            0.400 |                0.037 |
+| sector & sub-industry today green    | both               | 1026.000 |           0.279 |               0.010 | 1339.000 |            0.412 |                0.039 |
+| sector & sub-industry today green    | neither            | 1295.000 |           0.341 |               0.032 | 1699.000 |            0.403 |                0.042 |
+| sector & sub-industry today green    | one of the two     |  467.000 |           0.293 |               0.014 |  583.000 |            0.334 |                0.016 |
+| sector & sub-industry up over 5 days | both               | 1242.000 |           0.266 |               0.009 | 1254.000 |            0.410 |                0.040 |
+| sector & sub-industry up over 5 days | neither            | 1050.000 |           0.376 |               0.041 | 1823.000 |            0.389 |                0.036 |
+| sector & sub-industry up over 5 days | one of the two     |  495.000 |           0.281 |               0.008 |  544.000 |            0.381 |                0.031 |
+| sector & sub-industry above 21 EMA   | both               | 1303.000 |           0.288 |               0.014 | 1158.000 |            0.446 |                0.051 |
+| sector & sub-industry above 21 EMA   | neither            |  987.000 |           0.339 |               0.031 | 1902.000 |            0.375 |                0.032 |
+| sector & sub-industry above 21 EMA   | one of the two     |  498.000 |           0.311 |               0.019 |  561.000 |            0.358 |                0.024 |
+| sector (11 GICS, by median RS)       | bottom 3           | 1000.000 |           0.317 |               0.016 | 1027.000 |            0.382 |                0.035 |
+| sector (11 GICS, by median RS)       | middle 5           | 1286.000 |           0.313 |               0.024 | 1959.000 |            0.398 |                0.037 |
+| sector (11 GICS, by median RS)       | top 3 (leading)    |  745.000 |           0.286 |               0.012 |  773.000 |            0.389 |                0.033 |
+| sub-industry (by median RS)          | bottom 30%         | 1035.000 |           0.335 |               0.028 | 1472.000 |            0.417 |                0.043 |
+| sub-industry (by median RS)          | middle             |  864.000 |           0.309 |               0.018 | 1254.000 |            0.382 |                0.032 |
+| sub-industry (by median RS)          | top 30% (leading)  |  874.000 |           0.283 |               0.015 |  878.000 |            0.378 |                0.034 |
+| 3-day market model                   | bottom 10% (skip?) |  293.000 |           0.382 |               0.032 |   18.000 |            0.444 |                0.050 |
+| 3-day market model                   | rest               | 2738.000 |           0.300 |               0.017 | 3741.000 |            0.391 |                0.035 |
 
 All stocks (no model), +20/-10, by the same splits: does a leading sector help on its own?
 
-| regime                         | bucket             |       IS_n |   IS_hit_target |   IS_avg_net_return |      OOS_n |   OOS_hit_target |   OOS_avg_net_return |
-|:-------------------------------|:-------------------|-----------:|----------------:|--------------------:|-----------:|-----------------:|---------------------:|
-| breadth (stocks above 50d)     | high (> 71%)       |  71732.000 |           0.163 |               0.025 |  73183.000 |            0.209 |                0.009 |
-| breadth (stocks above 50d)     | low (< 53%)        |  67297.000 |           0.218 |               0.020 | 106675.000 |            0.261 |                0.021 |
-| breadth (stocks above 50d)     | mid                |  69689.000 |           0.160 |               0.015 | 100660.000 |            0.212 |                0.009 |
-| VIX level                      | 15-20              |  59022.000 |           0.163 |               0.018 | 107145.000 |            0.206 |                0.009 |
-| VIX level                      | 20-30              |  43347.000 |           0.263 |               0.034 |  85329.000 |            0.273 |                0.021 |
-| VIX level                      | < 15               |  86178.000 |           0.135 |               0.019 |  70893.000 |            0.174 |                0.002 |
-| VIX level                      | > 30               |  20171.000 |           0.241 |               0.003 |  17151.000 |            0.396 |                0.046 |
-| VIX / VIX3M                    | 0.9-1.0            |  68343.000 |           0.203 |               0.024 | 103129.000 |            0.244 |                0.018 |
-| VIX / VIX3M                    | < 0.9 (calm)       | 118980.000 |           0.155 |               0.020 | 157497.000 |            0.211 |                0.009 |
-| VIX / VIX3M                    | > 1.0 (stress)     |  21395.000 |           0.243 |               0.010 |  19892.000 |            0.311 |                0.024 |
-| SPY above 200d                 | no                 |  45920.000 |           0.246 |               0.014 |  51862.000 |            0.279 |                0.016 |
-| SPY above 200d                 | yes                | 162798.000 |           0.161 |               0.022 | 228656.000 |            0.219 |                0.013 |
-| QQQ above 10 & 20 SMA          | no                 |  85959.000 |           0.203 |               0.020 | 120794.000 |            0.235 |                0.011 |
-| QQQ above 10 & 20 SMA          | yes                | 122759.000 |           0.164 |               0.020 | 159724.000 |            0.226 |                0.015 |
-| SPY 1-month return             | -3..0%             |  41194.000 |           0.179 |               0.019 |  44690.000 |            0.225 |                0.015 |
-| SPY 1-month return             | 0..3%              |  75549.000 |           0.162 |               0.020 |  89375.000 |            0.216 |                0.010 |
-| SPY 1-month return             | < -3%              |  28564.000 |           0.261 |               0.021 |  44664.000 |            0.261 |                0.014 |
-| SPY 1-month return             | > 3%               |  63411.000 |           0.165 |               0.021 | 101789.000 |            0.231 |                0.015 |
-| sector (11 GICS, by median RS) | bottom 3           |  49082.000 |           0.183 |               0.021 |  61610.000 |            0.230 |                0.014 |
-| sector (11 GICS, by median RS) | middle 5           | 102206.000 |           0.183 |               0.022 | 137458.000 |            0.234 |                0.014 |
-| sector (11 GICS, by median RS) | top 3 (leading)    |  57430.000 |           0.172 |               0.017 |  81450.000 |            0.223 |                0.011 |
-| sub-industry (by median RS)    | bottom 30%         |  52119.000 |           0.195 |               0.022 |  75142.000 |            0.238 |                0.011 |
-| sub-industry (by median RS)    | middle             |  84123.000 |           0.170 |               0.022 | 113554.000 |            0.222 |                0.015 |
-| sub-industry (by median RS)    | top 30% (leading)  |  59994.000 |           0.179 |               0.018 |  82724.000 |            0.234 |                0.013 |
-| 3-day market model             | bottom 10% (skip?) |  21518.000 |           0.232 |               0.026 |   4965.000 |            0.352 |                0.043 |
-| 3-day market model             | rest               | 187200.000 |           0.174 |               0.020 | 275553.000 |            0.228 |                0.013 |
+| regime                               | bucket             |       IS_n |   IS_hit_target |   IS_avg_net_return |      OOS_n |   OOS_hit_target |   OOS_avg_net_return |
+|:-------------------------------------|:-------------------|-----------:|----------------:|--------------------:|-----------:|-----------------:|---------------------:|
+| breadth (stocks above 50d)           | high (> 71%)       |  71732.000 |           0.163 |               0.025 |  73183.000 |            0.209 |                0.009 |
+| breadth (stocks above 50d)           | low (< 53%)        |  67297.000 |           0.218 |               0.020 | 106675.000 |            0.261 |                0.021 |
+| breadth (stocks above 50d)           | mid                |  69689.000 |           0.160 |               0.015 | 100660.000 |            0.212 |                0.009 |
+| VIX level                            | 15-20              |  59022.000 |           0.163 |               0.018 | 107145.000 |            0.206 |                0.009 |
+| VIX level                            | 20-30              |  43347.000 |           0.263 |               0.034 |  85329.000 |            0.273 |                0.021 |
+| VIX level                            | < 15               |  86178.000 |           0.135 |               0.019 |  70893.000 |            0.174 |                0.002 |
+| VIX level                            | > 30               |  20171.000 |           0.241 |               0.003 |  17151.000 |            0.396 |                0.046 |
+| VIX / VIX3M                          | 0.9-1.0            |  68343.000 |           0.203 |               0.024 | 103129.000 |            0.244 |                0.018 |
+| VIX / VIX3M                          | < 0.9 (calm)       | 118980.000 |           0.155 |               0.020 | 157497.000 |            0.211 |                0.009 |
+| VIX / VIX3M                          | > 1.0 (stress)     |  21395.000 |           0.243 |               0.010 |  19892.000 |            0.311 |                0.024 |
+| SPY above 200d                       | no                 |  45920.000 |           0.246 |               0.014 |  51862.000 |            0.279 |                0.016 |
+| SPY above 200d                       | yes                | 162798.000 |           0.161 |               0.022 | 228656.000 |            0.219 |                0.013 |
+| QQQ above 10 & 20 SMA                | no                 |  85959.000 |           0.203 |               0.020 | 120794.000 |            0.235 |                0.011 |
+| QQQ above 10 & 20 SMA                | yes                | 122759.000 |           0.164 |               0.020 | 159724.000 |            0.226 |                0.015 |
+| SPY 1-month return                   | -3..0%             |  41194.000 |           0.179 |               0.019 |  44690.000 |            0.225 |                0.015 |
+| SPY 1-month return                   | 0..3%              |  75549.000 |           0.162 |               0.020 |  89375.000 |            0.216 |                0.010 |
+| SPY 1-month return                   | < -3%              |  28564.000 |           0.261 |               0.021 |  44664.000 |            0.261 |                0.014 |
+| SPY 1-month return                   | > 3%               |  63411.000 |           0.165 |               0.021 | 101789.000 |            0.231 |                0.015 |
+| SPY vs 21/50 SMA                     | above 21 & 50      | 128047.000 |           0.161 |               0.021 | 176873.000 |            0.213 |                0.010 |
+| SPY vs 21/50 SMA                     | above 21 only      |   8902.000 |           0.204 |               0.015 |  16994.000 |            0.269 |                0.026 |
+| SPY vs 21/50 SMA                     | above 50 only      |  21828.000 |           0.131 |               0.001 |  21415.000 |            0.225 |                0.010 |
+| SPY vs 21/50 SMA                     | below both         |  49941.000 |           0.245 |               0.027 |  65236.000 |            0.268 |                0.020 |
+| QQQ vs 21/50 SMA                     | above 21 & 50      | 126854.000 |           0.158 |               0.017 | 165855.000 |            0.217 |                0.012 |
+| QQQ vs 21/50 SMA                     | above 21 only      |  11791.000 |           0.198 |               0.022 |  16899.000 |            0.254 |                0.021 |
+| QQQ vs 21/50 SMA                     | above 50 only      |  20354.000 |           0.177 |               0.025 |  29649.000 |            0.222 |                0.009 |
+| QQQ vs 21/50 SMA                     | below both         |  49719.000 |           0.232 |               0.025 |  68115.000 |            0.258 |                0.017 |
+| A/D line vs its 21/50 MA             | above 21 & 50      | 131737.000 |           0.157 |               0.019 | 169798.000 |            0.209 |                0.009 |
+| A/D line vs its 21/50 MA             | above 21 only      |   7717.000 |           0.189 |              -0.010 |   8948.000 |            0.304 |                0.024 |
+| A/D line vs its 21/50 MA             | above 50 only      |  25278.000 |           0.164 |               0.022 |  39217.000 |            0.240 |                0.020 |
+| A/D line vs its 21/50 MA             | below both         |  43986.000 |           0.255 |               0.028 |  62555.000 |            0.271 |                0.019 |
+| % of stocks above 20d                | 40-60%             |  49663.000 |           0.167 |               0.013 |  72871.000 |            0.201 |                0.002 |
+| % of stocks above 20d                | < 40%              |  49408.000 |           0.224 |               0.024 |  72914.000 |            0.275 |                0.025 |
+| % of stocks above 20d                | > 60%              | 109647.000 |           0.166 |               0.022 | 134733.000 |            0.221 |                0.013 |
+| % above 50d, 10-day change           | falling (< -5 pts) |  83415.000 |           0.191 |               0.025 | 103046.000 |            0.242 |                0.016 |
+| % above 50d, 10-day change           | flat               |  46083.000 |           0.149 |               0.010 |  75622.000 |            0.214 |                0.007 |
+| % above 50d, 10-day change           | rising (> +5 pts)  |  79220.000 |           0.186 |               0.022 | 101850.000 |            0.229 |                0.014 |
+| A/D line, 10-day change              | flat               |  57613.000 |           0.166 |               0.014 |  76536.000 |            0.225 |                0.010 |
+| A/D line, 10-day change              | falling            |  56238.000 |           0.214 |               0.024 |  76386.000 |            0.269 |                0.022 |
+| A/D line, 10-day change              | rising             |  94867.000 |           0.168 |               0.022 | 127596.000 |            0.210 |                0.010 |
+| sector & sub-industry today green    | both               |  88243.000 |           0.167 |               0.018 | 121675.000 |            0.221 |                0.011 |
+| sector & sub-industry today green    | neither            |  78150.000 |           0.192 |               0.022 | 105754.000 |            0.243 |                0.017 |
+| sector & sub-industry today green    | one of the two     |  30420.000 |           0.182 |               0.022 |  44306.000 |            0.225 |                0.012 |
+| sector & sub-industry up over 5 days | both               |  98181.000 |           0.165 |               0.020 | 132962.000 |            0.227 |                0.014 |
+| sector & sub-industry up over 5 days | neither            |  67112.000 |           0.199 |               0.021 |  93454.000 |            0.245 |                0.016 |
+| sector & sub-industry up over 5 days | one of the two     |  31511.000 |           0.183 |               0.021 |  45312.000 |            0.211 |                0.006 |
+| sector & sub-industry above 21 EMA   | both               | 107573.000 |           0.161 |               0.021 | 140980.000 |            0.211 |                0.009 |
+| sector & sub-industry above 21 EMA   | neither            |  58174.000 |           0.215 |               0.022 |  84518.000 |            0.268 |                0.022 |
+| sector & sub-industry above 21 EMA   | one of the two     |  31066.000 |           0.174 |               0.016 |  46237.000 |            0.221 |                0.009 |
+| sector (11 GICS, by median RS)       | bottom 3           |  49082.000 |           0.183 |               0.021 |  61610.000 |            0.230 |                0.014 |
+| sector (11 GICS, by median RS)       | middle 5           | 102206.000 |           0.183 |               0.022 | 137458.000 |            0.234 |                0.014 |
+| sector (11 GICS, by median RS)       | top 3 (leading)    |  57430.000 |           0.172 |               0.017 |  81450.000 |            0.223 |                0.011 |
+| sub-industry (by median RS)          | bottom 30%         |  52119.000 |           0.195 |               0.022 |  75142.000 |            0.238 |                0.011 |
+| sub-industry (by median RS)          | middle             |  84123.000 |           0.170 |               0.022 | 113554.000 |            0.222 |                0.015 |
+| sub-industry (by median RS)          | top 30% (leading)  |  59994.000 |           0.179 |               0.018 |  82724.000 |            0.234 |                0.013 |
+| 3-day market model                   | bottom 10% (skip?) |  21518.000 |           0.232 |               0.026 |   4965.000 |            0.352 |                0.043 |
+| 3-day market model                   | rest               | 187200.000 |           0.174 |               0.020 | 275553.000 |            0.228 |                0.013 |
 
-Regime gates, one family at a time: skip the buckets of that family that were below break-even in-sample (hit < 33% or negative return), then trade the model's top 10% with +20/-10. LEADING rows (run 19) keep only the picks in leading groups (top 3 of 11 sectors / top 30% of sub-industries by median RS, fixed in advance). Portfolio 2018+:
+Regime gates, one family at a time: skip the buckets of that family that were below break-even in-sample (hit < 33% or negative return), then trade the model's top 10% with +20/-10. RULE rows keep only the picks that pass a rule fixed in advance: leading groups (run 19: top 3 of 11 sectors / top 30% of sub-industries by median RS) and the user's run-21 rules (SPY/QQQ vs 21 & 50 SMA, breadth, A/D line, sector & sub-industry green / up 5 days / above 21 EMA; groups = equal-weight median of member stocks). Portfolio 2018+:
 
-| gate                                              | skipped (chosen IS)                 |    CAGR |   max_DD |   trades |   PIT CAGR |   PIT max_DD |
-|:--------------------------------------------------|:------------------------------------|--------:|---------:|---------:|-----------:|-------------:|
-| breadth (stocks above 50d)                        | high (> 71%), mid                   |   0.125 |   -0.415 |  707.000 |      0.092 |       -0.266 |
-| VIX level                                         | 15-20, < 15                         |   0.256 |   -0.459 |  664.000 |      0.213 |       -0.296 |
-| VIX / VIX3M                                       | < 0.9 (calm), > 1.0 (stress)        |   0.134 |   -0.455 |  801.000 |      0.149 |       -0.268 |
-| SPY above 200d                                    | yes                                 |   0.092 |   -0.308 |  320.000 |      0.059 |       -0.217 |
-| QQQ above 10 & 20 SMA                             | yes                                 |   0.163 |   -0.458 |  907.000 |      0.120 |       -0.289 |
-| SPY 1-month return                                | -3..0%, > 3%                        |   0.176 |   -0.398 |  928.000 |      0.168 |       -0.285 |
-| sector (11 GICS, by median RS)                    | bottom 3, middle 5, top 3 (leading) | nan     |  nan     |  nan     |    nan     |      nan     |
-| sub-industry (by median RS)                       | middle, top 30% (leading)           |   0.211 |   -0.338 | 1024.000 |      0.164 |       -0.268 |
-| 3-day market model                                | rest                                |   0.075 |   -0.162 |  130.000 |      0.010 |       -0.053 |
-| LEADING: top 3 sectors only                       | nothing                             |   0.124 |   -0.342 |  909.000 |      0.114 |       -0.213 |
-| LEADING: top 30% sub-industries only              | nothing                             |   0.232 |   -0.312 |  933.000 |      0.112 |       -0.270 |
-| LEADING: top 3 sectors AND top 30% sub-industries | nothing                             |   0.181 |   -0.372 |  810.000 |      0.047 |       -0.254 |
-| (no gate)                                         | nothing                             |   0.253 |   -0.447 | 1189.000 |      0.213 |       -0.303 |
+| gate                                                  | skipped (chosen IS)                 |    CAGR |   max_DD |   trades |   PIT CAGR |   PIT max_DD |
+|:------------------------------------------------------|:------------------------------------|--------:|---------:|---------:|-----------:|-------------:|
+| breadth (stocks above 50d)                            | high (> 71%), mid                   |   0.125 |   -0.415 |  707.000 |      0.092 |       -0.266 |
+| VIX level                                             | 15-20, < 15                         |   0.256 |   -0.459 |  664.000 |      0.213 |       -0.296 |
+| VIX / VIX3M                                           | < 0.9 (calm), > 1.0 (stress)        |   0.134 |   -0.455 |  801.000 |      0.149 |       -0.268 |
+| SPY above 200d                                        | yes                                 |   0.092 |   -0.308 |  320.000 |      0.059 |       -0.217 |
+| QQQ above 10 & 20 SMA                                 | yes                                 |   0.163 |   -0.458 |  907.000 |      0.120 |       -0.289 |
+| SPY 1-month return                                    | -3..0%, > 3%                        |   0.176 |   -0.398 |  928.000 |      0.168 |       -0.285 |
+| SPY vs 21/50 SMA                                      | above 21 & 50, above 50 only        |   0.116 |   -0.406 |  554.000 |      0.085 |       -0.365 |
+| QQQ vs 21/50 SMA                                      | above 21 & 50                       |   0.159 |   -0.471 |  784.000 |      0.056 |       -0.322 |
+| A/D line vs its 21/50 MA                              | above 21 & 50, above 50 only        |   0.079 |   -0.397 |  554.000 |      0.037 |       -0.329 |
+| % of stocks above 20d                                 | 40-60%, > 60%                       |   0.152 |   -0.442 |  645.000 |      0.094 |       -0.250 |
+| % above 50d, 10-day change                            | flat, rising (> +5 pts)             |   0.094 |   -0.487 |  802.000 |      0.122 |       -0.251 |
+| A/D line, 10-day change                               | flat, rising                        |   0.140 |   -0.334 |  672.000 |      0.074 |       -0.290 |
+| sector & sub-industry today green                     | both, one of the two                |   0.290 |   -0.441 | 1029.000 |      0.146 |       -0.228 |
+| sector & sub-industry up over 5 days                  | both                                |   0.162 |   -0.426 | 1068.000 |      0.137 |       -0.275 |
+| sector & sub-industry above 21 EMA                    | both, one of the two                |   0.279 |   -0.363 |  958.000 |      0.108 |       -0.266 |
+| sector (11 GICS, by median RS)                        | bottom 3, middle 5, top 3 (leading) | nan     |  nan     |  nan     |    nan     |      nan     |
+| sub-industry (by median RS)                           | middle, top 30% (leading)           |   0.211 |   -0.338 | 1024.000 |      0.164 |       -0.268 |
+| 3-day market model                                    | rest                                |   0.075 |   -0.162 |  130.000 |      0.010 |       -0.053 |
+| RULE: top 3 sectors only                              | nothing                             |   0.124 |   -0.342 |  909.000 |      0.114 |       -0.213 |
+| RULE: top 30% sub-industries only                     | nothing                             |   0.232 |   -0.312 |  933.000 |      0.112 |       -0.270 |
+| RULE: top 3 sectors AND top 30% sub-industries        | nothing                             |   0.181 |   -0.372 |  810.000 |      0.047 |       -0.254 |
+| RULE: SPY above its 21 & 50 SMA                       | nothing                             |   0.213 |   -0.352 |  892.000 |      0.145 |       -0.263 |
+| RULE: QQQ above its 21 & 50 SMA                       | nothing                             |   0.240 |   -0.300 |  845.000 |      0.173 |       -0.215 |
+| RULE: SPY above its 50 SMA (21 either way)            | nothing                             |   0.172 |   -0.408 |  929.000 |      0.151 |       -0.328 |
+| RULE: A/D line above its 21 & 50 MA                   | nothing                             |   0.138 |   -0.546 |  896.000 |      0.209 |       -0.196 |
+| RULE: > 50% of stocks above their 50d                 | nothing                             |   0.132 |   -0.380 |  870.000 |      0.138 |       -0.274 |
+| RULE: % above 50d rising over 10 days                 | nothing                             |   0.195 |   -0.325 |  927.000 |      0.177 |       -0.260 |
+| RULE: sector AND sub-industry green today             | nothing                             |   0.223 |   -0.461 | 1026.000 |      0.201 |       -0.245 |
+| RULE: sector AND sub-industry up over 5 days          | nothing                             |   0.119 |   -0.518 |  991.000 |      0.176 |       -0.386 |
+| RULE: sector AND sub-industry above 21 EMA            | nothing                             |   0.152 |   -0.490 |  968.000 |      0.181 |       -0.259 |
+| RULE: SPY > 21 & 50 + sector & sub-industry up 5 days | nothing                             |   0.150 |   -0.358 |  818.000 |      0.161 |       -0.169 |
+| (no gate)                                             | nothing                             |   0.253 |   -0.447 | 1189.000 |      0.213 |       -0.303 |
 
 ## 11. Qullamaggie replication (per trade, out-of-sample 2018+; IS in brackets)
 
@@ -1069,97 +1217,137 @@ Scan = top 3% performer over 1, 3 or 6 months with ADR >= 4%. Regime = QQQ above
 
 ## 9. Portfolio simulation, 2018 -> today ($100k, 1% risk/trade, max 10 positions, no leverage)
 
-| strategy                                                                                 |   CAGR |   max_DD |   max_DD_realized |   trades |    win |   avg_positions |   top2_years_share |
-|:-----------------------------------------------------------------------------------------|-------:|---------:|------------------:|---------:|-------:|----------------:|-------------------:|
-| wf_scan_pullback / wf_scan / bracket_20_10                                               |  -0.01 |    -0.41 |             -0.40 |   692.00 |   0.39 |            8.87 |             nan    |
-| donchian_20 / all / bracket_20_10                                                        |   0.09 |    -0.44 |             -0.42 |   792.00 |   0.41 |            9.29 |               0.98 |
-| pocket_pivot / all / bracket_20_10                                                       |   0.07 |    -0.35 |             -0.31 |   574.00 |   0.41 |            7.27 |               0.63 |
-| wf_scan_base / all / bracket_20_10                                                       |   0.08 |    -0.21 |             -0.20 |   505.00 |   0.50 |            9.60 |               0.70 |
-| donchian_55 / all / bracket_20_10                                                        |   0.01 |    -0.41 |             -0.38 |   747.00 |   0.40 |            9.09 |               4.43 |
-| All setups, ML-filtered (top third), ranked by ML / bracket_20_10                        |   0.06 |    -0.34 |             -0.30 |   646.00 |   0.41 |            8.25 |               0.97 |
-| All setups, ranked by RS / bracket_20_10                                                 |   0.18 |    -0.41 |             -0.38 |  1104.00 |   0.41 |            9.12 |               0.54 |
-| All setups, random order / bracket_20_10                                                 |   0.01 |    -0.45 |             -0.42 |   552.00 |   0.43 |            8.86 |               7.80 |
-| All setups + rs80_early filter, ranked by RS / bracket_20_10                             |   0.14 |    -0.29 |             -0.28 |   849.00 |   0.42 |            8.90 |               0.61 |
-| BASELINE random entries, ranked by RS / bracket_20_10                                    |   0.04 |    -0.51 |             -0.47 |   689.00 |   0.40 |            7.64 |               1.59 |
-| BASELINE random entries, random order / bracket_20_10                                    |   0.05 |    -0.38 |             -0.35 |   424.00 |   0.45 |            7.13 |               1.23 |
-| IS-selected setups (4), ranked by RS / bracket_20_10                                     |  -0.02 |    -0.51 |             -0.49 |   528.00 |   0.40 |            8.15 |             nan    |
-| IS-selected setups, only when SPY > 200d / bracket_20_10                                 |  -0.04 |    -0.51 |             -0.49 |   428.00 |   0.39 |            7.01 |             nan    |
-| IS-selected setups (26), ranked by RS / sma50_close                                      |   0.05 |    -0.55 |             -0.48 |   982.00 |   0.26 |            8.99 |               1.25 |
-| IS-selected setups, only when SPY > 200d / sma50_close                                   |   0.06 |    -0.49 |             -0.45 |   812.00 |   0.25 |            7.74 |               1.03 |
-| All setups, ranked by RS / sma50_close                                                   |   0.15 |    -0.53 |             -0.46 |  1156.00 |   0.28 |            8.84 |               0.58 |
-| Top 5 strategies by IS expectancy (own exits), ranked by RS                              |   0.09 |    -0.26 |             -0.20 |   416.00 |   0.30 |            5.37 |               0.67 |
-| Top 10 strategies by IS expectancy (own exits), ranked by RS                             |   0.07 |    -0.34 |             -0.25 |   464.00 |   0.29 |            5.78 |               0.80 |
-| Top 20 strategies by IS expectancy (own exits), ranked by RS                             |   0.09 |    -0.24 |             -0.16 |   617.00 |   0.31 |            7.70 |               0.62 |
-| Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades)                 |   0.11 |    -0.21 |             -0.12 |   609.00 |   0.33 |            7.64 |               0.49 |
-| Top 20 by IS expectancy, ranked by superperformer model                                  |   0.10 |    -0.27 |             -0.25 |   640.00 |   0.32 |            7.59 |               0.51 |
-| All setups, ranked by superperformer model / bracket_20_10                               |   0.23 |    -0.41 |             -0.39 |  1369.00 |   0.40 |            9.14 |               0.52 |
-| Only setups in the model's top 10% likely superperformers / sma50_close                  |   0.13 |    -0.52 |             -0.45 |  1415.00 |   0.29 |            8.95 |               0.93 |
-| CHECK random entries in the model's top 10% / sma50_close                                |   0.08 |    -0.54 |             -0.47 |   979.00 |   0.15 |            5.30 |               1.07 |
-| CHECK top 10% model, leaders only (within 40% of 52w high) / sma50_close                 |   0.15 |    -0.50 |             -0.43 |  1333.00 |   0.28 |            8.60 |               0.88 |
-| Top 10% model + adaptive sizing / sma50_close                                            |   0.06 |    -0.52 |             -0.40 |  1513.00 |   0.29 |            9.31 |               1.47 |
-| Top 10% CLEAN model (+40% before -20%) / sma50_close                                     |   0.16 |    -0.43 |             -0.38 |  1412.00 |   0.30 |            9.10 |               0.72 |
-| GOAL b20: model's top 10% stocks, no setup needed / bracket_20_10                        |   0.21 |    -0.61 |             -0.59 |  1216.00 |   0.41 |            9.41 |               0.70 |
-| GOAL b20: model top 10% + adaptive sizing / bracket_20_10                                |   0.19 |    -0.51 |             -0.49 |  1189.00 |   0.40 |            9.14 |               0.75 |
-| GOAL b20: setups in the model's top 10% / bracket_20_10                                  |   0.14 |    -0.42 |             -0.41 |  1011.00 |   0.39 |            8.66 |               0.63 |
-| GOAL b20: model top 10%, S&P 500 point-in-time only / bracket_20_10                      |   0.12 |    -0.35 |             -0.33 |   780.00 |   0.40 |            7.98 |               0.90 |
-| GOAL b10: model's top 10% stocks, no setup needed / bracket_10_10                        |   0.09 |    -0.30 |             -0.29 |  1313.00 |   0.54 |            8.33 |               0.67 |
-| GOAL b10: model top 10% + adaptive sizing / bracket_10_10                                |   0.05 |    -0.29 |             -0.27 |  1287.00 |   0.54 |            8.13 |               0.90 |
-| GOAL b10: setups in the model's top 10% / bracket_10_10                                  |   0.12 |    -0.31 |             -0.30 |  1056.00 |   0.55 |            7.18 |               0.60 |
-| GOAL b10: model top 10%, S&P 500 point-in-time only / bracket_10_10                      |   0.08 |    -0.31 |             -0.27 |   835.00 |   0.55 |            6.70 |               1.06 |
-| MENU top 10% model / +10% -10%                                                           |   0.22 |    -0.53 |             -0.52 |  1933.00 |   0.56 |            8.68 |               0.75 |
-| MENU top 10% model / +20% -10%                                                           |   0.25 |    -0.45 |             -0.43 |  1189.00 |   0.42 |            9.07 |               0.65 |
-| MENU top 10% model / +20% -15% (IS best return per month)                                |   0.20 |    -0.36 |             -0.35 |   893.00 |   0.52 |            9.26 |               0.53 |
-| MENU top 10% model / +30% -15% (IS best return per trade)                                |   0.20 |    -0.33 |             -0.33 |   690.00 |   0.46 |            9.37 |               0.53 |
-| REGIME breadth (stocks above 50d): skip ['high (> 71%)', 'mid'] / +20% -10%              |   0.12 |    -0.41 |             -0.40 |   707.00 |   0.41 |            5.57 |               0.64 |
-| REGIME breadth (stocks above 50d), S&P 500 point-in-time only / +20% -10%                |   0.09 |    -0.27 |             -0.25 |   413.00 |   0.45 |            4.64 |               0.66 |
-| REGIME VIX level: skip ['15-20', '< 15'] / +20% -10%                                     |   0.26 |    -0.46 |             -0.44 |   664.00 |   0.47 |            5.53 |               0.50 |
-| REGIME VIX level, S&P 500 point-in-time only / +20% -10%                                 |   0.21 |    -0.30 |             -0.26 |   426.00 |   0.52 |            4.71 |               0.50 |
-| REGIME VIX / VIX3M: skip ['< 0.9 (calm)', '> 1.0 (stress)'] / +20% -10%                  |   0.13 |    -0.46 |             -0.43 |   801.00 |   0.41 |            6.61 |               0.87 |
-| REGIME VIX / VIX3M, S&P 500 point-in-time only / +20% -10%                               |   0.15 |    -0.27 |             -0.24 |   472.00 |   0.47 |            4.94 |               0.62 |
-| REGIME SPY above 200d: skip ['yes'] / +20% -10%                                          |   0.09 |    -0.31 |             -0.29 |   320.00 |   0.44 |            2.40 |               0.77 |
-| REGIME SPY above 200d, S&P 500 point-in-time only / +20% -10%                            |   0.06 |    -0.22 |             -0.18 |   190.00 |   0.47 |            1.73 |               0.88 |
-| REGIME QQQ above 10 & 20 SMA: skip ['yes'] / +20% -10%                                   |   0.16 |    -0.46 |             -0.44 |   907.00 |   0.41 |            7.34 |               0.42 |
-| REGIME QQQ above 10 & 20 SMA, S&P 500 point-in-time only / +20% -10%                     |   0.12 |    -0.29 |             -0.25 |   507.00 |   0.46 |            5.68 |               0.54 |
-| REGIME SPY 1-month return: skip ['-3..0%', '> 3%'] / +20% -10%                           |   0.18 |    -0.40 |             -0.39 |   928.00 |   0.41 |            7.63 |               0.57 |
-| REGIME SPY 1-month return, S&P 500 point-in-time only / +20% -10%                        |   0.17 |    -0.28 |             -0.24 |   504.00 |   0.47 |            5.68 |               0.42 |
-| REGIME sub-industry (by median RS): skip ['middle', 'top 30% (leading)'] / +20% -10%     |   0.21 |    -0.34 |             -0.31 |  1024.00 |   0.42 |            8.49 |               0.61 |
-| REGIME sub-industry (by median RS), S&P 500 point-in-time only / +20% -10%               |   0.16 |    -0.27 |             -0.25 |   518.00 |   0.47 |            5.86 |               0.52 |
-| REGIME 3-day market model: skip ['rest'] / +20% -10%                                     |   0.08 |    -0.16 |             -0.13 |   130.00 |   0.52 |            1.23 |               0.70 |
-| REGIME 3-day market model, S&P 500 point-in-time only / +20% -10%                        |   0.01 |    -0.05 |             -0.02 |    18.00 |   0.56 |            0.26 |               0.82 |
-| LEADING top 3 sectors only, model top 10% / +20% -10%                                    |   0.12 |    -0.34 |             -0.31 |   909.00 |   0.41 |            7.83 |               0.78 |
-| LEADING top 3 sectors only, S&P 500 point-in-time only / +20% -10%                       |   0.11 |    -0.21 |             -0.21 |   386.00 |   0.47 |            4.63 |               0.46 |
-| LEADING top 30% sub-industries only, model top 10% / +20% -10%                           |   0.23 |    -0.31 |             -0.26 |   933.00 |   0.43 |            8.47 |               0.54 |
-| LEADING top 30% sub-industries only, S&P 500 point-in-time only / +20% -10%              |   0.11 |    -0.27 |             -0.25 |   424.00 |   0.46 |            5.28 |               0.55 |
-| LEADING top 3 sectors AND top 30% sub-industries, model top 10% / +20% -10%              |   0.18 |    -0.37 |             -0.34 |   810.00 |   0.43 |            7.36 |               0.51 |
-| LEADING top 3 sectors AND top 30% sub-industries, S&P 500 point-in-time only / +20% -10% |   0.05 |    -0.25 |             -0.24 |   254.00 |   0.45 |            3.25 |               0.72 |
-| QULL scan+setups / qull_sma10                                                            |  -0.15 |    -0.77 |             -0.77 |  1130.00 |   0.38 |            3.35 |             nan    |
-| QULL scan+setups / qull_sma20                                                            |  -0.11 |    -0.70 |             -0.70 |   989.00 |   0.39 |            4.00 |             nan    |
-| QULL scan+setups / sma50_close                                                           |   0.08 |    -0.49 |             -0.38 |   658.00 |   0.20 |            5.57 |               1.22 |
-| QULL scan+setups / bracket_20_10                                                         |   0.05 |    -0.38 |             -0.37 |   711.00 |   0.39 |            5.58 |               1.52 |
-| QULL scan+setups, only when QQQ > 10 & 20 SMA / qull_sma10                               |  -0.08 |    -0.58 |             -0.56 |   743.00 |   0.39 |            2.26 |             nan    |
-| QULL ... + regime + adaptive sizing / qull_sma10                                         |  -0.06 |    -0.49 |             -0.47 |   838.00 |   0.39 |            2.53 |             nan    |
-| QULL scan+setups, only when QQQ > 10 & 20 SMA / qull_sma20                               |  -0.03 |    -0.43 |             -0.41 |   665.00 |   0.41 |            2.84 |             nan    |
-| QULL ... + regime + adaptive sizing / qull_sma20                                         |  -0.01 |    -0.35 |             -0.30 |   742.00 |   0.40 |            3.15 |             nan    |
-| QULL scan+setups, only when QQQ > 10 & 20 SMA / sma50_close                              |   0.17 |    -0.46 |             -0.32 |   465.00 |   0.23 |            4.20 |               0.64 |
-| QULL ... + regime + adaptive sizing / sma50_close                                        |   0.14 |    -0.34 |             -0.25 |   482.00 |   0.23 |            4.42 |               0.78 |
-| QULL scan+setups + regime, S&P 500 point-in-time only / qull_sma20                       |  -0.01 |    -0.29 |             -0.29 |    92.00 |   0.30 |            0.30 |             nan    |
-| SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close        |   0.43 |    -0.38 |             -0.32 |   935.00 |   0.32 |            7.19 |               0.47 |
-| SURVIVORSHIP S&P 500 names, only after joining the index (3826 signals) / sma50_close    |   0.18 |    -0.41 |             -0.36 |   810.00 |   0.32 |            6.02 |               0.80 |
-| WORKFLOW rockets as written (regime sizing) / wf_rocket                                  |   0.02 |    -0.10 |             -0.07 |   189.00 |   0.32 |            2.35 |               0.67 |
-| WORKFLOW rockets, no regime rule / wf_rocket                                             |   0.01 |    -0.10 |             -0.06 |   233.00 |   0.32 |            2.73 |               1.01 |
-| WORKFLOW rockets / sma50_close                                                           |   0.02 |    -0.09 |             -0.07 |   188.00 |   0.32 |            2.35 |               0.60 |
-| WORKFLOW rockets / bracket_20_10                                                         |   0.03 |    -0.09 |             -0.08 |   175.00 |   0.43 |            2.41 |               0.85 |
-| WORKFLOW BASELINE random entries, rocket filter + regime / wf_rocket                     |   0.00 |    -0.26 |             -0.15 |   478.00 |   0.17 |            2.46 |              11.52 |
-| WORKFLOW rockets as written, S&P 500 point-in-time only / wf_rocket                      |  -0.00 |    -0.08 |             -0.06 |   147.00 |   0.27 |            1.90 |             nan    |
-| WORKFLOW scanner as written, S&P 500 point-in-time (NDX proxy) / wf_weekly10             |   0.01 |    -0.17 |             -0.13 |   349.00 |   0.28 |            3.44 |               1.64 |
-| WORKFLOW scanner PIT, no regime rule / wf_weekly10                                       |   0.00 |    -0.18 |             -0.16 |   409.00 |   0.30 |            3.93 |              15.72 |
-| WORKFLOW scanner PIT / sma50_close                                                       |   0.01 |    -0.17 |             -0.15 |   374.00 |   0.29 |            3.39 |               1.18 |
-| WORKFLOW BASELINE random entries, scanner filter + regime, PIT / wf_weekly10             |   0.03 |    -0.17 |             -0.16 |   539.00 |   0.15 |            3.30 |               0.86 |
-| WORKFLOW scanner as written, full universe / wf_weekly10                                 |   0.00 |    -0.23 |             -0.20 |   379.00 |   0.25 |            3.40 |              12.76 |
-| Top 10 by IS expectancy, 1% risk, 10 slots, idle cash in SPY                             |   0.13 |    -0.39 |             -0.33 |   464.00 |   0.29 |            5.77 |               0.55 |
-| Top 10 by IS expectancy, 2% risk, 10 slots, idle cash in SPY                             |   0.16 |    -0.41 |             -0.35 |   368.00 |   0.29 |            4.53 |               0.59 |
-| Top 10 by IS expectancy, 2% risk, 15 slots, idle cash in SPY                             |   0.16 |    -0.41 |             -0.35 |   368.00 |   0.29 |            4.53 |               0.59 |
-| SPY buy & hold                                                                           |   0.15 |    -0.34 |            nan    |   nan    | nan    |          nan    |             nan    |
+| strategy                                                                                     |   CAGR |   max_DD |   max_DD_realized |   trades |    win |   avg_positions |   top2_years_share |
+|:---------------------------------------------------------------------------------------------|-------:|---------:|------------------:|---------:|-------:|----------------:|-------------------:|
+| wf_scan_pullback / wf_scan / bracket_20_10                                                   |  -0.01 |    -0.41 |             -0.40 |   692.00 |   0.39 |            8.87 |             nan    |
+| donchian_20 / all / bracket_20_10                                                            |   0.09 |    -0.44 |             -0.42 |   792.00 |   0.41 |            9.29 |               0.98 |
+| pocket_pivot / all / bracket_20_10                                                           |   0.07 |    -0.35 |             -0.31 |   574.00 |   0.41 |            7.27 |               0.63 |
+| wf_scan_base / all / bracket_20_10                                                           |   0.08 |    -0.21 |             -0.20 |   505.00 |   0.50 |            9.60 |               0.70 |
+| donchian_55 / all / bracket_20_10                                                            |   0.01 |    -0.41 |             -0.38 |   747.00 |   0.40 |            9.09 |               4.43 |
+| All setups, ML-filtered (top third), ranked by ML / bracket_20_10                            |   0.06 |    -0.34 |             -0.30 |   646.00 |   0.41 |            8.25 |               0.97 |
+| All setups, ranked by RS / bracket_20_10                                                     |   0.18 |    -0.41 |             -0.38 |  1104.00 |   0.41 |            9.12 |               0.54 |
+| All setups, random order / bracket_20_10                                                     |   0.01 |    -0.45 |             -0.42 |   552.00 |   0.43 |            8.86 |               7.80 |
+| All setups + rs80_early filter, ranked by RS / bracket_20_10                                 |   0.14 |    -0.29 |             -0.28 |   849.00 |   0.42 |            8.90 |               0.61 |
+| BASELINE random entries, ranked by RS / bracket_20_10                                        |   0.04 |    -0.51 |             -0.47 |   689.00 |   0.40 |            7.64 |               1.59 |
+| BASELINE random entries, random order / bracket_20_10                                        |   0.05 |    -0.38 |             -0.35 |   424.00 |   0.45 |            7.13 |               1.23 |
+| IS-selected setups (4), ranked by RS / bracket_20_10                                         |  -0.02 |    -0.51 |             -0.49 |   528.00 |   0.40 |            8.15 |             nan    |
+| IS-selected setups, only when SPY > 200d / bracket_20_10                                     |  -0.04 |    -0.51 |             -0.49 |   428.00 |   0.39 |            7.01 |             nan    |
+| IS-selected setups (26), ranked by RS / sma50_close                                          |   0.05 |    -0.55 |             -0.48 |   982.00 |   0.26 |            8.99 |               1.25 |
+| IS-selected setups, only when SPY > 200d / sma50_close                                       |   0.06 |    -0.49 |             -0.45 |   812.00 |   0.25 |            7.74 |               1.03 |
+| All setups, ranked by RS / sma50_close                                                       |   0.15 |    -0.53 |             -0.46 |  1156.00 |   0.28 |            8.84 |               0.58 |
+| Top 5 strategies by IS expectancy (own exits), ranked by RS                                  |   0.09 |    -0.26 |             -0.20 |   416.00 |   0.30 |            5.37 |               0.67 |
+| Top 10 strategies by IS expectancy (own exits), ranked by RS                                 |   0.07 |    -0.34 |             -0.25 |   464.00 |   0.29 |            5.78 |               0.80 |
+| Top 20 strategies by IS expectancy (own exits), ranked by RS                                 |   0.09 |    -0.24 |             -0.16 |   617.00 |   0.31 |            7.70 |               0.62 |
+| Top 20 by IS expectancy, adaptive sizing (x0.5 / x1.5 by last 20 trades)                     |   0.11 |    -0.21 |             -0.12 |   609.00 |   0.33 |            7.64 |               0.49 |
+| Top 20 by IS expectancy, ranked by superperformer model                                      |   0.10 |    -0.27 |             -0.25 |   640.00 |   0.32 |            7.59 |               0.51 |
+| All setups, ranked by superperformer model / bracket_20_10                                   |   0.23 |    -0.41 |             -0.39 |  1369.00 |   0.40 |            9.14 |               0.52 |
+| Only setups in the model's top 10% likely superperformers / sma50_close                      |   0.13 |    -0.52 |             -0.45 |  1415.00 |   0.29 |            8.95 |               0.93 |
+| CHECK random entries in the model's top 10% / sma50_close                                    |   0.08 |    -0.54 |             -0.47 |   979.00 |   0.15 |            5.30 |               1.07 |
+| CHECK top 10% model, leaders only (within 40% of 52w high) / sma50_close                     |   0.15 |    -0.50 |             -0.43 |  1333.00 |   0.28 |            8.60 |               0.88 |
+| Top 10% model + adaptive sizing / sma50_close                                                |   0.06 |    -0.52 |             -0.40 |  1513.00 |   0.29 |            9.31 |               1.47 |
+| Top 10% CLEAN model (+40% before -20%) / sma50_close                                         |   0.16 |    -0.43 |             -0.38 |  1412.00 |   0.30 |            9.10 |               0.72 |
+| GOAL b20: model's top 10% stocks, no setup needed / bracket_20_10                            |   0.21 |    -0.61 |             -0.59 |  1216.00 |   0.41 |            9.41 |               0.70 |
+| GOAL b20: model top 10% + adaptive sizing / bracket_20_10                                    |   0.19 |    -0.51 |             -0.49 |  1189.00 |   0.40 |            9.14 |               0.75 |
+| GOAL b20: setups in the model's top 10% / bracket_20_10                                      |   0.14 |    -0.42 |             -0.41 |  1011.00 |   0.39 |            8.66 |               0.63 |
+| GOAL b20: model top 10%, S&P 500 point-in-time only / bracket_20_10                          |   0.12 |    -0.35 |             -0.33 |   780.00 |   0.40 |            7.98 |               0.90 |
+| GOAL b10: model's top 10% stocks, no setup needed / bracket_10_10                            |   0.09 |    -0.30 |             -0.29 |  1313.00 |   0.54 |            8.33 |               0.67 |
+| GOAL b10: model top 10% + adaptive sizing / bracket_10_10                                    |   0.05 |    -0.29 |             -0.27 |  1287.00 |   0.54 |            8.13 |               0.90 |
+| GOAL b10: setups in the model's top 10% / bracket_10_10                                      |   0.12 |    -0.31 |             -0.30 |  1056.00 |   0.55 |            7.18 |               0.60 |
+| GOAL b10: model top 10%, S&P 500 point-in-time only / bracket_10_10                          |   0.08 |    -0.31 |             -0.27 |   835.00 |   0.55 |            6.70 |               1.06 |
+| MENU top 10% model / +10% -10%                                                               |   0.22 |    -0.53 |             -0.52 |  1933.00 |   0.56 |            8.68 |               0.75 |
+| MENU top 10% model / +20% -10%                                                               |   0.25 |    -0.45 |             -0.43 |  1189.00 |   0.42 |            9.07 |               0.65 |
+| MENU top 10% model / +20% -15% (IS best return per month)                                    |   0.20 |    -0.36 |             -0.35 |   893.00 |   0.52 |            9.26 |               0.53 |
+| MENU top 10% model / +30% -15% (IS best return per trade)                                    |   0.20 |    -0.33 |             -0.33 |   690.00 |   0.46 |            9.37 |               0.53 |
+| REGIME breadth (stocks above 50d): skip ['high (> 71%)', 'mid'] / +20% -10%                  |   0.12 |    -0.41 |             -0.40 |   707.00 |   0.41 |            5.57 |               0.64 |
+| REGIME breadth (stocks above 50d), S&P 500 point-in-time only / +20% -10%                    |   0.09 |    -0.27 |             -0.25 |   413.00 |   0.45 |            4.64 |               0.66 |
+| REGIME VIX level: skip ['15-20', '< 15'] / +20% -10%                                         |   0.26 |    -0.46 |             -0.44 |   664.00 |   0.47 |            5.53 |               0.50 |
+| REGIME VIX level, S&P 500 point-in-time only / +20% -10%                                     |   0.21 |    -0.30 |             -0.26 |   426.00 |   0.52 |            4.71 |               0.50 |
+| REGIME VIX / VIX3M: skip ['< 0.9 (calm)', '> 1.0 (stress)'] / +20% -10%                      |   0.13 |    -0.46 |             -0.43 |   801.00 |   0.41 |            6.61 |               0.87 |
+| REGIME VIX / VIX3M, S&P 500 point-in-time only / +20% -10%                                   |   0.15 |    -0.27 |             -0.24 |   472.00 |   0.47 |            4.94 |               0.62 |
+| REGIME SPY above 200d: skip ['yes'] / +20% -10%                                              |   0.09 |    -0.31 |             -0.29 |   320.00 |   0.44 |            2.40 |               0.77 |
+| REGIME SPY above 200d, S&P 500 point-in-time only / +20% -10%                                |   0.06 |    -0.22 |             -0.18 |   190.00 |   0.47 |            1.73 |               0.88 |
+| REGIME QQQ above 10 & 20 SMA: skip ['yes'] / +20% -10%                                       |   0.16 |    -0.46 |             -0.44 |   907.00 |   0.41 |            7.34 |               0.42 |
+| REGIME QQQ above 10 & 20 SMA, S&P 500 point-in-time only / +20% -10%                         |   0.12 |    -0.29 |             -0.25 |   507.00 |   0.46 |            5.68 |               0.54 |
+| REGIME SPY 1-month return: skip ['-3..0%', '> 3%'] / +20% -10%                               |   0.18 |    -0.40 |             -0.39 |   928.00 |   0.41 |            7.63 |               0.57 |
+| REGIME SPY 1-month return, S&P 500 point-in-time only / +20% -10%                            |   0.17 |    -0.28 |             -0.24 |   504.00 |   0.47 |            5.68 |               0.42 |
+| REGIME SPY vs 21/50 SMA: skip ['above 21 & 50', 'above 50 only'] / +20% -10%                 |   0.12 |    -0.41 |             -0.38 |   554.00 |   0.42 |            4.49 |               0.58 |
+| REGIME SPY vs 21/50 SMA, S&P 500 point-in-time only / +20% -10%                              |   0.09 |    -0.36 |             -0.31 |   350.00 |   0.45 |            3.92 |               0.74 |
+| REGIME QQQ vs 21/50 SMA: skip ['above 21 & 50'] / +20% -10%                                  |   0.16 |    -0.47 |             -0.42 |   784.00 |   0.42 |            6.33 |               0.56 |
+| REGIME QQQ vs 21/50 SMA, S&P 500 point-in-time only / +20% -10%                              |   0.06 |    -0.32 |             -0.27 |   473.00 |   0.42 |            5.27 |               0.96 |
+| REGIME A/D line vs its 21/50 MA: skip ['above 21 & 50', 'above 50 only'] / +20% -10%         |   0.08 |    -0.40 |             -0.38 |   554.00 |   0.40 |            4.48 |               0.85 |
+| REGIME A/D line vs its 21/50 MA, S&P 500 point-in-time only / +20% -10%                      |   0.04 |    -0.33 |             -0.27 |   341.00 |   0.42 |            3.71 |               1.26 |
+| REGIME % of stocks above 20d: skip ['40-60%', '> 60%'] / +20% -10%                           |   0.15 |    -0.44 |             -0.43 |   645.00 |   0.43 |            5.45 |               0.49 |
+| REGIME % of stocks above 20d, S&P 500 point-in-time only / +20% -10%                         |   0.09 |    -0.25 |             -0.21 |   381.00 |   0.45 |            4.52 |               0.68 |
+| REGIME % above 50d, 10-day change: skip ['flat', 'rising (> +5 pts)'] / +20% -10%            |   0.09 |    -0.49 |             -0.47 |   802.00 |   0.39 |            6.57 |               1.06 |
+| REGIME % above 50d, 10-day change, S&P 500 point-in-time only / +20% -10%                    |   0.12 |    -0.25 |             -0.22 |   456.00 |   0.45 |            5.27 |               0.67 |
+| REGIME A/D line, 10-day change: skip ['flat', 'rising'] / +20% -10%                          |   0.14 |    -0.33 |             -0.32 |   672.00 |   0.42 |            5.77 |               0.61 |
+| REGIME A/D line, 10-day change, S&P 500 point-in-time only / +20% -10%                       |   0.07 |    -0.29 |             -0.24 |   388.00 |   0.44 |            4.56 |               0.69 |
+| REGIME sector & sub-industry today green: skip ['both', 'one of the two'] / +20% -10%        |   0.29 |    -0.44 |             -0.40 |  1029.00 |   0.44 |            8.53 |               0.54 |
+| REGIME sector & sub-industry today green, S&P 500 point-in-time only / +20% -10%             |   0.15 |    -0.23 |             -0.25 |   536.00 |   0.46 |            6.02 |               0.54 |
+| REGIME sector & sub-industry up over 5 days: skip ['both'] / +20% -10%                       |   0.16 |    -0.43 |             -0.41 |  1068.00 |   0.40 |            8.71 |               0.79 |
+| REGIME sector & sub-industry up over 5 days, S&P 500 point-in-time only / +20% -10%          |   0.14 |    -0.27 |             -0.26 |   582.00 |   0.44 |            6.54 |               0.56 |
+| REGIME sector & sub-industry above 21 EMA: skip ['both', 'one of the two'] / +20% -10%       |   0.28 |    -0.36 |             -0.35 |   958.00 |   0.44 |            8.05 |               0.47 |
+| REGIME sector & sub-industry above 21 EMA, S&P 500 point-in-time only / +20% -10%            |   0.11 |    -0.27 |             -0.24 |   511.00 |   0.44 |            5.68 |               0.74 |
+| REGIME sub-industry (by median RS): skip ['middle', 'top 30% (leading)'] / +20% -10%         |   0.21 |    -0.34 |             -0.31 |  1024.00 |   0.42 |            8.49 |               0.61 |
+| REGIME sub-industry (by median RS), S&P 500 point-in-time only / +20% -10%                   |   0.16 |    -0.27 |             -0.25 |   518.00 |   0.47 |            5.86 |               0.52 |
+| REGIME 3-day market model: skip ['rest'] / +20% -10%                                         |   0.08 |    -0.16 |             -0.13 |   130.00 |   0.52 |            1.23 |               0.70 |
+| REGIME 3-day market model, S&P 500 point-in-time only / +20% -10%                            |   0.01 |    -0.05 |             -0.02 |    18.00 |   0.56 |            0.26 |               0.82 |
+| RULE top 3 sectors only, model top 10% / +20% -10%                                           |   0.12 |    -0.34 |             -0.31 |   909.00 |   0.41 |            7.83 |               0.78 |
+| RULE top 3 sectors only, S&P 500 point-in-time only / +20% -10%                              |   0.11 |    -0.21 |             -0.21 |   386.00 |   0.47 |            4.63 |               0.46 |
+| RULE top 30% sub-industries only, model top 10% / +20% -10%                                  |   0.23 |    -0.31 |             -0.26 |   933.00 |   0.43 |            8.47 |               0.54 |
+| RULE top 30% sub-industries only, S&P 500 point-in-time only / +20% -10%                     |   0.11 |    -0.27 |             -0.25 |   424.00 |   0.46 |            5.28 |               0.55 |
+| RULE top 3 sectors AND top 30% sub-industries, model top 10% / +20% -10%                     |   0.18 |    -0.37 |             -0.34 |   810.00 |   0.43 |            7.36 |               0.51 |
+| RULE top 3 sectors AND top 30% sub-industries, S&P 500 point-in-time only / +20% -10%        |   0.05 |    -0.25 |             -0.24 |   254.00 |   0.45 |            3.25 |               0.72 |
+| RULE SPY above its 21 & 50 SMA, model top 10% / +20% -10%                                    |   0.21 |    -0.35 |             -0.30 |   892.00 |   0.42 |            7.06 |               0.70 |
+| RULE SPY above its 21 & 50 SMA, S&P 500 point-in-time only / +20% -10%                       |   0.15 |    -0.26 |             -0.23 |   456.00 |   0.45 |            4.60 |               0.62 |
+| RULE QQQ above its 21 & 50 SMA, model top 10% / +20% -10%                                    |   0.24 |    -0.30 |             -0.27 |   845.00 |   0.43 |            7.10 |               0.59 |
+| RULE QQQ above its 21 & 50 SMA, S&P 500 point-in-time only / +20% -10%                       |   0.17 |    -0.22 |             -0.20 |   442.00 |   0.47 |            4.69 |               0.57 |
+| RULE SPY above its 50 SMA (21 either way), model top 10% / +20% -10%                         |   0.17 |    -0.41 |             -0.39 |   929.00 |   0.41 |            7.55 |               0.77 |
+| RULE SPY above its 50 SMA (21 either way), S&P 500 point-in-time only / +20% -10%            |   0.15 |    -0.33 |             -0.31 |   509.00 |   0.45 |            5.20 |               0.60 |
+| RULE A/D line above its 21 & 50 MA, model top 10% / +20% -10%                                |   0.14 |    -0.55 |             -0.51 |   896.00 |   0.40 |            7.14 |               0.87 |
+| RULE A/D line above its 21 & 50 MA, S&P 500 point-in-time only / +20% -10%                   |   0.21 |    -0.20 |             -0.18 |   469.00 |   0.50 |            4.80 |               0.44 |
+| RULE > 50% of stocks above their 50d, model top 10% / +20% -10%                              |   0.13 |    -0.38 |             -0.33 |   870.00 |   0.40 |            7.04 |               0.74 |
+| RULE > 50% of stocks above their 50d, S&P 500 point-in-time only / +20% -10%                 |   0.14 |    -0.27 |             -0.24 |   487.00 |   0.46 |            5.02 |               0.58 |
+| RULE % above 50d rising over 10 days, model top 10% / +20% -10%                              |   0.19 |    -0.33 |             -0.29 |   927.00 |   0.41 |            7.06 |               0.66 |
+| RULE % above 50d rising over 10 days, S&P 500 point-in-time only / +20% -10%                 |   0.18 |    -0.26 |             -0.21 |   443.00 |   0.49 |            4.60 |               0.52 |
+| RULE sector AND sub-industry green today, model top 10% / +20% -10%                          |   0.22 |    -0.46 |             -0.44 |  1026.00 |   0.43 |            8.50 |               0.79 |
+| RULE sector AND sub-industry green today, S&P 500 point-in-time only / +20% -10%             |   0.20 |    -0.24 |             -0.23 |   538.00 |   0.48 |            5.99 |               0.52 |
+| RULE sector AND sub-industry up over 5 days, model top 10% / +20% -10%                       |   0.12 |    -0.52 |             -0.51 |   991.00 |   0.40 |            8.26 |               0.94 |
+| RULE sector AND sub-industry up over 5 days, S&P 500 point-in-time only / +20% -10%          |   0.18 |    -0.39 |             -0.34 |   521.00 |   0.48 |            5.74 |               0.57 |
+| RULE sector AND sub-industry above 21 EMA, model top 10% / +20% -10%                         |   0.15 |    -0.49 |             -0.46 |   968.00 |   0.41 |            8.15 |               0.81 |
+| RULE sector AND sub-industry above 21 EMA, S&P 500 point-in-time only / +20% -10%            |   0.18 |    -0.26 |             -0.20 |   457.00 |   0.50 |            4.90 |               0.52 |
+| RULE SPY > 21 & 50 + sector & sub-industry up 5 days, model top 10% / +20% -10%              |   0.15 |    -0.36 |             -0.32 |   818.00 |   0.41 |            6.60 |               0.79 |
+| RULE SPY > 21 & 50 + sector & sub-industry up 5 days, S&P 500 point-in-time only / +20% -10% |   0.16 |    -0.17 |             -0.13 |   336.00 |   0.50 |            3.67 |               0.49 |
+| QULL scan+setups / qull_sma10                                                                |  -0.15 |    -0.77 |             -0.77 |  1130.00 |   0.38 |            3.35 |             nan    |
+| QULL scan+setups / qull_sma20                                                                |  -0.11 |    -0.70 |             -0.70 |   989.00 |   0.39 |            4.00 |             nan    |
+| QULL scan+setups / sma50_close                                                               |   0.08 |    -0.49 |             -0.38 |   658.00 |   0.20 |            5.57 |               1.22 |
+| QULL scan+setups / bracket_20_10                                                             |   0.05 |    -0.38 |             -0.37 |   711.00 |   0.39 |            5.58 |               1.52 |
+| QULL scan+setups, only when QQQ > 10 & 20 SMA / qull_sma10                                   |  -0.08 |    -0.58 |             -0.56 |   743.00 |   0.39 |            2.26 |             nan    |
+| QULL ... + regime + adaptive sizing / qull_sma10                                             |  -0.06 |    -0.49 |             -0.47 |   838.00 |   0.39 |            2.53 |             nan    |
+| QULL scan+setups, only when QQQ > 10 & 20 SMA / qull_sma20                                   |  -0.03 |    -0.43 |             -0.41 |   665.00 |   0.41 |            2.84 |             nan    |
+| QULL ... + regime + adaptive sizing / qull_sma20                                             |  -0.01 |    -0.35 |             -0.30 |   742.00 |   0.40 |            3.15 |             nan    |
+| QULL scan+setups, only when QQQ > 10 & 20 SMA / sma50_close                                  |   0.17 |    -0.46 |             -0.32 |   465.00 |   0.23 |            4.20 |               0.64 |
+| QULL ... + regime + adaptive sizing / sma50_close                                            |   0.14 |    -0.34 |             -0.25 |   482.00 |   0.23 |            4.42 |               0.78 |
+| QULL scan+setups + regime, S&P 500 point-in-time only / qull_sma20                           |  -0.01 |    -0.29 |             -0.29 |    92.00 |   0.30 |            0.30 |             nan    |
+| SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close            |   0.43 |    -0.38 |             -0.32 |   935.00 |   0.32 |            7.19 |               0.47 |
+| SURVIVORSHIP S&P 500 names, only after joining the index (3826 signals) / sma50_close        |   0.18 |    -0.41 |             -0.36 |   810.00 |   0.32 |            6.02 |               0.80 |
+| WORKFLOW rockets as written (regime sizing) / wf_rocket                                      |   0.02 |    -0.10 |             -0.07 |   189.00 |   0.32 |            2.35 |               0.67 |
+| WORKFLOW rockets, no regime rule / wf_rocket                                                 |   0.01 |    -0.10 |             -0.06 |   233.00 |   0.32 |            2.73 |               1.01 |
+| WORKFLOW rockets, QQQ 21/50 regime / wf_rocket                                               |   0.00 |    -0.12 |             -0.12 |   203.00 |   0.30 |            2.40 |               8.38 |
+| WORKFLOW rockets / sma50_close                                                               |   0.02 |    -0.09 |             -0.07 |   188.00 |   0.32 |            2.35 |               0.60 |
+| WORKFLOW rockets / bracket_20_10                                                             |   0.03 |    -0.09 |             -0.08 |   175.00 |   0.43 |            2.41 |               0.85 |
+| WORKFLOW BASELINE random entries, rocket filter + regime / wf_rocket                         |   0.00 |    -0.26 |             -0.15 |   478.00 |   0.17 |            2.46 |              11.52 |
+| WORKFLOW rockets as written, S&P 500 point-in-time only / wf_rocket                          |  -0.00 |    -0.08 |             -0.06 |   147.00 |   0.27 |            1.90 |             nan    |
+| WORKFLOW scanner as written, S&P 500 point-in-time (NDX proxy) / wf_weekly10                 |   0.01 |    -0.17 |             -0.13 |   349.00 |   0.28 |            3.44 |               1.64 |
+| WORKFLOW scanner PIT, no regime rule / wf_weekly10                                           |   0.00 |    -0.18 |             -0.16 |   409.00 |   0.30 |            3.93 |              15.72 |
+| WORKFLOW scanner PIT, QQQ 21/50 regime / wf_weekly10                                         |  -0.02 |    -0.22 |             -0.20 |   372.00 |   0.27 |            3.48 |             nan    |
+| WORKFLOW scanner PIT / sma50_close                                                           |   0.01 |    -0.17 |             -0.15 |   374.00 |   0.29 |            3.39 |               1.18 |
+| WORKFLOW BASELINE random entries, scanner filter + regime, PIT / wf_weekly10                 |   0.03 |    -0.17 |             -0.16 |   539.00 |   0.15 |            3.30 |               0.86 |
+| WORKFLOW scanner as written, full universe / wf_weekly10                                     |   0.00 |    -0.23 |             -0.20 |   379.00 |   0.25 |            3.40 |              12.76 |
+| Top 10 by IS expectancy, 1% risk, 10 slots, idle cash in SPY                                 |   0.13 |    -0.39 |             -0.33 |   464.00 |   0.29 |            5.77 |               0.55 |
+| Top 10 by IS expectancy, 2% risk, 10 slots, idle cash in SPY                                 |   0.16 |    -0.41 |             -0.35 |   368.00 |   0.29 |            4.53 |               0.59 |
+| Top 10 by IS expectancy, 2% risk, 15 slots, idle cash in SPY                                 |   0.16 |    -0.41 |             -0.35 |   368.00 |   0.29 |            4.53 |               0.59 |
+| SPY buy & hold                                                                               |   0.15 |    -0.34 |            nan    |   nan    | nan    |          nan    |             nan    |
 
 max_DD is from equity marked to market every day (open positions at the close); max_DD_realized only counts closed trades. Partial exits (trim plans) are approximated as held in full until the final exit.
 
@@ -1180,17 +1368,17 @@ Strategies in the 'Top 10 by IS expectancy' portfolio (chosen on pre-2018 data o
 
 Year-by-year returns (best 3 portfolios by CAGR vs SPY):
 
-|      |   SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |   REGIME VIX level: skip ['15-20', '< 15'] / +20% -10% |   MENU top 10% model / +20% -10% |   SPY |
-|-----:|------------------------------------------------------------------------------------:|-------------------------------------------------------:|---------------------------------:|------:|
-| 2018 |                                                                                12.3 |                                                    7.5 |                              6.5 |  -5.2 |
-| 2019 |                                                                                37.7 |                                                   32.9 |                             26.1 |  31.2 |
-| 2020 |                                                                                65.5 |                                                  105.4 |                            102.7 |  18.3 |
-| 2021 |                                                                                -4.0 |                                                   28.2 |                             25.6 |  28.7 |
-| 2022 |                                                                               -17.1 |                                                  -26.3 |                            -27.8 | -18.2 |
-| 2023 |                                                                                81.9 |                                                   32.1 |                             79.3 |  26.2 |
-| 2024 |                                                                                59.0 |                                                   30.9 |                             26.0 |  24.9 |
-| 2025 |                                                                                63.6 |                                                   33.0 |                             66.1 |  17.7 |
-| 2026 |                                                                               144.1 |                                                   15.1 |                            -21.9 |  14.4 |
+|      |   SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |   REGIME sector & sub-industry today green: skip ['both', 'one of the two'] / +20% -10% |   REGIME sector & sub-industry above 21 EMA: skip ['both', 'one of the two'] / +20% -10% |   SPY |
+|-----:|------------------------------------------------------------------------------------:|----------------------------------------------------------------------------------------:|-----------------------------------------------------------------------------------------:|------:|
+| 2018 |                                                                                12.3 |                                                                                     8.1 |                                                                                      2.9 |  -5.2 |
+| 2019 |                                                                                37.7 |                                                                                    56.6 |                                                                                     17.7 |  31.2 |
+| 2020 |                                                                                65.5 |                                                                                   101.9 |                                                                                     67.7 |  18.3 |
+| 2021 |                                                                                -4.0 |                                                                                    28.8 |                                                                                     62.9 |  28.7 |
+| 2022 |                                                                               -17.1 |                                                                                   -23.4 |                                                                                    -26.7 | -18.2 |
+| 2023 |                                                                                81.9 |                                                                                    19.5 |                                                                                     33.7 |  26.2 |
+| 2024 |                                                                                59.0 |                                                                                    29.5 |                                                                                     31.2 |  24.9 |
+| 2025 |                                                                                63.6 |                                                                                    66.2 |                                                                                     42.2 |  17.7 |
+| 2026 |                                                                               144.1 |                                                                                     7.4 |                                                                                     42.6 |  14.4 |
 
 ## Appendix: entries and exits
 
