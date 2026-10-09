@@ -1,5 +1,13 @@
 # Research log (newest first)
 
+## Run 18 — 2026-10-09 (commit 5ce3166): regime gates one family at a time, point-in-time
+Goal model (+20/−10, run-16 features) top 10%; gates chosen on IS buckets below break-even.
+- **Correction to run 17:** the point-in-time S&P 500 row in section 9 (11.7% CAGR) uses the *original* goal model. With the run-16 features the same portfolio is **21.3% CAGR, −30% DD point-in-time** (full universe 25.3%, −45%) vs SPY 14.5%, −34%. The new features matter much more at portfolio level than the tier table suggested.
+- **The VIX effect survives the point-in-time check.** PIT S&P 500, top 10%, +20/−10: VIX 20-30 hit **44.4% IS / 41.3% OOS** (+5.9% / +4.8% per trade); VIX 15-20 22.5% / 35.6%; VIX < 15 25.4% / 31.0% (−0.4% per trade OOS). VIX > 30: 34% IS, 53% OOS (small n).
+- **But the VIX ≥ 20 gate doesn't raise portfolio returns:** 25.6% CAGR / −46% DD (PIT 21.3% / −30%) with 664 trades vs 1,189 ungated, i.e. the same return with half the trades, because cash sits idle when VIX < 20. Per trade it's better; per portfolio it's equal.
+- **Other gates hurt:** breadth 12.5% (PIT 9.2%), VIX/VIX3M 13.4%, SPY > 200d skip-uptrend 9.2%, QQQ trend 16.3%, SPY 1-month 17.6%, 3-day market model 7.5% (too few trades). Gating mostly removes trades; none beat no gate on CAGR.
+- **Decision:** keep trading the goal model ungated. Use VIX as a **sizing** signal instead of a filter (more risk per trade when VIX ≥ 20, less when < 15), and/or keep idle cash in SPY while VIX is low. Use the run-16-feature model in picks.py.
+
 ## Run 17 — 2026-10-09 (commit 4ad9589): bracket menu and market regime
 Goal-model (+20/−10, with run-16 features) top 10% of each year; every stock every 10 days, entry at the close, 63-day limit, 0.2% round-trip costs. IS = walk-forward years before 2018.
 - **A 70% hit rate is easy to get, and it doesn't help.** +5/−10: OOS hit 72.4% (break-even 67%), +0.8% per trade. +10/−15: 67.5% (BE 60%), +2.3%. +5/−15: 81% (BE 75%). The edge over break-even is the same ~4-8 points in every bracket; the hit rate is mostly set by the geometry.

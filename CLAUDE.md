@@ -52,4 +52,7 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - Hit rate is set by the bracket geometry (run 17): +5/-10 hits 72% but break-even is 67%. Return per
   month held is ~flat across brackets; wider stops (+20/-15, +30/-15) cut portfolio drawdown.
 - The goal model's picks hit +20/-10 far more often when VIX is 20-30 (43% IS and OOS) than when VIX < 20
-  (~30%): buy the fear, not the calm (run 17; survivorship caveat, check point-in-time).
+  (~30%): buy the fear, not the calm. Holds point-in-time (run 18), but a VIX>=20 filter only halves the
+  trades at the same CAGR; use VIX for sizing, not as a filter.
+- Goal model with run-16 features, top 10%, +20/-10, point-in-time S&P 500: 21% CAGR / -30% DD vs SPY
+  14.5% / -34% (run 18). The original-feature model only made 12% point-in-time.
