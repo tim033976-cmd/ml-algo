@@ -1,5 +1,17 @@
 # Research log (newest first)
 
+## Run 17 — 2026-10-09 (commit 4ad9589): bracket menu and market regime
+Goal-model (+20/−10, with run-16 features) top 10% of each year; every stock every 10 days, entry at the close, 63-day limit, 0.2% round-trip costs. IS = walk-forward years before 2018.
+- **A 70% hit rate is easy to get, and it doesn't help.** +5/−10: OOS hit 72.4% (break-even 67%), +0.8% per trade. +10/−15: 67.5% (BE 60%), +2.3%. +5/−15: 81% (BE 75%). The edge over break-even is the same ~4-8 points in every bracket; the hit rate is mostly set by the geometry.
+- **Return per month held is nearly flat across brackets:** IS 1.1-1.3%, OOS 1.9-2.7% for every combination. Wider stops and farther targets earn more per trade but tie money up longer.
+- **The model lifts every bracket vs all stocks** (+20/−10: 23% → 38% hit; +20/−15: 26% → 46%; +30/−15: 12% → 30%). Stock selection is the edge, not the bracket.
+- **IS choice: +20/−15 (best return per month, a near-tie with the rest).** OOS: hit 45.9% vs BE 43%, +4.0% per trade, 2.7%/month. Portfolio 19.6% CAGR, **−36% DD** vs +20/−10 25.3% CAGR, −45% DD (both full universe, survivorship-inflated). +30/−15: 19.7%, −33%. Tight 5% stops are worst (−55 to −67% DD).
+- **Point-in-time S&P 500 +20/−10 portfolio is weaker this run: 11.7% CAGR, −35% DD vs SPY 14.5%, −34%** (run 13: 18%, −29%). The full-universe numbers lean on survivors.
+- **Regime: the picks work best when the market is scared, not calm.** VIX 20-30: hit 43.7% IS / 42.8% OOS, +4.4% per trade both; VIX < 20: 28-30% IS, 32-34% OOS (below or at break-even, ~0-1.5% per trade). SPY below its 200d: 35%/41% vs above 31%/38%. The 3-day market model's worst days were *better* (41%/48% hit), so the "skip the worst days" idea is rejected: it's buy-the-fear.
+- Caution: buying into fear on a survivor universe is flattered by survivorship (the stocks that crashed and never came back aren't in it). Needs a point-in-time check.
+- **The combined regime gate was a bad design:** it skipped any bucket below break-even in any of 7 families, which removed almost every trade (no portfolio row). Test one family at a time.
+- **Next:** (1) VIX ≥ 20 gate (chosen on IS) as a portfolio, full universe and point-in-time S&P 500; regime tables point-in-time; (2) per-family gates instead of the combined one; (3) decide the bracket on drawdown (+20/−15 or +30/−15) vs CAGR (+20/−10).
+
 ## Run 16 — 2026-10-09 (commit 00c2b0a): short horizons, concrete data only
 - **Short-horizon direction is close to a coin flip.** OOS AUC 0.51-0.52, accuracy 51-52% vs base rates 49-51%: green day 0.514, up 1 day 0.514, **up 3 days 0.520** (best: top 10% up 53.2% vs bottom 10% 45.1%, ~0.6% return spread over 3 days), up 5 days 0.508 (not monotonic, unusable).
 - **Chart features add nothing beyond the market.** The market-only model (market + VIX + calendar) matches or beats the full model on every horizon. Top drivers of the 1-week model: SPY 1-day return, breadth, VIX 1-day change, month, VIX 5-day change, VIX/VIX3M. Candle anatomy, gaps/FVGs, round numbers and support/resistance rank at the bottom.

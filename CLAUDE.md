@@ -49,3 +49,7 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - Stock selection matters as much as the entry: rs80_early (RS top 20% + 1st/2nd staircase) lifts even random entries.
 - SPY-above-EMAs market filter adds nothing. Exit on a close below the 50 SMA is the most robust.
 - ML must predict R (not win/loss); a win/loss classifier just learns stop width.
+- Hit rate is set by the bracket geometry (run 17): +5/-10 hits 72% but break-even is 67%. Return per
+  month held is ~flat across brackets; wider stops (+20/-15, +30/-15) cut portfolio drawdown.
+- The goal model's picks hit +20/-10 far more often when VIX is 20-30 (43% IS and OOS) than when VIX < 20
+  (~30%): buy the fear, not the calm (run 17; survivorship caveat, check point-in-time).
