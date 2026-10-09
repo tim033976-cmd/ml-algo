@@ -49,6 +49,9 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - Wikipedia no longer lists removed S&P 500 members; survivorship bias is a standing caveat.
 - Stock selection matters as much as the entry: rs80_early (RS top 20% + 1st/2nd staircase) lifts even random entries.
 - SPY-above-EMAs market filter adds nothing. Exit on a close below the 50 SMA is the most robust.
+- User's workflow PDF (run 20): rocket setups (gap >= 5% holding 2 days; 6-week base -> 52w high on 1.5x
+  vol; top 20% 6-month RS) beat random entries (+0.13 to +0.24R OOS) and need the QQQ>200d green regime;
+  the scanner's pullback/base rules have no OOS edge. As sized (0.5% x 3) the whole plan made 6% CAGR.
 - ML must predict R (not win/loss); a win/loss classifier just learns stop width.
 - Hit rate is set by the bracket geometry (run 17): +5/-10 hits 72% but break-even is 67%. Return per
   month held is ~flat across brackets; wider stops (+20/-15, +30/-15) cut portfolio drawdown.

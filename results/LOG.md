@@ -1,5 +1,13 @@
 # Research log (newest first)
 
+## Run 20 — 2026-10-09 (commit 246a119): the user's "Stock Selection Workflow" PDF, rules as written
+Price-testable parts only (no fundamentals, no Singapore part); scanner on point-in-time S&P 500 as the Nasdaq-100 proxy.
+- **Rockets have a real per-trade edge.** wf_rocket filter (price >= $10, >= $20M/day, top 20% 6-month return), PDF exit (1/3 at +25%, stop to entry, trail 50 SMA): gap-hold +0.06R IS / **+0.20R OOS**, 52w-high base breakout +0.07R / +0.13R, vs random entries with the same filter and exit −0.14R / −0.06R. sma50 exit about the same (+0.24R / +0.16R OOS).
+- **The PDF's 200-day regime helps rockets (both periods):** green +0.19R IS / +0.21R OOS; yellow −0.22R / −0.04R; red −0.26R / −0.01R. Unlike the goal model's picks (runs 17-18), breakouts need a healthy market.
+- **The scanner has no edge OOS.** Pullback / 4-week base with its own exit (weekly close < 10-week MA): +0.09R / +0.10R IS, +0.006R / −0.011R OOS; random with the same filter −0.03R / −0.07R. Its regime rule is inconsistent (red +0.46R IS, −0.20R OOS).
+- **Portfolios are too small to matter.** 0.5% risk x 3 positions with an 8% stop = ~6% per position, ~2.3 positions on average, so the sleeve is mostly cash: rockets 1.7% CAGR, −10% DD (PIT −0.2%); scanner PIT 1.0%, −17% (random baseline 2.6%). The whole 40/25/15/20 split: **6.3% CAGR, −17% DD** vs SPY 14.6%, −34%, about what 40% SPY + 60% cash gives.
+- **Decision:** keep the rocket setups (gap-hold, 52w-high base breakout) with the green-regime rule as candidate entries, sized larger; drop the scanner's pullback/base rules. The goal model (21% CAGR / −30% DD PIT) is the better engine. Next: rockets inside the goal model's top picks, and rockets with normal (1%) risk.
+
 ## Run 19 — 2026-10-09 (commit e1db28d): only trade leading sectors? (user question)
 Sector rank = the sector's median RS rank, percentile among the 11 GICS sectors, daily; leading = top 3. Sub-industry leading = top 30%. Cut-offs fixed before the run.
 - **Leading sectors don't raise the odds.** +20/−10 hit rates, model top 10%: top-3 sectors 31.3% IS / 38.3% OOS vs bottom-3 33.1% / 37.4%, middle 32.6% / 38.9%. All stocks without the model: top-3 17.2% / 22.3% vs bottom-3 18.3% / 23.0%. Point-in-time S&P 500: same picture (top-3 28.6% / 38.9%). Sub-industries: no difference either (top 30% 30.7% / 38.7% vs bottom 30% 34.2% / 38.2%).
