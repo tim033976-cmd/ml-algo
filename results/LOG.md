@@ -1,5 +1,11 @@
 # Research log (newest first)
 
+## Run 16 — 2026-10-09 (commit 00c2b0a): short horizons, concrete data only
+- **Short-horizon direction is close to a coin flip.** OOS AUC 0.51-0.52, accuracy 51-52% vs base rates 49-51%: green day 0.514, up 1 day 0.514, **up 3 days 0.520** (best: top 10% up 53.2% vs bottom 10% 45.1%, ~0.6% return spread over 3 days), up 5 days 0.508 (not monotonic, unusable).
+- **Chart features add nothing beyond the market.** The market-only model (market + VIX + calendar) matches or beats the full model on every horizon. Top drivers of the 1-week model: SPY 1-day return, breadth, VIX 1-day change, month, VIX 5-day change, VIX/VIX3M. Candle anatomy, gaps/FVGs, round numbers and support/resistance rank at the bottom.
+- **They do slightly improve the +20/−10 goal model:** top 1% 42.8% → 44.2% hit (avg +3.7% → +4.2% net), top 2% 40.6 → 41.6%, top 10% 37.4 → 38.3%. Small but consistent: keep them in the goal model.
+- **Conclusion:** don't trade next-day / next-week direction from daily charts. Use the new features inside the +20/−10 model, and at most use the 3-day market model to avoid entering on the worst days (entry timing), to be tested.
+
 ## Run 16 — planned 2026-10-09: short horizons with concrete data only
 User decision: test the probability of a green day / up next day / up over 3 days / up over a week, using **concrete data only**: no VWAP, volume profile or CVD proxies (those need intraday / order-flow data).
 - New features (`mlalgo/research/shortterm.py`, all point-in-time, tested): candle anatomy (body, wicks, close location, inside/outside day, NR7, streaks, previous candle), gaps (overnight gap, gap filled, bullish/bearish fair value gaps), relative volume, round-number distance, 20/200 SMA distance, nearest confirmed swing support/resistance, 20-day trend-line slope and residual, completed-week structure (weekly return, close location, higher high / higher low, above the 10-week MA, week-to-date), VIX (level, 1/5-day change, 1-year percentile, VIX/VIX3M), SPY 1/5-day return, calendar.

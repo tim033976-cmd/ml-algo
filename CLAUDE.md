@@ -38,6 +38,10 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - SURVIVORSHIP IS LARGE: S&P 500 names traded on all dates 47% CAGR vs only after joining the index
   20% (run 12). Always report point-in-time results; treat all-dates numbers as inflated.
 - Adaptive sizing (x0.5 / x1.5 by last 20 closed trades) improved risk-adjusted returns every time.
+- Next-day / 3-day / 1-week direction from daily data is a coin flip (AUC 0.51-0.52, run 16);
+  what little edge exists is market-wide (SPY, VIX, breadth), not chart features.
+- Qullamaggie's breakout with his fast 10/20-SMA exits loses on daily bars (run 15); his scan and
+  setups work with longer exits (sma50, +20/-10).
 - Select strategies by in-sample expectancy (avgR, n >= 200), not t-stat (run 4).
 - Industry-group ("theme") RS did not help as a filter (run 4). Honest MTM drawdowns of pooled
   portfolios are ~-50%: a portfolio must be judged on drawdown, not just CAGR.
