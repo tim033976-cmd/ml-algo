@@ -28,6 +28,14 @@ def bars(df: pd.DataFrame) -> dict[str, np.ndarray]:
         "vol50": v.rolling(50).mean(), "low10prev": l.rolling(10).min().shift(1),
     }
     b["vol50prev"] = b["vol50"].shift(1)
+    # run 20: weekly close below the 10-week MA (known at the week's last close; 1.0 = exit signal)
+    week_end = pd.Series(c.index.to_period("W-FRI"), index=c.index)
+    is_end = week_end != week_end.shift(-1)
+    if len(c):
+        is_end.iloc[-1] = False  # the last bar's week may not be finished
+    wc = c[is_end]
+    wma = wc.rolling(10).mean()
+    b["wkx"] = ((wc < wma).astype(float)).reindex(c.index).fillna(0.0)
     return {k: s.to_numpy(np.float64) for k, s in b.items()}
 
 
@@ -193,6 +201,60 @@ def _playbook(fn):
     return run
 
 
+# ------------------------------------------------------------------ run 20: the user's workflow PDF
+def wf_rocket_breakout(b):
+    """Workflow 'US rockets': breakout from a base of >= 6 weeks to a new 52-week high on >= 1.5x
+    volume; not more than 5% above the breakout point. Stop 8% below entry."""
+    old = _rmax(b["h"], 222, shift=31)          # the 52-week high as it stood 30+ days ago
+    base = _rmax(b["h"], 30)                    # the last 30 days stayed at or below it
+    sig = ((base <= old) & (b["c"] > old) & (b["c"] <= old * 1.05)
+           & (b["v"] >= 1.5 * b["vol50prev"]))
+    t = np.flatnonzero(sig)
+    return _frame(t, b["c"][t] * 0.92)
+
+
+def wf_gap_hold(b, gap=0.05, days=2):
+    """Workflow 'earnings gap up >= 5% that holds above the gap-day low for 2-3 days': entry at the
+    close `days` days after the gap if no low since undercut the gap-day low; stop just under it.
+    No earnings dates in the data: a gap on >= 2x volume is the proxy."""
+    g = b["o"] / _shift(b["c"], 1) - 1
+    gday = (g >= gap) & (b["v"] >= 2.0 * b["vol50prev"])
+    ok = _shift(gday.astype(float), days) == 1
+    lows_after = pd.Series(b["l"]).rolling(days).min().to_numpy()   # lows of the `days` days after the gap
+    gap_low = _shift(b["l"], days)
+    sig = ok & (lows_after > gap_low)
+    t = np.flatnonzero(sig)
+    return _frame(t, gap_low[t] * 0.995)
+
+
+def _uptrend_template(b):
+    s50, s200 = b["sma50"], b["sma200"]
+    return (b["c"] > s200) & (s200 > _shift(s200, 21)) & (s50 > s200) & (b["c"] >= 0.85 * _rmax(b["h"], 252, shift=0))
+
+
+def wf_scan_pullback(b):
+    """Workflow 'Nasdaq-100 scanner' entry: in an uptrend, a pullback to the 21 EMA or 50 SMA that
+    holds (a low within 1% of the MA in the last 5 days, no close below it), then a close above the
+    prior day's high. Stop just under the pullback low."""
+    near21 = (b["l"] <= b["ema21"] * 1.01) & (b["c"] >= b["ema21"])
+    near50 = (b["l"] <= b["sma50"] * 1.01) & (b["c"] >= b["sma50"])
+    touched = pd.Series((near21 | near50).astype(float)).rolling(5).max().to_numpy() == 1
+    sig = _uptrend_template(b) & touched & (b["c"] > _shift(b["h"], 1)) & (_shift(b["c"], 1) <= _shift(b["h"], 2))
+    t = np.flatnonzero(sig)
+    return _frame(t, _rmin(b["l"], 5, shift=0)[t] * 0.995)
+
+
+def wf_scan_base(b):
+    """Workflow scanner entry: in an uptrend, close above a base of >= 4 weeks (20 days, <= 25% deep).
+    Stop just under the base low."""
+    level = _rmax(b["h"], 20)
+    lo = _rmin(b["l"], 20)
+    depth = (level - lo) / level
+    sig = _uptrend_template(b) & (b["c"] > level) & (_shift(b["c"], 1) <= _shift(level, 1)) & (depth <= 0.25)
+    t = np.flatnonzero(sig)
+    return _frame(t, lo[t] * 0.995, base_depth=depth[t])
+
+
 def random_uptrend(b, seed):
     """Baseline: random days while price is above a rising 50-day average. Same stop rule."""
     rng = np.random.default_rng(seed)
@@ -235,6 +297,10 @@ ENTRIES = {
     "undercut": (_playbook(playbook.undercuts), {}, True, "Undercut & rally (your playbook)"),
     "qull_breakout": (qull_breakout, {}, False, "Qullamaggie breakout: buy-stop above the flag high next day"),
     "qull_breakout_60": (qull_breakout, {"min_move": 0.60}, False, "Qullamaggie breakout after a 60%+ move"),
+    "wf_rocket_breakout": (wf_rocket_breakout, {}, False, "Workflow PDF rockets: 6-week base -> 52w high on 1.5x vol, stop -8%"),
+    "wf_rocket_gap": (wf_gap_hold, {}, False, "Workflow PDF rockets: gap >= 5% (2x vol) holding its low 2 days"),
+    "wf_scan_pullback": (wf_scan_pullback, {}, False, "Workflow PDF scanner: uptrend pullback to 21EMA/50SMA, close > prior high"),
+    "wf_scan_base": (wf_scan_base, {}, False, "Workflow PDF scanner: uptrend, breakout from a 4-week base"),
     "random_uptrend": (random_uptrend, {"seed": 0}, False, "BASELINE: random entries in an uptrend"),
 }
 
@@ -272,6 +338,7 @@ def all_signals(df: pd.DataFrame, b: dict, cooldown: int = 10, max_risk: float =
     s["vol_ratio"] = b["v"][t] / b["vol50prev"][t]
     s["gap"] = b["o"][t] / b["c"][t - 1] - 1
     s["close_strength"] = _strength(b)[t]
+    s["uptrend_tpl"] = _uptrend_template(b)[t].astype(float)   # run 20: the workflow scanner's trend rules
     s = s.replace([np.inf, -np.inf], np.nan)
     ok = ((s["risk_pct"] > 0) & (s["risk_pct"] <= max_risk) & (c >= min_price)
           & (c * b["vol50"][t] >= min_dollar_vol))

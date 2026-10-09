@@ -80,6 +80,129 @@ def _menu_section(menu, menu_ports, menu_choice, regime, regime_pit, gates, md, 
     ]
 
 
+WF_ROCKET = ["wf_rocket_breakout", "wf_rocket_gap"]
+WF_SCAN = ["wf_scan_pullback", "wf_scan_base", "wf_rocket_gap"]
+
+
+def workflow_test(sig, lb, closes, market, pit):
+    """Run 20: backtest the price-based rules of the user's workflow PDF (rockets 15%, Nasdaq-100
+    scanner 25%, core index 40%; the Singapore part and all fundamental tests can't be tested here).
+    Rules are taken as written, nothing is tuned. The Nasdaq-100 isn't in the universe, so the
+    scanner runs on point-in-time S&P 500 members (large caps) and on the full universe."""
+    out = {"ports": [], "trades": None, "regime": None, "blend": None}
+    if not set(WF_ROCKET + WF_SCAN) <= set(sig["entry_name"]) or "ndx_regime" not in sig:
+        return out
+    size = lambda d: d["ndx_regime"].map({2.0: 1.0, 1.0: 0.5, 0.0: 0.0}).fillna(1.0)   # green / yellow / red
+    roc = sig[sig["entry_name"].isin(WF_ROCKET)]
+    roc = roc[A.FILTERS["wf_rocket"](roc)].copy()
+    roc["size_mult"] = size(roc)
+    scn = sig[sig["entry_name"].isin(WF_SCAN)]
+    scn = scn[A.FILTERS["wf_scan"](scn)].copy()
+    rr = ((0.10 - scn["risk_pct"]) / 0.05).clip(0, 1)
+    scn["wf_score"] = (40 * scn["rs_rank"] + 30 * rr) / 70        # the business-momentum 30% isn't testable
+    scn["size_mult"] = size(scn)
+    base = sig[sig["entry_name"] == A.BASELINE]
+    b_roc = base[A.FILTERS["wf_rocket"](base)].copy()
+    b_roc["size_mult"] = size(b_roc)
+    b_scn = base[A.FILTERS["wf_scan"](base)].copy()
+    b_scn["wf_score"] = b_scn["rs_rank"]
+    b_scn["size_mult"] = size(b_scn)
+    nr = lambda d: d.drop(columns="size_mult")            # ignore the regime rule
+    P = lambda d, ex, pr, risk, slots: A.portfolio(d, ex, pr, closes=closes, risk=risk, max_pos=slots, pos_cap=0.10)
+    pt = (lambda d: d[pit(d).to_numpy()]) if pit is not None else None
+    R = lambda d, ex: P(d, ex, "r6_rank", 0.005, 3)        # rockets: 0.5% risk, 3 positions
+    S = lambda d, ex: P(d, ex, "wf_score", 0.006, 4)       # scanner: 0.6% risk, 4 positions
+    ports = [
+        ("rockets as written (regime sizing) / wf_rocket", R(roc, "wf_rocket")),
+        ("rockets, no regime rule / wf_rocket", R(nr(roc), "wf_rocket")),
+        ("rockets / sma50_close", R(roc, "sma50_close")),
+        ("rockets / bracket_20_10", R(roc, "bracket_20_10")),
+        ("BASELINE random entries, rocket filter + regime / wf_rocket", R(b_roc, "wf_rocket")),
+    ]
+    if pt:
+        ports += [("rockets as written, S&P 500 point-in-time only / wf_rocket", R(pt(roc), "wf_rocket"))]
+        ports += [
+            ("scanner as written, S&P 500 point-in-time (NDX proxy) / wf_weekly10", S(pt(scn), "wf_weekly10")),
+            ("scanner PIT, no regime rule / wf_weekly10", S(nr(pt(scn)), "wf_weekly10")),
+            ("scanner PIT / sma50_close", S(pt(scn), "sma50_close")),
+            ("BASELINE random entries, scanner filter + regime, PIT / wf_weekly10", S(pt(b_scn), "wf_weekly10")),
+        ]
+    ports += [("scanner as written, full universe / wf_weekly10", S(scn, "wf_weekly10"))]
+    out["ports"] = ports
+    # per trade: each setup vs the random baseline, same filter and exit (IS and OOS)
+    ex_ok = lb["exit"].isin(["wf_rocket", "wf_weekly10", "sma50_close", "bracket_20_10"])
+    rk = lb["entry"].isin(WF_ROCKET + [A.BASELINE]) & lb["filter"].isin(["wf_rocket", "wf_rocket_green"])
+    sk = lb["entry"].isin(WF_SCAN + [A.BASELINE]) & lb["filter"].isin(["wf_scan", "wf_scan_green"])
+    keep = lb[ex_ok & (rk | sk)]
+    out["trades"] = keep[["entry", "filter", "exit", "IS_n", "IS_avgR", "IS_win", "OOS_n", "OOS_avgR", "OOS_win", "OOS_t"]
+                         ].sort_values(["filter", "exit", "OOS_avgR"], ascending=[True, True, False])
+    # per trade by Nasdaq regime (green / yellow / red), with the PDF's own exits
+    rows = []
+    for name, d, ex in (("rockets", roc, "wf_rocket"), ("scanner", scn, "wf_weekly10"),
+                        ("random (rocket filter)", b_roc, "wf_rocket"), ("random (scanner filter)", b_scn, "wf_weekly10")):
+        for period, m in (("IS", d["date"] < A.IS_END), ("OOS", d["date"] >= A.IS_END)):
+            for reg, g in d[m].groupby("ndx_regime"):
+                rows.append({"part": name, "regime": {2.0: "green", 1.0: "yellow", 0.0: "red"}.get(reg, reg),
+                             "period": period, "n": len(g), "avgR": g[f"R_{ex}"].mean(), "win": (g[f"R_{ex}"] > 0).mean()})
+    if rows:
+        t = pd.DataFrame(rows).pivot_table(index=["part", "regime"], columns="period", values=["n", "avgR", "win"], sort=False)
+        t.columns = [f"{p}_{v}" for v, p in t.columns]
+        out["regime"] = t[[c for c in ("IS_n", "IS_avgR", "IS_win", "OOS_n", "OOS_avgR", "OOS_win") if c in t]].reset_index()
+    # the PDF's portfolio: 40% core index + 25% scanner + 15% rockets + 20% Singapore (untested -> cash)
+    curves = dict(ports)
+    spy = market["SPY"]["close"] if "SPY" in market else None
+    sc_key = "scanner as written, S&P 500 point-in-time (NDX proxy) / wf_weekly10"
+    ro_key = "rockets as written, S&P 500 point-in-time only / wf_rocket"
+    if spy is not None and sc_key in curves and ro_key in curves:
+        r = pd.DataFrame({"core": spy[spy.index >= A.IS_END].pct_change(),
+                          "scanner": curves[sc_key]["curve"].pct_change(),
+                          "rockets": curves[ro_key]["curve"].pct_change()}).dropna(how="all").fillna(0.0)
+        blends = {"PDF split: 40% SPY / 25% scanner / 15% rockets / 20% cash": {"core": 0.40, "scanner": 0.25, "rockets": 0.15},
+                  "trading parts only, 25:15": {"scanner": 0.625, "rockets": 0.375},
+                  "SPY 100%": {"core": 1.0}}
+        res = []
+        for name, w in blends.items():
+            eq = (1 + sum(r[k] * v for k, v in w.items())).cumprod()
+            yrs = (eq.index[-1] - eq.index[0]).days / 365.25
+            res.append({"portfolio (2018+, daily rebalanced)": name, "CAGR": eq.iloc[-1] ** (1 / yrs) - 1,
+                        "max_DD": (eq / eq.cummax() - 1).min(), "worst_year": A.yearly(eq).min()})
+        out["blend"] = pd.DataFrame(res)
+    return out
+
+
+def _workflow_section(wf, md):
+    port = pd.DataFrame([{"strategy": k, **{m: v.get(m) for m in ("CAGR", "max_DD", "trades", "win", "avg_positions")}}
+                         for k, v in wf["ports"]])
+    return [
+        "## 14. Your Stock Selection Workflow PDF, price-testable rules (run 20)",
+        "",
+        "Rules as written, nothing tuned. Rockets: 6-week base -> new 52w high on 1.5x volume (<= 5% above the "
+        "pivot, stop -8%) or a >= 5% gap on 2x volume holding its low for 2 days (no earnings dates: volume is the "
+        "proxy); price >= $10, >= $20M/day, top 20% 6-month return; exit = sell 1/3 at +25%, stop to entry, trail "
+        "the 50 SMA. Scanner: above a rising 200d, 50d > 200d, within 15% of the 52w high; entry = pullback to the "
+        "21 EMA / 50 SMA then a close above the prior high, a 4-week base breakout, or a holding gap; stop under the "
+        "pullback/base low, skipped if > 10%; ranked by RS (40) + stop distance (30); exit = weekly close below the "
+        "10-week MA. Regime (QQQ): green full size, yellow half, red no new entries. Sizing: rockets 0.5% risk x 3 "
+        "positions, scanner 0.6% x 4, max 10% per stock. Not testable here: fundamentals (guidance, revenue, FCF, "
+        "estimates), the Singapore part, the Nasdaq-100 membership itself.",
+        "",
+        "Per trade vs random entries with the same filter and exit (R multiples):",
+        "",
+        md(wf["trades"], floatfmt=".3f"),
+        "",
+        "Per trade by Nasdaq-100 regime at entry (the PDF's own exits):",
+        "",
+        md(wf["regime"], floatfmt=".3f") if wf.get("regime") is not None else "",
+        "",
+        "Portfolios 2018+ (marked to market daily):",
+        "",
+        md(port, floatfmt=".3f"),
+        "",
+        *(["The PDF's full split (Singapore part as cash; scanner and rockets point-in-time):", "",
+           md(wf["blend"], floatfmt=".3f"), ""] if wf.get("blend") is not None else []),
+    ]
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--cache", default="data")
@@ -165,6 +288,7 @@ def main() -> None:
     sup = sup_clean = None
     short, goal_ext, short_imp = {}, {}, None
     regime_all = None
+    pit = None
     menu = regime = regime_pit = menu_choice = menu_ports = regime_skipped = None
     regime_gates = []
     if len(sample):
@@ -398,6 +522,10 @@ def main() -> None:
                               A.portfolio(sp5, "sma50_close", "super_prob", closes=closes)))
             port_rows.append((f"SURVIVORSHIP S&P 500 names, only after joining the index ({n_oos(after)} signals) / sma50_close",
                               A.portfolio(after, "sma50_close", "super_prob", closes=closes)))
+    # ---------------- run 20: the user's "Stock Selection Workflow" PDF, price-testable parts
+    wf = workflow_test(sig, lb, closes, market, pit)
+    for k, res in wf["ports"]:
+        port_rows.append((f"WORKFLOW {k}", res))
     # run-5 lesson: the EP portfolio left ~40% of capital idle and earning nothing
     pool10 = A.strategy_pool(sig, ranked.head(10))
     spy_close = market["SPY"]["close"] if "SPY" in market else None
@@ -423,6 +551,13 @@ def main() -> None:
     # ---------------- what this run tells us
     found, nxt, key = findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup,
                                sup_imp if sup else None, goal_tables if sup else None)
+    for k, v in wf["ports"]:
+        if "as written" in k:
+            found.append(f"Workflow PDF {k}: {v['CAGR']:.1%} CAGR, {v['max_DD']:.0%} DD, {v['trades']} trades.")
+    if wf.get("blend") is not None:
+        b0 = wf["blend"].iloc[0]
+        found.append(f"Workflow PDF split (40/25/15/20 cash): {b0['CAGR']:.1%} CAGR, {b0['max_DD']:.0%} DD vs SPY "
+                     f"{wf['blend'].iloc[-1]['CAGR']:.1%}, {wf['blend'].iloc[-1]['max_DD']:.0%}.")
     if menu is not None:  # run 17: bracket menu
         oos = menu[(menu["period"] == "OOS") & (menu["tier"] == "top 10%")].set_index("key")
         ch = menu_choice["return per month"]
@@ -596,6 +731,7 @@ def main() -> None:
             "",
             *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
         ] if short else []),
+        *(_workflow_section(wf, md) if wf.get("trades") is not None else []),
         *(_menu_section(menu, menu_ports, menu_choice, regime, regime_pit, regime_gates, md, regime_all) if menu is not None else []),
         "## 11. Qullamaggie replication (per trade, out-of-sample 2018+; IS in brackets)",
         "",

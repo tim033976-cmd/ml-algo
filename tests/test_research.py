@@ -15,7 +15,7 @@ def _sim(df, t, entry, stop, code, cost=0.0):
     b = bars(df)
     ret, R, xidx, reason = engine.simulate_all(
         b["o"], b["h"], b["l"], b["c"], b["sma10"], b["sma20"], b["sma50"], b["ema8"], b["ema21"], b["ema50"],
-        b["atr20"], b["low10prev"], np.array([t]), np.array([entry]), np.array([stop]), np.array([code]), 250, cost)
+        b["atr20"], b["low10prev"], b["wkx"], np.array([t]), np.array([entry]), np.array([stop]), np.array([code]), 250, cost)
     return ret[0, 0], R[0, 0], xidx[0, 0], reason[0, 0]
 
 
@@ -298,3 +298,58 @@ def test_group_frames_sector_rank_is_percentile_among_sectors():
     g = group_frames(rank, u, tick)
     assert np.allclose(g["T0"]["sector_rank"], 1 / 3) and np.allclose(g["T8"]["sector_rank"], 1.0)
     assert np.allclose(g["T4"]["sector_rs"], 0.5)
+
+
+def test_workflow_rocket_exit_sells_third_at_25pct_then_breakeven_stop():
+    # flat at 100 (50 SMA = 100), entry at 100; next day +26% high closes 120; then a dip to 99
+    close = [100.0] * 300 + [120.0, 105.0]
+    high = [100.5] * 300 + [126.0, 110.0]
+    low = [99.5] * 300 + [101.0, 99.0]
+    open_ = [100.0] * 300 + [101.0, 110.0]
+    df = _df(close, high, low, open_)
+    ret, _, xidx, reason = _sim(df, 299, 100.0, 92.0, CODES["wf_rocket"])
+    # 1/3 sold at 125 (+25%), stop moved to 100 and hit on the next bar: (1/3) * 25% overall
+    assert np.isclose(ret, 0.25 / 3) and xidx == 301 and reason == 1
+
+
+def test_workflow_weekly_exit_only_on_completed_weeks():
+    df = synthetic(600, seed=5)
+    b = bars(df)
+    wkx = pd.Series(b["wkx"], index=df.index)
+    fired = wkx[wkx > 0].index
+    assert len(fired) > 0
+    nxt = df.index.to_series().shift(-1)
+    # every exit signal is on the last trading day of its week, never on the last (unfinished) bar
+    assert all(nxt[d] is pd.NaT or nxt[d].to_period("W-FRI") != d.to_period("W-FRI") for d in fired)
+    assert wkx.iloc[-1] == 0
+    # changing future prices doesn't change earlier triggers
+    t = 400
+    tampered = df.copy()
+    tampered.iloc[t:] *= 0.5
+    w2 = bars(tampered)["wkx"]
+    assert (b["wkx"][:t] == w2[:t]).all()
+    # it fires when the weekly close is below the 10-week MA
+    wc = df["close"].groupby(df.index.to_period("W-FRI")).last()
+    below = (wc < wc.rolling(10).mean())
+    d = fired[5]
+    assert below[d.to_period("W-FRI")]
+
+
+def test_workflow_gap_hold_waits_two_days_and_stops_under_gap_low():
+    from mlalgo.research.entries import wf_gap_hold
+    n = 80
+    close = np.full(n, 50.0)
+    open_, high, low = close.copy(), close * 1.005, close * 0.995
+    g = 70
+    open_[g], close[g], high[g], low[g] = 54.0, 55.0, 56.0, 53.0      # +8% gap
+    for k in (71, 72):
+        open_[k], close[k], high[k], low[k] = 55.0, 55.5, 56.0, 54.0   # holds above 53
+    close[73:], open_[73:], high[73:], low[73:] = 55.0, 55.0, 55.5, 54.5
+    df = _df(close, high, low, open_)
+    df.loc[df.index[g], "volume"] = 5e6
+    s = wf_gap_hold(bars(df))
+    assert list(s["idx"]) == [72] and np.isclose(s["stop"].iloc[0], 53.0 * 0.995)
+    # a day that undercuts the gap-day low cancels it
+    low2 = low.copy()
+    low2[71] = 52.0
+    assert wf_gap_hold(bars(_df(close, high, low2, open_).assign(volume=df["volume"]))).empty

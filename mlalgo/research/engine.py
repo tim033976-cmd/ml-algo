@@ -19,13 +19,16 @@ EXITS = {
     # the user's goal (run 13): a fixed bracket on the daily chart
     "bracket_10_10": (9, "stop -10%, target +10%, close after 63 days if neither"),
     "bracket_20_10": (10, "stop -10%, target +20%, close after 63 days if neither"),
+    # run 20: the user's workflow PDF
+    "wf_rocket": (11, "workflow rockets: sell 1/3 at +25% and move the stop to entry, trail the rest on close<50SMA"),
+    "wf_weekly10": (12, "workflow scanner: exit on a weekly close below the 10-week MA (setup stop stays)"),
 }
 
 REASON = {0: "end", 1: "stop", 2: "rule", 3: "target"}
 
 
 @njit(cache=True)
-def _sim_one(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10prev,
+def _sim_one(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10prev, wkx,
              t, entry, stop0, code, max_days, cost):
     n = len(c)
     stop = stop0
@@ -131,6 +134,21 @@ def _sim_one(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10pr
             if held >= 63:
                 reason = 2
                 break
+        elif code == 11:
+            tgt = entry * 1.25
+            if stage == 0 and h[d] >= tgt:
+                px = max(o[d], tgt)
+                pnl += (1.0 / 3.0) * (px / entry - 1.0)
+                remaining -= 1.0 / 3.0
+                stage = 1
+                stop = max(stop, entry)
+            if c[d] < sma50[d]:
+                reason = 2
+                break
+        elif code == 12:
+            if wkx[d] > 0.5:
+                reason = 2
+                break
     if remaining > 1e-9:
         pnl += remaining * (c[d] / entry - 1.0)
     pnl -= 2.0 * cost
@@ -138,7 +156,7 @@ def _sim_one(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10pr
 
 
 @njit(cache=True)
-def simulate_all(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10prev,
+def simulate_all(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10prev, wkx,
                  sig_idx, sig_entry, sig_stop, codes, max_days, cost):
     ns, ne = len(sig_idx), len(codes)
     ret = np.empty((ns, ne))
@@ -147,7 +165,7 @@ def simulate_all(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low
     reason = np.empty((ns, ne), dtype=np.int64)
     for i in range(ns):
         for j in range(ne):
-            a, b, d, r = _sim_one(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10prev,
+            a, b, d, r = _sim_one(o, h, l, c, sma10, sma20, sma50, ema8, ema21, ema50, atr20, low10prev, wkx,
                                   sig_idx[i], sig_entry[i], sig_stop[i], codes[j], max_days, cost)
             ret[i, j], rmult[i, j], exit_idx[i, j], reason[i, j] = a, b, d, r
     return ret, rmult, exit_idx, reason

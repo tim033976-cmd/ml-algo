@@ -17,13 +17,16 @@ EXIT_CODES = np.array([engine.EXITS[k][0] for k in EXIT_NAMES], dtype=np.int64)
 GROUP_COLS = ["industry_rs", "industry_rank", "sector_rs", "qull_rank"]
 # run 19: sector percentile among sectors (leading sectors), kept out of the model features so the
 # goal model stays comparable with runs 16-18
-GROUP_EXTRA = ["sector_rank"]
+GROUP_EXTRA = ["sector_rank", "r6_rank"]   # r6_rank (run 20): 6-month return percentile
 SIGNAL_EXTRAS = ["risk_pct", "risk_adr", "vol_ratio", "gap", "close_strength",
                  "prior_move", "flag_depth", "flag_days", "base_depth", "contraction",
-                 "pattern_len", "pattern_width", "pattern_touches", "coil_range"]
+                 "pattern_len", "pattern_width", "pattern_touches", "coil_range", "uptrend_tpl"]
 MARKET_COLS = ["mkt_ok", "mkt_ema_stack", "mkt_ret_21", "mkt_above200", "qqq_ok", "qqq_ret_21",
                "qqq_trend", "rates_rising", "breadth_50"]
 VIX_COLS = ["vix", "vix_chg_1", "vix_chg_5", "vix_pct_1y", "vix_term", "spy_ret_1", "spy_ret_5"]
+# run 20 (workflow PDF): Nasdaq-100 regime, 2 = green (QQQ > 200d and 50d > 200d), 1 = yellow
+# (> 200d, 50d < 200d), 0 = red (< 200d). Not a model feature.
+REGIME_COLS = ["ndx_regime"]
 
 
 def _rs_composite(df: pd.DataFrame) -> pd.Series:
@@ -75,7 +78,12 @@ def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series) -> pd.Data
         sc = market["SPY"]["close"]
         parts.append(pd.DataFrame({"spy_ret_1": sc.pct_change(), "spy_ret_5": sc.pct_change(5)}))
     m = pd.concat(parts, axis=1).sort_index().ffill()
-    return m.reindex(columns=MARKET_COLS + VIX_COLS)
+    if "QQQ" in market:
+        q = market["QQQ"]["close"]
+        s50, s200 = q.rolling(50).mean(), q.rolling(200).mean()
+        reg = pd.Series(np.where(q < s200, 0.0, np.where(s50 > s200, 2.0, 1.0)), index=q.index).where(s200.notna())
+        m["ndx_regime"] = reg.reindex(m.index).ffill()
+    return m.reindex(columns=MARKET_COLS + VIX_COLS + REGIME_COLS)
 
 
 SUPER_HORIZON, SUPER_GAIN, SAMPLE_EVERY = 63, 0.40, 10
@@ -183,7 +191,7 @@ def process_ticker(args):
     idx = sig["idx"].to_numpy()
     ret, rmult, xidx, reason = engine.simulate_all(
         b["o"], b["h"], b["l"], b["c"], b["sma10"], b["sma20"], b["sma50"], b["ema8"], b["ema21"], b["ema50"],
-        b["atr20"], b["low10prev"], idx, sig["entry"].to_numpy(), sig["stop"].to_numpy(), EXIT_CODES, max_days, cost)
+        b["atr20"], b["low10prev"], b["wkx"], idx, sig["entry"].to_numpy(), sig["stop"].to_numpy(), EXIT_CODES, max_days, cost)
     feats = feats_all.iloc[idx].reset_index(drop=True)
     out = pd.DataFrame({"ticker": ticker, "date": df.index[idx], "entry_name": sig["entry_name"].to_numpy(),
                         "entry": sig["entry"].to_numpy(), "stop": sig["stop"].to_numpy()})
@@ -214,13 +222,23 @@ def perf_rank(prices: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return pd.concat(ranks).groupby(level=0).max().astype("float32")
 
 
+def ret_rank(prices: dict[str, pd.DataFrame], n: int = 126) -> pd.DataFrame:
+    """Per-day percentile of each stock's n-day return (workflow PDF: top 20% over 6 months)."""
+    r = pd.DataFrame({t: df["close"] / df["close"].shift(n) - 1 for t, df in prices.items()})
+    return r.rank(axis=1, pct=True).astype("float32")
+
+
 def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers,
-                 qrank: pd.DataFrame | None = None) -> dict[str, pd.DataFrame]:
+                 qrank: pd.DataFrame | None = None, r6: pd.DataFrame | None = None) -> dict[str, pd.DataFrame]:
     """Per-ticker sub-industry / sector RS series (empty if the universe has no sector info)."""
     grp = {}
     if qrank is not None:
         for t in tickers:
             grp[t] = pd.DataFrame({"qull_rank": qrank[t] if t in qrank else np.nan}, index=rank.index)
+    if r6 is not None:
+        for t in tickers:
+            g = pd.DataFrame({"r6_rank": r6[t] if t in r6 else np.nan}, index=rank.index)
+            grp[t] = g if t not in grp else pd.concat([grp[t], g], axis=1)
     if universe is None or "sub_industry" not in universe:
         return grp
     u = universe.drop_duplicates("ticker").set_index("ticker")
@@ -242,7 +260,7 @@ def run(prices: dict[str, pd.DataFrame], market: dict[str, pd.DataFrame], max_da
         cost: float = 0.001, workers: int | None = None, universe: pd.DataFrame | None = None) -> pd.DataFrame:
     rank, breadth = cross_section(prices)
     mkt = market_frame(market, breadth)
-    grp = group_frames(rank, universe, prices, qrank=perf_rank(prices))
+    grp = group_frames(rank, universe, prices, qrank=perf_rank(prices), r6=ret_rank(prices))
     tasks = [(t, df, rank[t], grp.get(t), max_days, cost, i) for i, (t, df) in enumerate(prices.items())]
     workers = workers or os.cpu_count() or 1
     frames, samples = [], []

@@ -32,6 +32,13 @@ FILTERS = {
     "theme": lambda s: (s["industry_rank"] >= 0.7).to_numpy(),
     "rs80_theme": lambda s: ((s["rs_rank"] >= 0.8) & (s["industry_rank"] >= 0.7)).to_numpy(),
     "rs80_early_theme": lambda s: ((s["rs_rank"] >= 0.8) & s["base_count"].between(1, 2) & (s["industry_rank"] >= 0.7)).to_numpy(),
+    # run 20, the user's workflow PDF. Rockets: price >= $10, >= $20M a day, top 20% 6-month return.
+    "wf_rocket": lambda s: ((s["entry"] >= 10) & (s["dollar_vol_50"] >= 20e6) & (s["r6_rank"] >= 0.8)).to_numpy(),
+    "wf_rocket_green": lambda s: ((s["entry"] >= 10) & (s["dollar_vol_50"] >= 20e6) & (s["r6_rank"] >= 0.8)
+                                  & (s["ndx_regime"] == 2)).to_numpy(),
+    # scanner: above a rising 200d, 50d > 200d, within 15% of the 52w high; logical stop <= 10% away
+    "wf_scan": lambda s: ((s["uptrend_tpl"] == 1) & (s["risk_pct"] <= 0.10)).to_numpy(),
+    "wf_scan_green": lambda s: ((s["uptrend_tpl"] == 1) & (s["risk_pct"] <= 0.10) & (s["ndx_regime"] == 2)).to_numpy(),
 }
 FEATURES = list(dict.fromkeys(ML_FEATURES + SIGNAL_EXTRAS + MARKET_COLS + GROUP_COLS + ["rs_rank"]))
 
@@ -236,6 +243,7 @@ def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END,
     drawdown is honest; without it equity only moves when trades close (run 1-3 reports).
     `idle`: close prices of an asset (e.g. SPY) that uninvested cash is held in (run 5: EP
     portfolios averaged ~6 of 10 slots filled, with the rest of the cash earning nothing).
+    `size_mult` column (optional): per-trade multiplier of the risk; 0 skips the trade.
     `adaptive`: size like a discretionary pro, by how the strategy is working right now: risk
     x0.5 when the last 20 closed trades averaged < 0R, x1.5 when > +0.5R (only closed trades)."""
     t = trades[trades["date"] >= start].copy()
@@ -289,7 +297,10 @@ def portfolio(trades: pd.DataFrame, exit_name: str, priority: str, start=IS_END,
                     break
                 if r.ticker in held or r.exit_date <= day:
                     continue
-                alloc = min(realized * risk * mult / max(r.risk_pct, 1e-4), realized * pos_cap, cash)
+                size = mult * getattr(r, "size_mult", 1.0)   # run 20: per-trade size (regime half size)
+                if size <= 0:
+                    continue
+                alloc = min(realized * risk * size / max(r.risk_pct, 1e-4), realized * pos_cap, cash)
                 if alloc < realized * 0.02:
                     continue
                 cash -= alloc
