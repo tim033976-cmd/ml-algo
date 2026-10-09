@@ -1,5 +1,12 @@
 # Research log (newest first)
 
+## Run 19 — 2026-10-09 (commit e1db28d): only trade leading sectors? (user question)
+Sector rank = the sector's median RS rank, percentile among the 11 GICS sectors, daily; leading = top 3. Sub-industry leading = top 30%. Cut-offs fixed before the run.
+- **Leading sectors don't raise the odds.** +20/−10 hit rates, model top 10%: top-3 sectors 31.3% IS / 38.3% OOS vs bottom-3 33.1% / 37.4%, middle 32.6% / 38.9%. All stocks without the model: top-3 17.2% / 22.3% vs bottom-3 18.3% / 23.0%. Point-in-time S&P 500: same picture (top-3 28.6% / 38.9%). Sub-industries: no difference either (top 30% 30.7% / 38.7% vs bottom 30% 34.2% / 38.2%).
+- **As a filter it hurts portfolios:** model top 10% +20/−10, no filter 25.3% CAGR / −45% DD (PIT **21.3% / −30%**); top-3 sectors only 12.4% / −34% (PIT 11.4% / −21%); top-30% sub-industries 23.2% / −31% (PIT 11.2% / −27%); both 18.1% / −37% (PIT 4.7% / −25%). It cuts drawdowns only by trading less.
+- Consistent with run 4 (sub-industry "theme" filter didn't help setups). The model already uses group strength as a feature and gives it little weight; stock-level RS and volatility carry the information.
+- **Decision:** don't filter by sector. Stock selection (the model) beats sector selection.
+
 ## Run 18 — 2026-10-09 (commit 5ce3166): regime gates one family at a time, point-in-time
 Goal model (+20/−10, run-16 features) top 10%; gates chosen on IS buckets below break-even.
 - **Correction to run 17:** the point-in-time S&P 500 row in section 9 (11.7% CAGR) uses the *original* goal model. With the run-16 features the same portfolio is **21.3% CAGR, −30% DD point-in-time** (full universe 25.3%, −45%) vs SPY 14.5%, −34%. The new features matter much more at portfolio level than the tier table suggested.

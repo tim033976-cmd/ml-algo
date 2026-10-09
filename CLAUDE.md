@@ -43,7 +43,8 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - Qullamaggie's breakout with his fast 10/20-SMA exits loses on daily bars (run 15); his scan and
   setups work with longer exits (sma50, +20/-10).
 - Select strategies by in-sample expectancy (avgR, n >= 200), not t-stat (run 4).
-- Industry-group ("theme") RS did not help as a filter (run 4). Honest MTM drawdowns of pooled
+- Industry-group ("theme") RS did not help as a filter (run 4), nor did leading sectors (top 3 of 11 by
+  median RS) or sub-industries for the goal model (run 19: PIT 21% -> 11% CAGR). Honest MTM drawdowns of pooled
   portfolios are ~-50%: a portfolio must be judged on drawdown, not just CAGR.
 - Wikipedia no longer lists removed S&P 500 members; survivorship bias is a standing caveat.
 - Stock selection matters as much as the entry: rs80_early (RS top 20% + 1st/2nd staircase) lifts even random entries.
