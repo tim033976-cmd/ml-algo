@@ -22,7 +22,11 @@
     "Regime gate SPY above 200d (skip yes): 9.2% CAGR, -31% DD; point-in-time S&P 500 5.9%, -22%.",
     "Regime gate QQQ above 10 & 20 SMA (skip yes): 16.3% CAGR, -46% DD; point-in-time S&P 500 12.0%, -29%.",
     "Regime gate SPY 1-month return (skip -3..0%, > 3%): 17.6% CAGR, -40% DD; point-in-time S&P 500 16.8%, -28%.",
+    "Regime gate sub-industry (by median RS) (skip middle, top 30% (leading)): 21.1% CAGR, -34% DD; point-in-time S&P 500 16.4%, -27%.",
     "Regime gate 3-day market model (skip rest): 7.5% CAGR, -16% DD; point-in-time S&P 500 1.0%, -5%.",
+    "Filter LEADING: top 3 sectors only: 12.4% CAGR, -34% DD; point-in-time S&P 500 11.4%, -21%.",
+    "Filter LEADING: top 30% sub-industries only: 23.2% CAGR, -31% DD; point-in-time S&P 500 11.2%, -27%.",
+    "Filter LEADING: top 3 sectors AND top 30% sub-industries: 18.1% CAGR, -37% DD; point-in-time S&P 500 4.7%, -25%.",
     "Regime gate (no gate) (skip nothing): 25.3% CAGR, -45% DD; point-in-time S&P 500 21.3%, -30%."
   ],
   "next_steps": [
@@ -73,7 +77,7 @@
       "early_stage"
     ],
     "ml_auc": 0.5071617335573618,
-    "ml_rank_corr": 0.0054069519256954475,
+    "ml_rank_corr": 0.005406951925695445,
     "ml_monotonic": -0.35757575757575755,
     "ml_gap": "0.014152542",
     "top_features": [
