@@ -16,7 +16,14 @@
     "Best portfolio 2018->today: SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close at 47.2% CAGR (max drawdown -42.5%) vs SPY 14.5%.",
     "Best return per unit of drawdown: SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close (47.2% CAGR, -42.5% max DD).",
     "Bracket menu: in-sample best (return per month) is +20% / -15%. OOS top 10%: hit 45.9% (break-even 43%), +3.98% per trade, +2.70% per month held, vs +20/-10: hit 38.3%, +2.63%, +2.34%/month.",
-    "Regime gate skipped (chosen in-sample): [('breadth (stocks above 50d)', 'high (> 71%)'), ('breadth (stocks above 50d)', 'mid'), ('VIX level', '15-20'), ('VIX level', '< 15'), ('VIX / VIX3M', '< 0.9 (calm)'), ('VIX / VIX3M', '> 1.0 (stress)'), ('SPY above 200d', 'yes'), ('QQQ above 10 & 20 SMA', 'yes'), ('SPY 1-month return', '-3..0%'), ('SPY 1-month return', '> 3%'), ('3-day market model', 'rest')]."
+    "Regime gate breadth (stocks above 50d) (skip high (> 71%), mid): 12.5% CAGR, -41% DD; point-in-time S&P 500 9.2%, -27%.",
+    "Regime gate VIX level (skip 15-20, < 15): 25.6% CAGR, -46% DD; point-in-time S&P 500 21.3%, -30%.",
+    "Regime gate VIX / VIX3M (skip < 0.9 (calm), > 1.0 (stress)): 13.4% CAGR, -46% DD; point-in-time S&P 500 14.9%, -27%.",
+    "Regime gate SPY above 200d (skip yes): 9.2% CAGR, -31% DD; point-in-time S&P 500 5.9%, -22%.",
+    "Regime gate QQQ above 10 & 20 SMA (skip yes): 16.3% CAGR, -46% DD; point-in-time S&P 500 12.0%, -29%.",
+    "Regime gate SPY 1-month return (skip -3..0%, > 3%): 17.6% CAGR, -40% DD; point-in-time S&P 500 16.8%, -28%.",
+    "Regime gate 3-day market model (skip rest): 7.5% CAGR, -16% DD; point-in-time S&P 500 1.0%, -5%.",
+    "Regime gate (no gate) (skip nothing): 25.3% CAGR, -45% DD; point-in-time S&P 500 21.3%, -30%."
   ],
   "next_steps": [
     "Loosen the definitions of htf or widen the universe so they can be evaluated.",
