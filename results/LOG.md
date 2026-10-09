@@ -1,5 +1,13 @@
 # Research log (newest first)
 
+## Run 21 — 2026-10-09 (commit 993b458): 21/50 market trend, breadth, A/D line, sector momentum (user)
+Goal model top 10%, +20/−10; groups = equal-weight median of member stocks; rules fixed in advance.
+- **No rule raises the hit rate in both periods.** SPY above 21 & 50: 31.3% IS / 38.7% OOS vs below both 38.7% / 38.3%. QQQ the same (28.8% / 38.4% vs 38.7% / 38.8%). A/D line above both MAs: 29.2% / 40.0% vs below both 40.4% / 38.0%. % above 20d > 60%: 31.6% / 41.5% vs < 40%: 34.8% / 37.8%. Before 2018 the weak-market buckets were clearly *better*, after 2018 about equal: the run-17 "buy the fear" pattern again.
+- **Sector + sub-industry momentum doesn't help either.** Both green today: 30.8% / 38.0% vs neither 34.0% / 39.8%. Both up 5 days: 29.4% / 39.6% vs 36.0% / 38.1%. Both above the 21 EMA: 30.4% / 39.8% vs 35.3% / 38.4%.
+- **Portfolios (PIT S&P 500; no filter 21.3% CAGR / −30% DD):** QQQ > 21 & 50 17.3% / −21.5%; A/D above both 20.9% / −19.6%; SPY > 21&50 + groups up 5d 16.1% / −16.9%; sector & sub-industry green today 20.1% / −24.5%. Some cut point-in-time drawdowns at a small cost in CAGR, **but on the full universe the same rules have larger drawdowns** (A/D 13.8% / −55%, groups up 5d 11.9% / −52%) and the per-trade data before 2018 point the other way. Not robust: don't adopt.
+- **Rockets (workflow PDF): the 200-day regime is the better rule.** QQQ below both 21/50: +0.19R IS / +0.05R OOS; above both +0.09R / +0.19R, so the fast regime doesn't separate good from bad. PDF red (200d) was −0.26R / −0.01R. Rockets portfolio with 21/50 sizing 0.2% CAGR vs 1.7% with the 200d rule.
+- **Decision:** keep the goal model unfiltered. For breakout setups (rockets), keep the QQQ > 200d rule. Next: rockets sized at 1% risk, rockets inside the model's top 10%, VIX-based sizing.
+
 ## Run 20 — 2026-10-09 (commit 246a119): the user's "Stock Selection Workflow" PDF, rules as written
 Price-testable parts only (no fundamentals, no Singapore part); scanner on point-in-time S&P 500 as the Nasdaq-100 proxy.
 - **Rockets have a real per-trade edge.** wf_rocket filter (price >= $10, >= $20M/day, top 20% 6-month return), PDF exit (1/3 at +25%, stop to entry, trail 50 SMA): gap-hold +0.06R IS / **+0.20R OOS**, 52w-high base breakout +0.07R / +0.13R, vs random entries with the same filter and exit −0.14R / −0.06R. sma50 exit about the same (+0.24R / +0.16R OOS).

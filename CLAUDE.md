@@ -48,6 +48,9 @@ using ML to test many variations honestly. The user trades breakout / momentum s
   portfolios are ~-50%: a portfolio must be judged on drawdown, not just CAGR.
 - Wikipedia no longer lists removed S&P 500 members; survivorship bias is a standing caveat.
 - Stock selection matters as much as the entry: rs80_early (RS top 20% + 1st/2nd staircase) lifts even random entries.
+- Short market filters (SPY/QQQ vs 21 & 50 SMA, A/D line, breadth) and sector + sub-industry momentum
+  (both green / up 5 days / above 21 EMA) don't raise the goal model's hit rate (run 21); the model
+  likes weak markets. For breakout setups the QQQ > 200d rule is better than 21/50.
 - SPY-above-EMAs market filter adds nothing. Exit on a close below the 50 SMA is the most robust.
 - User's workflow PDF (run 20): rocket setups (gap >= 5% holding 2 days; 6-week base -> 52w high on 1.5x
   vol; top 20% 6-month RS) beat random entries (+0.13 to +0.24R OOS) and need the QQQ>200d green regime;
