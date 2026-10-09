@@ -146,7 +146,8 @@ def test_superperformer_label_and_features_are_point_in_time():
     tampered = df.copy()
     tampered.iloc[t + 1:] *= 2
     s2 = superperformer_sample("T", tampered, structure_features(tampered), rs, None)
-    labels = ["fwd_max_gain", "fwd_ret_63", "clean_super"] + [c for c in s.columns if c[:3] in ("b10", "b20")]
+    labels = (["fwd_max_gain", "fwd_ret_63", "clean_super"] + [c for c in s.columns if c[:3] in ("b10", "b20")]
+              + [c for c in s.columns if c.startswith(("y_", "r_"))])
     a = s[s["date"] == row["date"]].drop(columns=labels).reset_index(drop=True)
     b = s2[s2["date"] == row["date"]].drop(columns=labels).reset_index(drop=True)
     pd.testing.assert_frame_equal(a, b)
@@ -242,3 +243,19 @@ def test_forward_tracker_scores_logged_picks(tmp_path):
     out = pd.read_csv(tmp_path / "forward_test.csv")
     assert out.loc[0, "b20_result"] == "target" and np.isclose(out.loc[0, "b20_ret"], 0.198)
     assert (tmp_path / "picks_history.csv").exists() and (tmp_path / "forward_test.md").exists()
+
+
+def test_short_features_point_in_time_and_labels():
+    from mlalgo.research.shortterm import short_features, short_labels
+    df = synthetic(900, seed=31)
+    cut = 600
+    t2 = df.copy()
+    t2.iloc[cut:] *= 1.7
+    a, b = short_features(df).iloc[:cut], short_features(t2).iloc[:cut]
+    pd.testing.assert_frame_equal(a, b)
+    lab = short_labels(df)
+    t = 100
+    c, o = df["close"].to_numpy(), df["open"].to_numpy()
+    assert lab["y_up1"].iloc[t] == float(c[t + 1] > c[t])
+    assert lab["y_green1"].iloc[t] == float(c[t + 1] > o[t + 1])
+    assert np.isclose(lab["r_up5"].iloc[t], c[t + 5] / c[t] - 1, rtol=1e-5)

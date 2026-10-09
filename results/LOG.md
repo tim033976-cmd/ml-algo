@@ -1,5 +1,13 @@
 # Research log (newest first)
 
+## Run 16 — planned 2026-10-09: short horizons with concrete data only
+User decision: test the probability of a green day / up next day / up over 3 days / up over a week, using **concrete data only**: no VWAP, volume profile or CVD proxies (those need intraday / order-flow data).
+- New features (`mlalgo/research/shortterm.py`, all point-in-time, tested): candle anatomy (body, wicks, close location, inside/outside day, NR7, streaks, previous candle), gaps (overnight gap, gap filled, bullish/bearish fair value gaps), relative volume, round-number distance, 20/200 SMA distance, nearest confirmed swing support/resistance, 20-day trend-line slope and residual, completed-week structure (weekly return, close location, higher high / higher low, above the 10-week MA, week-to-date), VIX (level, 1/5-day change, 1-year percentile, VIX/VIX3M), SPY 1/5-day return, calendar.
+- Labels: next-day green (close > open), up 1 / 3 / 5 days (close to close).
+- Models: all features vs **market-only** (market + VIX + calendar), walk-forward retrained every 2 years. Report AUC, accuracy, top/bottom-decile up-rate, return spread, importance. Expectation: ~52-54% at best; the bar is the natural base rate (~50-53%).
+- Also: do these features improve the +20/-10 goal model? (original vs extended, OOS tiers)
+- Price cache bumped to v4 to download ^VIX and ^VIX3M.
+
 ## Run 15 — 2026-10-08 (commit f522ebc): Qullamaggie replication on daily data
 - **His breakout with his exits fails mechanically on daily bars.** qull_breakout + qull_sma10/20: OOS −0.15 to −0.25R per trade (PF 0.64-0.77, win 33-37%), IS similar. Portfolios: **−11% to −14% CAGR, −71% to −76% DD**. With his regime rule: −2% to −7% CAGR. The 60%-run variant is no better.
 - **The same breakouts with longer exits are fine:** + bracket +20/−10 → +0.15R OOS (t 6.8; regime +0.19R), + sma50 & regime +0.28R. So his entries/stocks are OK; the fast 10/20-SMA trailing with tight stops is what loses on daily bars.

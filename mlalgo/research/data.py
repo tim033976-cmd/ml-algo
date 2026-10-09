@@ -176,12 +176,12 @@ def load_all(cache_dir: str, start: str, indexes=("sp500", "sp400", "sp600"), ma
         print(f"[data] loaded cache: {long['ticker'].nunique()} tickers")
     else:
         universe = build_universe(indexes)
-        tickers = list(universe["ticker"]) + ["SPY", "QQQ", "^IRX"]
+        tickers = list(universe["ticker"]) + ["SPY", "QQQ", "^IRX", "^VIX", "^VIX3M"]
         prices = download(list(dict.fromkeys(tickers)), start)
         long = to_long(prices)
         long.to_parquet(pfile, index=False)
         universe.to_csv(ufile, index=False)
     prices = from_long(long)
-    market = {k: prices.pop(k) for k in ("SPY", "QQQ", "^IRX") if k in prices}
+    market = {k: prices.pop(k) for k in ("SPY", "QQQ", "^IRX", "^VIX", "^VIX3M") if k in prices}
     universe = universe[universe["ticker"].isin(prices)]
     return universe, prices, market

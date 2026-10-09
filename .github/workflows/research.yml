@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data/
-          key: prices-v3-${{ steps.week.outputs.key }}
+          key: prices-v4-${{ steps.week.outputs.key }}
 
       - name: Download prices
         run: python research.py --cache data --download-only
@@ -61,7 +61,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data/
-          key: prices-v3-${{ steps.week.outputs.key }}
+          key: prices-v4-${{ steps.week.outputs.key }}
 
       - name: Run research
         run: python research.py --cache data --out results --limit "${{ github.event.inputs.limit || '0' }}"

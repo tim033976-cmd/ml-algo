@@ -20,6 +20,7 @@ SIGNAL_EXTRAS = ["risk_pct", "risk_adr", "vol_ratio", "gap", "close_strength",
                  "pattern_len", "pattern_width", "pattern_touches", "coil_range"]
 MARKET_COLS = ["mkt_ok", "mkt_ema_stack", "mkt_ret_21", "mkt_above200", "qqq_ok", "qqq_ret_21",
                "qqq_trend", "rates_rising", "breadth_50"]
+VIX_COLS = ["vix", "vix_chg_1", "vix_chg_5", "vix_pct_1y", "vix_term", "spy_ret_1", "spy_ret_5"]
 
 
 def _rs_composite(df: pd.DataFrame) -> pd.Series:
@@ -61,8 +62,17 @@ def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series) -> pd.Data
         parts.append(((q > q.rolling(10).mean()) & (q > q.rolling(20).mean())).astype(int).rename("qqq_trend"))
     if "^IRX" in market:
         parts.append(rates_regime(market["^IRX"]["close"]))
+    if "^VIX" in market:
+        vx = market["^VIX"]["close"]
+        parts.append(pd.DataFrame({"vix": vx, "vix_chg_1": vx.pct_change(), "vix_chg_5": vx.pct_change(5),
+                                   "vix_pct_1y": vx.rolling(252).rank(pct=True)}))
+        if "^VIX3M" in market:
+            parts.append((vx / market["^VIX3M"]["close"]).rename("vix_term"))
+    if "SPY" in market:
+        sc = market["SPY"]["close"]
+        parts.append(pd.DataFrame({"spy_ret_1": sc.pct_change(), "spy_ret_5": sc.pct_change(5)}))
     m = pd.concat(parts, axis=1).sort_index().ffill()
-    return m.reindex(columns=MARKET_COLS)
+    return m.reindex(columns=MARKET_COLS + VIX_COLS)
 
 
 SUPER_HORIZON, SUPER_GAIN, SAMPLE_EVERY = 63, 0.40, 10
@@ -137,6 +147,11 @@ def superperformer_sample(ticker, df, feats_all, rs_rank, grp, warmup=252) -> pd
     unknown = idx + SUPER_HORIZON > n - 1
     out.loc[unknown, ["fwd_max_gain", "fwd_ret_63", "clean_super"] + [f"{b}_{x}" for b in BRACKETS for x in ("hit", "ret")]] = np.nan
     out["close"] = c[idx]
+    # short-horizon features (concrete daily/weekly data only) and next 1/3/5-day labels
+    from mlalgo.research.shortterm import short_features, short_labels
+    sf = short_features(df).iloc[idx].reset_index(drop=True)
+    sl = short_labels(df).iloc[idx].reset_index(drop=True)
+    out = pd.concat([out.reset_index(drop=True), sf, sl], axis=1)
     ok = (c[idx] >= 5) & (c[idx] * feats_all["avg_vol_50"].to_numpy()[idx] >= 5e6)
     return out[ok].astype({k: "float32" for k in out.select_dtypes("float64").columns})
 

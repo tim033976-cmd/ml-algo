@@ -12,7 +12,8 @@ from sklearn.metrics import roc_auc_score
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from mlalgo.research.entries import ENTRIES
-from mlalgo.research.run import EXIT_NAMES, GROUP_COLS, MARKET_COLS, SIGNAL_EXTRAS
+from mlalgo.research.run import EXIT_NAMES, GROUP_COLS, MARKET_COLS, SIGNAL_EXTRAS, VIX_COLS
+from mlalgo.research.shortterm import SHORT_FEATURES
 from mlalgo.structure import ML_FEATURES
 
 IS_END = pd.Timestamp("2018-01-01")
@@ -352,6 +353,8 @@ def concentration(curve: pd.Series) -> float:
 # user goal (run 13): daily chart, +10% / +20% before -10%. Break-even hit rates ignore the
 # trades that time out at 63 days, which the expected-return column includes.
 GOALS = {"b10": ("+10% before -10%", 0.50), "b20": ("+20% before -10%", 1 / 3)}
+SHORT_LABELS = {"green1": "next day green (close > open)", "up1": "up next day (close to close)",
+                "up3": "up over the next 3 days", "up5": "up over the next week (5 days)"}
 SUPER_FEATURES = list(dict.fromkeys(ML_FEATURES + MARKET_COLS + GROUP_COLS + ["rs_rank"]))
 
 
@@ -365,19 +368,22 @@ def _label(d, label):
         return (d["clean_super"] == 1).to_numpy()
     if label in GOALS:
         return (d[f"{label}_hit"] == 1).to_numpy() if f"{label}_hit" in d else None
+    if label in SHORT_LABELS:
+        return (d[f"y_{label}"] == 1).to_numpy() if f"y_{label}" in d else None
     return (d["fwd_max_gain"] >= 0.40).to_numpy() if "fwd_max_gain" in d else None
 
 
-def _xy(d, label="gain40"):
-    X = d[SUPER_FEATURES].copy()
-    for c in SUPER_FEATURES:
+def _xy(d, label="gain40", features=None):
+    features = features or SUPER_FEATURES
+    X = d.reindex(columns=features).copy()
+    for c in features:
         if X[c].isna().all():
             X[c] = 0.0
     return X, _label(d, label)
 
 
 def super_walk_forward(sample: pd.DataFrame, score: list[pd.DataFrame], max_train: int = 200_000,
-                       label: str = "gain40", col: str = "super_prob"):
+                       label: str = "gain40", col: str = "super_prob", features=None, step: int = 1):
     """Adds `col` (predicted probability) to `sample` and to every frame in `score`.
     label: 'gain40' = high >= +40% within 3 months; 'clean' = +40% before -20%."""
     sample = sample.copy()
@@ -386,24 +392,27 @@ def super_walk_forward(sample: pd.DataFrame, score: list[pd.DataFrame], max_trai
     for f in score:
         f[col] = np.nan
     rng = np.random.default_rng(0)
-    known = sample["fwd_max_gain"].notna()
-    for yr in sorted(sample["date"].dt.year.unique()):
+    lab_col = f"y_{label}" if label in SHORT_LABELS else "fwd_max_gain"
+    known = sample[lab_col].notna()
+    years = sorted(sample["date"].dt.year.unique())
+    for yr in years[::step]:
         start = pd.Timestamp(f"{yr}-01-01")
+        test_years = [y for y in years if yr <= y < yr + step]
         tr = np.flatnonzero((known & (sample["label_end"] < start)).to_numpy())
         if len(tr) < 20_000:
             continue
         if len(tr) > max_train:
             tr = rng.choice(tr, max_train, replace=False)
-        X, y = _xy(sample.iloc[tr], label)
+        X, y = _xy(sample.iloc[tr], label, features)
         if y.sum() < 200:
             continue
         m = _super_model().fit(X, y)
-        te = (sample["date"].dt.year == yr).to_numpy()
-        sample.loc[te, col] = m.predict_proba(_xy(sample[te])[0])[:, 1]
+        te = sample["date"].dt.year.isin(test_years).to_numpy()
+        sample.loc[te, col] = m.predict_proba(_xy(sample[te], features=features)[0])[:, 1]
         for f in score:
-            fm = (f["date"].dt.year == yr).to_numpy()
+            fm = f["date"].dt.year.isin(test_years).to_numpy()
             if fm.any():
-                f.loc[fm, col] = m.predict_proba(_xy(f[fm])[0])[:, 1]
+                f.loc[fm, col] = m.predict_proba(_xy(f[fm], features=features)[0])[:, 1]
     return sample, score
 
 
@@ -503,3 +512,33 @@ def goal_tiers(sample: pd.DataFrame, goal: str, col: str, keep: pd.Series | None
         rows.append({"tier": name, "n": len(g), "hit_target": g[f"{goal}_hit"].mean(),
                      "hit_stop": (g[f"{goal}_ret"] <= -0.1019).mean(), "avg_net_return": g[f"{goal}_ret"].mean()})
     return pd.DataFrame(rows).set_index("tier")
+
+
+# feature sets for the short-horizon study (run 16)
+SHORT_ALL = list(dict.fromkeys(SUPER_FEATURES + SHORT_FEATURES + VIX_COLS))
+SHORT_MARKET_ONLY = list(dict.fromkeys(MARKET_COLS + VIX_COLS + ["dow", "month"]))
+
+
+def short_report(sample: pd.DataFrame, label: str, col: str) -> dict:
+    """OOS: base rate, AUC, accuracy at 50%, and the up-rate / avg return by decile."""
+    o = sample[(sample["date"] >= IS_END) & sample[col].notna() & sample[f"y_{label}"].notna()]
+    y = o[f"y_{label}"] == 1
+    ret_col = {"green1": "r_up1"}.get(label, f"r_{label}")
+    dec = o.groupby(pd.qcut(o[col], 10, labels=False, duplicates="drop")).agg(
+        n=(col, "size"), predicted=(col, "mean"), actual_up=(f"y_{label}", "mean"), avg_return=(ret_col, "mean"))
+    return {"base": float(y.mean()), "auc": float(roc_auc_score(y, o[col])),
+            "accuracy": float(((o[col] >= 0.5) == y).mean()),
+            "top": float(dec["actual_up"].iloc[-1]), "bottom": float(dec["actual_up"].iloc[0]),
+            "spread": float(dec["avg_return"].iloc[-1] - dec["avg_return"].iloc[0]), "deciles": dec}
+
+
+def short_importance(sample: pd.DataFrame, label: str, features: list[str], n_eval: int = 60_000) -> pd.DataFrame:
+    known = sample[sample[f"y_{label}"].notna()]
+    tr = known[known["date"] < IS_END].sample(min(200_000, int((known["date"] < IS_END).sum())), random_state=0)
+    te = known[known["date"] >= IS_END]
+    te = te.sample(min(n_eval, len(te)), random_state=0)
+    Xtr, ytr = _xy(tr, label, features)
+    Xte, yte = _xy(te, label, features)
+    m = _super_model().fit(Xtr, ytr)
+    pi = permutation_importance(m, Xte, yte, scoring="roc_auc", n_repeats=3, random_state=0)
+    return pd.DataFrame({"feature": features, "auc_drop": pi.importances_mean}).sort_values("auc_drop", ascending=False)

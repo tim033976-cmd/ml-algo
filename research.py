@@ -45,7 +45,7 @@ def main() -> None:
 
     if a.prices_parquet:
         prices = D.from_long(pd.read_parquet(a.prices_parquet))
-        market = {k: prices.pop(k) for k in ("SPY", "QQQ", "^IRX") if k in prices}
+        market = {k: prices.pop(k) for k in ("SPY", "QQQ", "^IRX", "^VIX", "^VIX3M") if k in prices}
         universe = (pd.read_csv(a.universe_csv) if a.universe_csv else
                     pd.DataFrame({"ticker": list(prices), "index": "file", "status": "current"}))
     else:
@@ -108,6 +108,7 @@ def main() -> None:
 
     # ---------------- superperformer model: learn what future big winners look like beforehand
     sup = sup_clean = None
+    short, goal_ext, short_imp = {}, {}, None
     if len(sample):
         sample, (sig,) = A.super_walk_forward(sample, [sig])
         sup = A.super_report(sample)
@@ -144,6 +145,23 @@ def main() -> None:
                               "name": gname, "breakeven": breakeven}
             goal_tables[g]["all"].to_csv(out / f"goal_{g}_deciles.csv")
         print(f"[research] goal models done ({time.time() - t0:.0f}s)")
+
+        # ---------------- run 16: short horizons (concrete daily/weekly data + VIX only)
+        short = {}
+        if "y_up1" in sample:
+            for lab in A.SHORT_LABELS:
+                sample, _ = A.super_walk_forward(sample, [], label=lab, col=f"s_{lab}", features=A.SHORT_ALL,
+                                                 step=2, max_train=150_000)
+                sample, _ = A.super_walk_forward(sample, [], label=lab, col=f"m_{lab}", features=A.SHORT_MARKET_ONLY,
+                                                 step=2, max_train=150_000)
+                short[lab] = {"all": A.short_report(sample, lab, f"s_{lab}"),
+                              "market": A.short_report(sample, lab, f"m_{lab}")}
+            short_imp = A.short_importance(sample, "up5", A.SHORT_ALL)
+            short_imp.to_csv(out / "short_importance_up5.csv", index=False)
+            # do the new features improve the +20/-10 goal model?
+            sample, _ = A.super_walk_forward(sample, [], label="b20", col="p_b20_ext", features=A.SHORT_ALL)
+            goal_ext = {"original": A.goal_tiers(sample, "b20", "p_b20"), "with new features": A.goal_tiers(sample, "b20", "p_b20_ext")}
+        print(f"[research] short-horizon models done ({time.time() - t0:.0f}s)")
 
     # ---------------- portfolio simulation, 2018 -> today (marked to market daily)
     closes = pd.DataFrame({t: df["close"] for t, df in prices.items()}).astype("float32").ffill()
@@ -415,6 +433,32 @@ def main() -> None:
             md(sup_sig, index=True, floatfmt=".3f"),
             "",
         ] if sup else []),
+        *([
+            "## 12. Short horizons: green day / next day / 3 days / week (out-of-sample 2018+)",
+            "",
+            "Features: candle anatomy, gaps and fair value gaps, relative volume, round numbers / moving averages / "
+            "swing support & resistance / 20-day trend line, completed-week structure, VIX (level, change, percentile, "
+            "VIX/VIX3M), plus everything the earlier models use. Market-only = market + VIX + calendar features only. "
+            "Retrained every 2 years. 'top/bottom' = actual up-rate in the model's highest/lowest 10%; spread = their "
+            "difference in average return over the horizon.",
+            "",
+            md(pd.DataFrame([{"target": A.SHORT_LABELS[k], "model": m, "base rate": v[m]["base"], "AUC": v[m]["auc"],
+                              "accuracy": v[m]["accuracy"], "top 10% up": v[m]["top"], "bottom 10% up": v[m]["bottom"],
+                              "return spread": v[m]["spread"]} for k, v in short.items() for m in ("all", "market")]),
+               floatfmt=".3f"),
+            "",
+            "Up over the next week, by decile of the full model:",
+            "",
+            md(short["up5"]["all"]["deciles"], index=True, floatfmt=".4f"),
+            "",
+            "What drives the 1-week prediction (permutation importance, drop in OOS AUC):",
+            "",
+            md(short_imp.head(15), floatfmt=".4f"),
+            "",
+            "Do the new features improve the +20%/-10% goal model? (OOS tiers)",
+            "",
+            *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
+        ] if short else []),
         "## 11. Qullamaggie replication (per trade, out-of-sample 2018+; IS in brackets)",
         "",
         "Scan = top 3% performer over 1, 3 or 6 months with ADR >= 4%. Regime = QQQ above its 10- and 20-day SMAs. "
