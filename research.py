@@ -67,8 +67,10 @@ def _menu_section(menu, menu_ports, menu_choice, regime, regime_pit, gates, md, 
         *(["All stocks (no model), +20/-10, by the same splits: does a leading sector help on its own?", "",
            md(regime_all.reset_index(), floatfmt=".3f"), ""] if regime_all is not None and len(regime_all) else []),
         "Regime gates, one family at a time: skip the buckets of that family that were below break-even in-sample "
-        "(hit < 33% or negative return), then trade the model's top 10% with +20/-10. LEADING rows (run 19) keep only "
-        "the picks in leading groups (top 3 of 11 sectors / top 30% of sub-industries by median RS, fixed in advance). "
+        "(hit < 33% or negative return), then trade the model's top 10% with +20/-10. RULE rows keep only the picks that "
+        "pass a rule fixed in advance: leading groups (run 19: top 3 of 11 sectors / top 30% of sub-industries by "
+        "median RS) and the user's run-21 rules (SPY/QQQ vs 21 & 50 SMA, breadth, A/D line, sector & sub-industry "
+        "green / up 5 days / above 21 EMA; groups = equal-weight median of member stocks). "
         "Portfolio 2018+:",
         "",
         md(pd.DataFrame([{"gate": f, "skipped (chosen IS)": ", ".join(map(str, sk)) or "nothing",
@@ -108,6 +110,10 @@ def workflow_test(sig, lb, closes, market, pit):
     b_scn["wf_score"] = b_scn["rs_rank"]
     b_scn["size_mult"] = size(b_scn)
     nr = lambda d: d.drop(columns="size_mult")            # ignore the regime rule
+    # run 21 (user): the PDF's regime with QQQ's 21/50 SMA instead of the 200: above both full size,
+    # above one half size, below both no new entries
+    s2150 = lambda d: d.assign(size_mult=d["qqq_2150"].map({3.0: 1.0, 2.0: 0.5, 1.0: 0.5, 0.0: 0.0}).fillna(1.0)) \
+        if "qqq_2150" in d else d
     P = lambda d, ex, pr, risk, slots: A.portfolio(d, ex, pr, closes=closes, risk=risk, max_pos=slots, pos_cap=0.10)
     pt = (lambda d: d[pit(d).to_numpy()]) if pit is not None else None
     R = lambda d, ex: P(d, ex, "r6_rank", 0.005, 3)        # rockets: 0.5% risk, 3 positions
@@ -115,6 +121,7 @@ def workflow_test(sig, lb, closes, market, pit):
     ports = [
         ("rockets as written (regime sizing) / wf_rocket", R(roc, "wf_rocket")),
         ("rockets, no regime rule / wf_rocket", R(nr(roc), "wf_rocket")),
+        ("rockets, QQQ 21/50 regime / wf_rocket", R(s2150(roc), "wf_rocket")),
         ("rockets / sma50_close", R(roc, "sma50_close")),
         ("rockets / bracket_20_10", R(roc, "bracket_20_10")),
         ("BASELINE random entries, rocket filter + regime / wf_rocket", R(b_roc, "wf_rocket")),
@@ -124,6 +131,7 @@ def workflow_test(sig, lb, closes, market, pit):
         ports += [
             ("scanner as written, S&P 500 point-in-time (NDX proxy) / wf_weekly10", S(pt(scn), "wf_weekly10")),
             ("scanner PIT, no regime rule / wf_weekly10", S(nr(pt(scn)), "wf_weekly10")),
+            ("scanner PIT, QQQ 21/50 regime / wf_weekly10", S(s2150(pt(scn)), "wf_weekly10")),
             ("scanner PIT / sma50_close", S(pt(scn), "sma50_close")),
             ("BASELINE random entries, scanner filter + regime, PIT / wf_weekly10", S(pt(b_scn), "wf_weekly10")),
         ]
@@ -141,9 +149,13 @@ def workflow_test(sig, lb, closes, market, pit):
     for name, d, ex in (("rockets", roc, "wf_rocket"), ("scanner", scn, "wf_weekly10"),
                         ("random (rocket filter)", b_roc, "wf_rocket"), ("random (scanner filter)", b_scn, "wf_weekly10")):
         for period, m in (("IS", d["date"] < A.IS_END), ("OOS", d["date"] >= A.IS_END)):
-            for reg, g in d[m].groupby("ndx_regime"):
-                rows.append({"part": name, "regime": {2.0: "green", 1.0: "yellow", 0.0: "red"}.get(reg, reg),
-                             "period": period, "n": len(g), "avgR": g[f"R_{ex}"].mean(), "win": (g[f"R_{ex}"] > 0).mean()})
+            for col, labels in (("ndx_regime", {2.0: "PDF green (200d)", 1.0: "PDF yellow", 0.0: "PDF red"}),
+                                ("qqq_2150", {3.0: "QQQ > 21 & 50", 2.0: "QQQ > 21 only", 1.0: "QQQ > 50 only", 0.0: "QQQ < both"})):
+                if col not in d:
+                    continue
+                for reg, g in d[m].groupby(col):
+                    rows.append({"part": name, "regime": labels.get(reg, reg),
+                                 "period": period, "n": len(g), "avgR": g[f"R_{ex}"].mean(), "win": (g[f"R_{ex}"] > 0).mean()})
     if rows:
         t = pd.DataFrame(rows).pivot_table(index=["part", "regime"], columns="period", values=["n", "avgR", "win"], sort=False)
         t.columns = [f"{p}_{v}" for v, p in t.columns]
@@ -477,9 +489,25 @@ def main() -> None:
             # run 19 (user's question): only trade the model's picks from leading sectors / sub-industries
             # (pre-registered cut-offs: top 3 of 11 sectors, top 30% of sub-industries by median RS)
             top_rows = A._top(sample[sample[score_col].notna() & sample["m20_10_ret"].notna()], score_col, 0.9)
-            leading = {"top 3 sectors only": top_rows["sector_rank"] >= 0.75,
-                       "top 30% sub-industries only": top_rows["industry_rank"] >= 0.7,
-                       "top 3 sectors AND top 30% sub-industries": (top_rows["sector_rank"] >= 0.75) & (top_rows["industry_rank"] >= 0.7)}
+            T = top_rows
+            leading = {"top 3 sectors only": T["sector_rank"] >= 0.75,
+                       "top 30% sub-industries only": T["industry_rank"] >= 0.7,
+                       "top 3 sectors AND top 30% sub-industries": (T["sector_rank"] >= 0.75) & (T["industry_rank"] >= 0.7)}
+            # run 21 (user's rules, fixed in advance): short market trend, breadth, A/D line, group momentum
+            if "spy_2150" in T:
+                both = lambda f: (T[f"sec_{f}"] > (0.5 if f == "up21" else 0)) & (T[f"ind_{f}"] > (0.5 if f == "up21" else 0))
+                leading.update({
+                    "SPY above its 21 & 50 SMA": T["spy_2150"] == 3,
+                    "QQQ above its 21 & 50 SMA": T["qqq_2150"] == 3,
+                    "SPY above its 50 SMA (21 either way)": T["spy_2150"].isin([1, 3]),
+                    "A/D line above its 21 & 50 MA": T["ad_2150"] == 3,
+                    "> 50% of stocks above their 50d": T["breadth_50"] > 0.5,
+                    "% above 50d rising over 10 days": T["breadth_50_chg10"] > 0,
+                    "sector AND sub-industry green today": both("ret1"),
+                    "sector AND sub-industry up over 5 days": both("ret5"),
+                    "sector AND sub-industry above 21 EMA": both("up21"),
+                    "SPY > 21 & 50 + sector & sub-industry up 5 days": (T["spy_2150"] == 3) & both("ret5"),
+                })
             for name, m in leading.items():
                 g = top_rows[m.fillna(False).to_numpy()]
                 if (g["date"] >= A.IS_END).sum() < 50:
@@ -487,10 +515,10 @@ def main() -> None:
                 tr = A.menu_trades(g, "m20_10", 0.10, score_col, cal, q=0)
                 full = A.portfolio(tr, "bracket", "priority", closes=closes)
                 pt = A.portfolio(tr[pit(tr).to_numpy()], "bracket", "priority", closes=closes) if pit else None
-                regime_gates.append((f"LEADING: {name}", [], full, pt))
-                port_rows.append((f"LEADING {name}, model top 10% / +20% -10%", full))
+                regime_gates.append((f"RULE: {name}", [], full, pt))
+                port_rows.append((f"RULE {name}, model top 10% / +20% -10%", full))
                 if pt is not None:
-                    port_rows.append((f"LEADING {name}, S&P 500 point-in-time only / +20% -10%", pt))
+                    port_rows.append((f"RULE {name}, S&P 500 point-in-time only / +20% -10%", pt))
             if pit:
                 base_tr = A.menu_trades(sample, "m20_10", 0.10, score_col, cal)
                 regime_gates.append(("(no gate)", [], A.portfolio(base_tr, "bracket", "priority", closes=closes),
@@ -552,7 +580,7 @@ def main() -> None:
     found, nxt, key = findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup,
                                sup_imp if sup else None, goal_tables if sup else None)
     for k, v in wf["ports"]:
-        if "as written" in k:
+        if "as written" in k or "21/50" in k:
             found.append(f"Workflow PDF {k}: {v['CAGR']:.1%} CAGR, {v['max_DD']:.0%} DD, {v['trades']} trades.")
     if wf.get("blend") is not None:
         b0 = wf["blend"].iloc[0]
@@ -570,7 +598,7 @@ def main() -> None:
             key["menu_choice"], key["menu_choice_oos_ret"] = r["bracket"], float(r["avg_net_return"])
         for f, sk, a, p in regime_gates:
             if a:
-                found.append(f"{'Filter ' + f if f.startswith('LEADING') else f'Regime gate {f} (skip ' + (', '.join(map(str, sk)) or 'nothing') + ')'}: {a['CAGR']:.1%} CAGR, "
+                found.append(f"{'Filter ' + f if f.startswith('RULE') else f'Regime gate {f} (skip ' + (', '.join(map(str, sk)) or 'nothing') + ')'}: {a['CAGR']:.1%} CAGR, "
                              f"{a['max_DD']:.0%} DD" + (f"; point-in-time S&P 500 {p['CAGR']:.1%}, {p['max_DD']:.0%}" if p else "") + ".")
     hist = append_history(out / "history.csv", key, len(prices), len(sig))
     (out / "insights.json").write_text(json.dumps({"findings": found, "next_steps": nxt, "key": key}, indent=2, default=str))

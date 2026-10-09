@@ -353,3 +353,33 @@ def test_workflow_gap_hold_waits_two_days_and_stops_under_gap_low():
     low2 = low.copy()
     low2[71] = 52.0
     assert wf_gap_hold(bars(_df(close, high, low2, open_).assign(volume=df["volume"]))).empty
+
+
+def test_market_internals_ad_line_and_2150_codes():
+    from mlalgo.research.run import _above_2150, market_internals
+    idx = pd.bdate_range("2020-01-01", periods=120)
+    up = pd.DataFrame({"close": np.linspace(10, 20, 120)}, index=idx)
+    down = pd.DataFrame({"close": np.linspace(20, 10, 120)}, index=idx)
+    m = market_internals({"A": up, "B": up.copy(), "C": down})
+    # 2 advancers, 1 decliner every day -> the A/D line rises by 1 a day and sits above its averages
+    assert m["ad_2150"].iloc[-1] == 3 and np.isclose(m["ad_chg10"].iloc[-1], 10 / 3)
+    assert np.isclose(m["breadth_20"].iloc[-1], 2 / 3)
+    # codes: rising series above both, falling below both, NaN before 50 bars
+    assert _above_2150(up["close"]).iloc[-1] == 3 and _above_2150(down["close"]).iloc[-1] == 0
+    assert np.isnan(_above_2150(up["close"]).iloc[30])
+
+
+def test_group_momentum_uses_member_median_and_is_point_in_time():
+    from mlalgo.research.run import group_momentum
+    idx = pd.bdate_range("2020-01-01", periods=60)
+    px = {t: pd.DataFrame({"close": 100 * (1 + r) ** np.arange(60)}, index=idx)
+          for t, r in (("a", 0.01), ("b", 0.02), ("c", 0.03), ("d", -0.01), ("e", -0.01))}
+    g = pd.Series({"a": "tech", "b": "tech", "c": "tech", "d": "small", "e": "small"})
+    m = group_momentum(px, g)
+    assert np.isclose(m["ret1"]["tech"].iloc[-1], 0.02)          # median of 1%, 2%, 3%
+    assert m["ret1"]["small"].isna().all()                       # fewer than 3 members
+    assert np.isclose(m["ret5"]["tech"].iloc[-1], 1.02 ** 5 - 1) and m["up21"]["tech"].iloc[-1] == 1
+    # tampering with the future doesn't change the past
+    px2 = {t: d.assign(close=d["close"].where(d.index < idx[40], d["close"] * 0.5)) for t, d in px.items()}
+    m2 = group_momentum(px2, g)
+    pd.testing.assert_frame_equal(m["ret5"].iloc[:40], m2["ret5"].iloc[:40])

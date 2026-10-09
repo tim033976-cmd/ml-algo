@@ -27,6 +27,12 @@ VIX_COLS = ["vix", "vix_chg_1", "vix_chg_5", "vix_pct_1y", "vix_term", "spy_ret_
 # run 20 (workflow PDF): Nasdaq-100 regime, 2 = green (QQQ > 200d and 50d > 200d), 1 = yellow
 # (> 200d, 50d < 200d), 0 = red (< 200d). Not a model feature.
 REGIME_COLS = ["ndx_regime"]
+# run 21 (user): shorter market trend (21/50 SMA instead of 200), breadth and the advance/decline
+# line. Codes for *_2150: 3 = above both, 2 = above the 21 only, 1 = above the 50 only, 0 = below both.
+REGIME_COLS += ["spy_2150", "qqq_2150", "breadth_20", "breadth_50_chg10", "ad_2150", "ad_chg10"]
+# sector / sub-industry short-term momentum ("tech and software ETFs both green")
+GROUP_MOM = ["sec_ret1", "sec_ret5", "sec_up21", "ind_ret1", "ind_ret5", "ind_up21"]
+GROUP_EXTRA += GROUP_MOM
 
 
 def _rs_composite(df: pd.DataFrame) -> pd.Series:
@@ -55,8 +61,28 @@ def cross_section(prices: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.Ser
     return rank, breadth
 
 
-def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series) -> pd.DataFrame:
-    parts = [breadth]
+def _above_2150(x: pd.Series) -> pd.Series:
+    a21, a50 = x > x.rolling(21).mean(), x > x.rolling(50).mean()
+    code = pd.Series(np.select([a21 & a50, a21, a50], [3.0, 2.0, 1.0], 0.0), index=x.index)
+    return code.where(x.rolling(50).count() == 50)
+
+
+def market_internals(prices: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Run 21: % of stocks above their 20-day average, the 10-day change of the % above the 50-day,
+    and the advance/decline line (cumulative advancers - decliners) vs its 21/50-day averages."""
+    close = pd.DataFrame({t: df["close"] for t, df in prices.items()})
+    chg = close.diff()
+    adv, dec = (chg > 0).sum(axis=1), (chg < 0).sum(axis=1)
+    ad = (adv - dec).cumsum()
+    above20 = (close > close.rolling(20).mean()).where(close.rolling(20).count() == 20)
+    above50 = (close > close.rolling(50).mean()).where(close.rolling(50).count() == 50)
+    b50 = above50.mean(axis=1)
+    return pd.DataFrame({"breadth_20": above20.mean(axis=1), "breadth_50_chg10": b50 - b50.shift(10),
+                         "ad_2150": _above_2150(ad), "ad_chg10": (ad - ad.shift(10)) / close.notna().sum(axis=1)})
+
+
+def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series, internals: pd.DataFrame | None = None) -> pd.DataFrame:
+    parts = [breadth] + ([internals] if internals is not None else [])
     if "SPY" in market:
         spy = market["SPY"]
         parts.append(index_regime(spy, "mkt"))
@@ -83,6 +109,9 @@ def market_frame(market: dict[str, pd.DataFrame], breadth: pd.Series) -> pd.Data
         s50, s200 = q.rolling(50).mean(), q.rolling(200).mean()
         reg = pd.Series(np.where(q < s200, 0.0, np.where(s50 > s200, 2.0, 1.0)), index=q.index).where(s200.notna())
         m["ndx_regime"] = reg.reindex(m.index).ffill()
+        m["qqq_2150"] = _above_2150(q).reindex(m.index).ffill()
+    if "SPY" in market:
+        m["spy_2150"] = _above_2150(market["SPY"]["close"]).reindex(m.index).ffill()
     return m.reindex(columns=MARKET_COLS + VIX_COLS + REGIME_COLS)
 
 
@@ -228,8 +257,22 @@ def ret_rank(prices: dict[str, pd.DataFrame], n: int = 126) -> pd.DataFrame:
     return r.rank(axis=1, pct=True).astype("float32")
 
 
+def group_momentum(prices: dict[str, pd.DataFrame], groups: pd.Series, min_members: int = 3) -> dict[str, pd.DataFrame]:
+    """Equal-weight group index from members' median daily return: today's return, 5-day return,
+    and whether the index is above its 21-day EMA. Groups with < min_members stocks are NaN."""
+    rets = pd.DataFrame({t: df["close"].pct_change() for t, df in prices.items()})
+    g = groups.reindex(rets.columns)
+    med = rets.T.groupby(g).median().T
+    cnt = rets.T.groupby(g).count().T
+    med = med.where(cnt >= min_members)
+    idx = (1 + med.fillna(0)).cumprod().where(med.notna())
+    return {"ret1": med.astype("float32"), "ret5": (idx / idx.shift(5) - 1).astype("float32"),
+            "up21": (idx > idx.ewm(span=21, adjust=False).mean()).astype("float32").where(med.notna())}
+
+
 def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers,
-                 qrank: pd.DataFrame | None = None, r6: pd.DataFrame | None = None) -> dict[str, pd.DataFrame]:
+                 qrank: pd.DataFrame | None = None, r6: pd.DataFrame | None = None,
+                 prices: dict[str, pd.DataFrame] | None = None) -> dict[str, pd.DataFrame]:
     """Per-ticker sub-industry / sector RS series (empty if the universe has no sector info)."""
     grp = {}
     if qrank is not None:
@@ -244,6 +287,10 @@ def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers,
     u = universe.drop_duplicates("ticker").set_index("ticker")
     ind_rs, ind_rank = group_strength(rank, u["sub_industry"].replace("nan", np.nan))
     sec_rs, sec_rank = group_strength(rank, u["sector"].replace("nan", np.nan))
+    mom = {}
+    if prices is not None:
+        mom["sec"] = group_momentum(prices, u["sector"].replace("nan", np.nan))
+        mom["ind"] = group_momentum(prices, u["sub_industry"].replace("nan", np.nan))
     for t in tickers:
         if t in u.index:
             sub, sec = u.at[t, "sub_industry"], u.at[t, "sector"]
@@ -251,7 +298,10 @@ def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers,
                 "industry_rs": ind_rs[sub] if sub in ind_rs else np.nan,
                 "industry_rank": ind_rank[sub] if sub in ind_rank else np.nan,
                 "sector_rs": sec_rs[sec] if sec in sec_rs else np.nan,
-                "sector_rank": sec_rank[sec] if sec in sec_rank else np.nan}, index=rank.index)
+                "sector_rank": sec_rank[sec] if sec in sec_rank else np.nan,
+                **{f"{k}_{f}": (mom[k][f][grp_] if grp_ in mom[k][f] else np.nan)
+                   for k, grp_ in (("sec", sec), ("ind", sub)) if k in mom for f in ("ret1", "ret5", "up21")}},
+                index=rank.index).astype("float32")
             grp[t] = g if t not in grp else pd.concat([grp[t], g], axis=1)
     return grp
 
@@ -259,8 +309,8 @@ def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers,
 def run(prices: dict[str, pd.DataFrame], market: dict[str, pd.DataFrame], max_days: int = 250,
         cost: float = 0.001, workers: int | None = None, universe: pd.DataFrame | None = None) -> pd.DataFrame:
     rank, breadth = cross_section(prices)
-    mkt = market_frame(market, breadth)
-    grp = group_frames(rank, universe, prices, qrank=perf_rank(prices), r6=ret_rank(prices))
+    mkt = market_frame(market, breadth, market_internals(prices))
+    grp = group_frames(rank, universe, prices, qrank=perf_rank(prices), r6=ret_rank(prices), prices=prices)
     tasks = [(t, df, rank[t], grp.get(t), max_days, cost, i) for i, (t, df) in enumerate(prices.items())]
     workers = workers or os.cpu_count() or 1
     frames, samples = [], []

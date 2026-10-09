@@ -615,6 +615,25 @@ def regime_splits(d: pd.DataFrame, ref: pd.DataFrame) -> dict[str, pd.Series]:
     if "mkt_ret_21" in d:
         out["SPY 1-month return"] = pd.cut(d["mkt_ret_21"], [-np.inf, -0.03, 0.0, 0.03, np.inf],
                                            labels=["< -3%", "-3..0%", "0..3%", "> 3%"])
+    # run 21 (user): short market trend, breadth, A/D line, and sector / sub-industry momentum
+    code = {3.0: "above 21 & 50", 2.0: "above 21 only", 1.0: "above 50 only", 0.0: "below both"}
+    for col, name in (("spy_2150", "SPY vs 21/50 SMA"), ("qqq_2150", "QQQ vs 21/50 SMA"), ("ad_2150", "A/D line vs its 21/50 MA")):
+        if col in d:
+            out[name] = d[col].map(code)
+    if "breadth_20" in d:
+        out["% of stocks above 20d"] = pd.cut(d["breadth_20"], [-np.inf, 0.4, 0.6, np.inf], labels=["< 40%", "40-60%", "> 60%"])
+    if "breadth_50_chg10" in d:
+        out["% above 50d, 10-day change"] = pd.cut(d["breadth_50_chg10"], [-np.inf, -0.05, 0.05, np.inf],
+                                                   labels=["falling (< -5 pts)", "flat", "rising (> +5 pts)"])
+    if "ad_chg10" in d:
+        out["A/D line, 10-day change"] = pd.cut(d["ad_chg10"], [-np.inf, -0.5, 0.5, np.inf],
+                                                labels=["falling", "flat", "rising"])
+    for f, name in (("ret1", "today green"), ("ret5", "up over 5 days"), ("up21", "above 21 EMA")):
+        a, b = f"sec_{f}", f"ind_{f}"
+        if a in d and b in d:
+            x, y = (d[a] > 0.5) if f == "up21" else (d[a] > 0), (d[b] > 0.5) if f == "up21" else (d[b] > 0)
+            lab = np.select([x & y, x | y], ["both", "one of the two"], "neither")
+            out[f"sector & sub-industry {name}"] = pd.Series(lab, index=d.index).where(d[a].notna() & d[b].notna())
     # run 19: stock-level group strength (median RS rank of the group, percentile among groups)
     if "sector_rank" in d:
         out["sector (11 GICS, by median RS)"] = pd.cut(d["sector_rank"], [-np.inf, 0.30, 0.75, np.inf],
