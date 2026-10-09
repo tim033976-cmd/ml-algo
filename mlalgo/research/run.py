@@ -15,6 +15,9 @@ from mlalgo.structure import ML_FEATURES, setup_score, structure_features
 EXIT_NAMES = list(engine.EXITS)
 EXIT_CODES = np.array([engine.EXITS[k][0] for k in EXIT_NAMES], dtype=np.int64)
 GROUP_COLS = ["industry_rs", "industry_rank", "sector_rs", "qull_rank"]
+# run 19: sector percentile among sectors (leading sectors), kept out of the model features so the
+# goal model stays comparable with runs 16-18
+GROUP_EXTRA = ["sector_rank"]
 SIGNAL_EXTRAS = ["risk_pct", "risk_adr", "vol_ratio", "gap", "close_strength",
                  "prior_move", "flag_depth", "flag_days", "base_depth", "contraction",
                  "pattern_len", "pattern_width", "pattern_touches", "coil_range"]
@@ -129,7 +132,7 @@ def superperformer_sample(ticker, df, feats_all, rs_rank, grp, warmup=252) -> pd
     out.insert(0, "date", df.index[idx])
     out.insert(0, "ticker", ticker)
     out["rs_rank"] = rs_rank.reindex(df.index).to_numpy()[idx]
-    for col in GROUP_COLS:
+    for col in GROUP_COLS + GROUP_EXTRA:
         out[col] = grp[col].reindex(df.index).to_numpy()[idx] if grp is not None and col in grp else np.nan
     out["fwd_max_gain"] = fwd_max[idx] / c[idx] - 1
     # "clean" superperformer: reaches +40% before it ever trades 20% below the starting close
@@ -187,7 +190,7 @@ def process_ticker(args):
     for col in SIGNAL_EXTRAS:
         out[col] = sig[col].to_numpy() if col in sig else np.nan
     out["rs_rank"] = rs_rank.reindex(df.index).to_numpy()[idx]
-    for col in GROUP_COLS:
+    for col in GROUP_COLS + GROUP_EXTRA:
         out[col] = grp[col].reindex(df.index).to_numpy()[idx] if grp is not None and col in grp else np.nan
     out = pd.concat([out, feats[[c for c in ML_FEATURES + ["trend_template", "dollar_vol_50"] if c in feats]]], axis=1)
     dates = df.index.to_numpy()
@@ -222,14 +225,15 @@ def group_frames(rank: pd.DataFrame, universe: pd.DataFrame | None, tickers,
         return grp
     u = universe.drop_duplicates("ticker").set_index("ticker")
     ind_rs, ind_rank = group_strength(rank, u["sub_industry"].replace("nan", np.nan))
-    sec_rs, _ = group_strength(rank, u["sector"].replace("nan", np.nan))
+    sec_rs, sec_rank = group_strength(rank, u["sector"].replace("nan", np.nan))
     for t in tickers:
         if t in u.index:
             sub, sec = u.at[t, "sub_industry"], u.at[t, "sector"]
             g = pd.DataFrame({
                 "industry_rs": ind_rs[sub] if sub in ind_rs else np.nan,
                 "industry_rank": ind_rank[sub] if sub in ind_rank else np.nan,
-                "sector_rs": sec_rs[sec] if sec in sec_rs else np.nan}, index=rank.index)
+                "sector_rs": sec_rs[sec] if sec in sec_rs else np.nan,
+                "sector_rank": sec_rank[sec] if sec in sec_rank else np.nan}, index=rank.index)
             grp[t] = g if t not in grp else pd.concat([grp[t], g], axis=1)
     return grp
 

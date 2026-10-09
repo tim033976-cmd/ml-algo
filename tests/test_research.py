@@ -286,3 +286,15 @@ def test_bracket_menu_columns_match_bracket_outcome_and_portfolio_exit_dates():
     j = np.array([df.index.get_loc(d) for d in tr["date"]]) + s2["m15_8_days"].to_numpy()
     assert (tr["exit_bracket"].to_numpy() == df.index[j].to_numpy()).all()
     assert (tr["risk_pct"] == 0.08).all()
+
+
+def test_group_frames_sector_rank_is_percentile_among_sectors():
+    from mlalgo.research.run import group_frames
+    idx = pd.date_range("2020-01-01", periods=3)
+    tick = [f"T{i}" for i in range(9)]
+    # three sectors of three stocks; sector C strongest, A weakest
+    rank = pd.DataFrame([[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]] * 3, index=idx, columns=tick)
+    u = pd.DataFrame({"ticker": tick, "sector": ["A"] * 3 + ["B"] * 3 + ["C"] * 3, "sub_industry": ["x"] * 9})
+    g = group_frames(rank, u, tick)
+    assert np.allclose(g["T0"]["sector_rank"], 1 / 3) and np.allclose(g["T8"]["sector_rank"], 1.0)
+    assert np.allclose(g["T4"]["sector_rs"], 0.5)

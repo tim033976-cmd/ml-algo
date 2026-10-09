@@ -604,6 +604,13 @@ def regime_splits(d: pd.DataFrame, ref: pd.DataFrame) -> dict[str, pd.Series]:
     if "mkt_ret_21" in d:
         out["SPY 1-month return"] = pd.cut(d["mkt_ret_21"], [-np.inf, -0.03, 0.0, 0.03, np.inf],
                                            labels=["< -3%", "-3..0%", "0..3%", "> 3%"])
+    # run 19: stock-level group strength (median RS rank of the group, percentile among groups)
+    if "sector_rank" in d:
+        out["sector (11 GICS, by median RS)"] = pd.cut(d["sector_rank"], [-np.inf, 0.30, 0.75, np.inf],
+                                                        labels=["bottom 3", "middle 5", "top 3 (leading)"])
+    if "industry_rank" in d:
+        out["sub-industry (by median RS)"] = pd.cut(d["industry_rank"], [-np.inf, 0.3, 0.7, np.inf],
+                                                     labels=["bottom 30%", "middle", "top 30% (leading)"])
     if "m_up3" in d:
         cut = ref["m_up3"].quantile(0.1) if "m_up3" in ref and ref["m_up3"].notna().any() else np.nan
         if cut == cut:
