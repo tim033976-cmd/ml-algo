@@ -14,7 +14,9 @@
     "GOAL +10% before -10%: all stocks hit it 49% of the time; the model's top 10% 53% (break-even ~50%), avg net return per trade +0.9%. Point-in-time S&P 500 top 10%: 54%, +1.4% per trade (n=7041).",
     "GOAL +20% before -10%: all stocks hit it 23% of the time; the model's top 10% 37% (break-even ~33%), avg net return per trade +2.4%. Point-in-time S&P 500 top 10%: 39%, +3.6% per trade (n=4335).",
     "Best portfolio 2018->today: SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close at 47.2% CAGR (max drawdown -42.5%) vs SPY 14.5%.",
-    "Best return per unit of drawdown: SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close (47.2% CAGR, -42.5% max DD)."
+    "Best return per unit of drawdown: SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close (47.2% CAGR, -42.5% max DD).",
+    "Bracket menu: in-sample best (return per month) is +20% / -15%. OOS top 10%: hit 45.9% (break-even 43%), +3.98% per trade, +2.70% per month held, vs +20/-10: hit 38.3%, +2.63%, +2.34%/month.",
+    "Regime gate skipped (chosen in-sample): [('breadth (stocks above 50d)', 'high (> 71%)'), ('breadth (stocks above 50d)', 'mid'), ('VIX level', '15-20'), ('VIX level', '< 15'), ('VIX / VIX3M', '< 0.9 (calm)'), ('VIX / VIX3M', '> 1.0 (stress)'), ('SPY above 200d', 'yes'), ('QQQ above 10 & 20 SMA', 'yes'), ('SPY 1-month return', '-3..0%'), ('SPY 1-month return', '> 3%'), ('3-day market model', 'rest')]."
   ],
   "next_steps": [
     "Loosen the definitions of htf or widen the universe so they can be evaluated.",
@@ -64,7 +66,7 @@
       "early_stage"
     ],
     "ml_auc": 0.5071617335573618,
-    "ml_rank_corr": 0.005406951925695444,
+    "ml_rank_corr": 0.0054069519256954475,
     "ml_monotonic": -0.35757575757575755,
     "ml_gap": "0.014152542",
     "top_features": [
@@ -89,6 +91,8 @@
     "best_calmar": "SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close",
     "best_portfolio": "SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close",
     "best_cagr": 0.4722899917335257,
-    "spy_cagr": 0.14547779240482006
+    "spy_cagr": 0.14547779240482006,
+    "menu_choice": "+20% / -15%",
+    "menu_choice_oos_ret": 0.03981611875864755
   }
 }
