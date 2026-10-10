@@ -297,6 +297,123 @@ def run24(sig, sample, lb, closes, prices, market, pit, pit_current, hist, score
     return r
 
 
+TRADER_SETUPS = ["ep_gap10", "ep_gap8_hold", "ep_gap10_vol2", "ep_gap15", "wf_rocket_breakout", "wf_rocket_gap",
+                 "qull_breakout", "qull_breakout_60", "tc_ema_cross_base", "base_25", "base_50", "high52_fresh",
+                 "flag_30", "flag_60", "htf", "vcp"]
+
+
+def run25(sig, prices, market, sp_hist, out):
+    """Run 25: concentrated (3-5 stocks) leader portfolio run on top traders' rules, updated at every
+    close; grid selected on 2007-2017 (IS), judged on 2018+ (OOS), point-in-time S&P 500 incl. former members."""
+    from mlalgo.research import rotation as RT
+    r = {}
+    closes = pd.DataFrame({t: df["close"] for t, df in prices.items()})
+    dv = pd.DataFrame({t: (df["close"] * df["volume"]).rolling(50).mean() for t, df in prices.items()}).reindex(closes.index)
+    members = D.sp500_mask(sp_hist, closes.index, closes.columns) if sp_hist is not None and len(sp_hist) else None
+    P = RT.prepare(closes, dv, members)
+    P_all = RT.prepare(closes, dv, None)
+    qqq = market["QQQ"]["close"].reindex(closes.index).ffill() if "QQQ" in market else None
+    regime = (qqq > qqq.rolling(200).mean()).to_numpy() if qqq is not None else None
+    s = sig[sig["entry_name"].isin(TRADER_SETUPS)][["date", "ticker"]]
+    setup = pd.DataFrame(False, index=closes.index, columns=closes.columns)
+    if len(s):
+        piv = s.assign(v=True).drop_duplicates(["date", "ticker"]).pivot(index="date", columns="ticker", values="v")
+        piv = piv.reindex(index=closes.index, columns=closes.columns).fillna(False).astype(float)
+        setup = piv.rolling(3, min_periods=1).max() > 0          # a setup fired today or in the last 2 days
+    setup = setup.to_numpy()
+    rows, results = [], {}
+    for n in (3, 4, 5):
+        for score in RT.SCORES:
+            for ex in RT.EXITS:
+                for reg_name, reg in (("none", None), ("QQQ > 200d", regime)):
+                    for entry_name, st in (("any leader", None), ("setup required", setup)):
+                        key = (n, score, ex, reg_name, entry_name)
+                        res = RT.run(P, n=n, score=score, exit_rule=ex, regime=reg, setup=st)
+                        results[key] = res
+                        rows.append({"N": n, "rank by": score, "exit": ex, "regime": reg_name, "entry": entry_name,
+                                     **RT.stats(res, A.IS_END)})
+    grid = pd.DataFrame(rows)
+    grid.to_csv(out / "run25_grid.csv", index=False)
+    ok = grid[grid["IS_trades"] >= 30]
+    best = ok.sort_values("IS_CAGR_per_DD", ascending=False).head(10)
+    r["best_is"] = best
+    # pre-registered trader-style defaults
+    defaults = {"Qullamaggie style (best-of 1/3/6m RS, setup, 20-day trail, QQQ > 200d, 4 stocks)": (4, "qull_best", "sma20", "QQQ > 200d", "setup required"),
+                "Minervini / O'Neil style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, 4 stocks)": (4, "mom_6m1m", "sma50", "QQQ > 200d", "setup required"),
+                "Pure leader rotation (6m/1m momentum, any leader, 50-day + rank, no regime, 5 stocks)": (5, "mom_6m1m", "sma50_rank", "none", "any leader")}
+    m = lambda k: (grid["N"] == k[0]) & (grid["rank by"] == k[1]) & (grid["exit"] == k[2]) & (grid["regime"] == k[3]) & (grid["entry"] == k[4])
+    r["defaults"] = pd.concat([grid[m(k)].assign(style=name) for name, k in defaults.items()])
+    # the IS winner: robustness checks and today's portfolio
+    b = best.iloc[0]
+    key = (int(b["N"]), b["rank by"], b["exit"], b["regime"], b["entry"])
+    reg = regime if key[3] != "none" else None
+    st = setup if key[4] == "setup required" else None
+    win = results[key]
+    checks = {"IS winner, S&P 500 point-in-time (0.1%/side)": win,
+              "IS winner, S&P 500 point-in-time, 0.3%/side": RT.run(P, n=key[0], score=key[1], exit_rule=key[2], regime=reg, setup=st, cost=0.003),
+              "IS winner, all stocks (survivorship-inflated)": RT.run(P_all, n=key[0], score=key[1], exit_rule=key[2], regime=reg, setup=st)}
+    r["checks"] = pd.DataFrame([{"version": k, **RT.stats(v, A.IS_END)} for k, v in checks.items()])
+    bench = {}
+    for name in ("SPY", "QQQ"):
+        if name in market:
+            px = market[name]["close"]
+            bench[name] = A.split_stats(px.pct_change().fillna(0))
+    r["bench"] = pd.DataFrame([{"benchmark": k, **v} for k, v in bench.items()])
+    yr = A.yearly(win["curve"][win["curve"].index >= "2007-01-01"]).rename("IS winner")
+    if "SPY" in market:
+        spy = market["SPY"]["close"]
+        yr = pd.concat([yr, A.yearly(spy[spy.index >= "2007-01-01"]).rename("SPY")], axis=1)
+        r["alpha"] = pd.DataFrame([{"strategy (2018+)": "IS winner, PIT", **A.alpha_beta(win["curve"][win["curve"].index >= A.IS_END], spy)}])
+    yr.index = yr.index.astype(int)
+    r["years"] = yr.rename_axis("year").reset_index()
+    r["winner"] = ", ".join(map(str, key))
+    r["today"] = win["open"]
+    for k in ("best_is", "defaults", "checks", "bench", "years", "today"):
+        r[k].to_csv(out / f"run25_{k}.csv", index=False)
+    return r
+
+
+def _run25_section(r, md):
+    T = lambda k: md(r[k], floatfmt=".3f") if isinstance(r.get(k), pd.DataFrame) and len(r[k]) else "(not available)"
+    return [
+        "## 17. Run 25: concentrated leader portfolio (3-5 stocks) on top traders' rules",
+        "",
+        "Hold N stocks (equal weight), decided at every close. Leaders only: price >= $10, >= $20M/day, above a "
+        "rising 50-day that is above the 200-day, within 25% of the 52-week high; S&P 500 members at the time "
+        "(incl. later-removed ones). Entry: best-ranked leader into an empty slot (optionally only within 3 days of "
+        "a top-trader setup: episodic pivot / breakout / base / flag / VCP; optionally only while QQQ > 200-day). "
+        "Exit at the close: below the 10/20/50-day average, 8% below entry, or (rank) out of the top 3N. 0.1% per "
+        "side. 144 configurations; the winner is chosen on 2007-2017 return / drawdown only.",
+        "",
+        "Top 10 configurations by IS (2007-2017) CAGR / max drawdown, with their OOS (2018+) results:",
+        "",
+        T("best_is"),
+        "",
+        "Pre-registered trader-style versions (not selected on any results):",
+        "",
+        T("defaults"),
+        "",
+        f"IS winner: {r.get('winner', '')}. Robustness:",
+        "",
+        T("checks"),
+        "",
+        "Benchmarks (same periods):",
+        "",
+        T("bench"),
+        "",
+        T("alpha"),
+        "",
+        "Year by year (IS winner vs SPY):",
+        "",
+        T("years"),
+        "",
+        "Today's portfolio (IS winner, as of the last close):",
+        "",
+        T("today"),
+        "",
+    ]
+
+
 def _run24_section(r, md):
     T = lambda k, f=".3f": md(r[k], floatfmt=f) if isinstance(r.get(k), pd.DataFrame) and len(r[k]) else "(not available)"
     return [
@@ -831,6 +948,8 @@ def main() -> None:
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
 
     # ---------------- run 24: consolidated tests
+    r25 = run25(sig, prices, market, sp_hist, out)
+    print(f"[research] run 25 portfolio grid done ({time.time() - t0:.0f}s)")
     r24 = run24(sig, sample, lb, closes, prices, market, pit, pit_current, sp_hist,
                 score_col if menu is not None else None, out)
 
@@ -1021,6 +1140,7 @@ def main() -> None:
             "",
             *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
         ] if short else []),
+        *_run25_section(r25, md),
         *_run24_section(r24, md),
         "## 15. ADR%, volatility-matched check, parabolic shorts (run 23)",
         "",

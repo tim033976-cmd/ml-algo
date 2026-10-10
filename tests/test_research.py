@@ -480,3 +480,27 @@ def test_replay_picks_trains_only_on_closed_labels(monkeypatch):
     first = dates[40]
     assert seen[0] == int((s["label_end"] < first).sum())
     assert set(rep["list"]) == {"all", "leaders"} and rep.groupby(["date", "list"]).size().max() == 10
+
+
+def test_leader_rotation_mechanics():
+    from mlalgo.research import rotation as R
+    idx = pd.bdate_range("2010-01-01", periods=600)
+    g = np.arange(600)
+    up = lambda r: 50 * np.exp(r * g)
+    closes = pd.DataFrame({"fast": up(0.003), "mid": up(0.002), "slow": up(0.001), "flat": np.full(600, 50.0)}, index=idx)
+    # 'mid' crashes 20% on day 450 (stop), 'slow' stops trading on day 500 (delisted)
+    closes.loc[idx[450]:, "mid"] *= 0.8
+    closes.loc[idx[500]:, "slow"] = np.nan
+    dv = closes * 1e6
+    P = R.prepare(closes, dv)
+    res = R.run(P, n=2, start=str(idx[300].date()), cost=0.0)
+    tr = res["trades"]
+    # the two strongest leaders are bought first; 'flat' is never a leader
+    assert "flat" not in set(P["tickers"][j] for j in tr["j"])
+    assert any(P["tickers"][j] == "mid" and t_out == 450 for j, t_out in zip(tr["j"], tr["t_out"]))   # 8% stop
+    assert any(P["tickers"][j] == "slow" for j in tr["j"])                                            # sold after delisting
+    assert set(res["open"]["ticker"]) <= {"fast", "mid", "slow"} and "fast" in set(res["open"]["ticker"])
+    # equity: holding 'fast' (+0.3%/day) and one other, never worse than flat
+    assert res["curve"].iloc[-1] > 1.0
+    s = R.stats(res, pd.Timestamp("2011-06-01"))
+    assert {"IS_CAGR", "OOS_CAGR", "OOS_maxDD"} <= set(s)
