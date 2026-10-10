@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-10 15:18 UTC in 78 min.
+Generated 2026-10-10 16:44 UTC in 78 min.
 Universe: 1540 stocks with data (sp500: 657, sp600: 537, sp400: 346; 158 former S&P 500 members). Signals 2006-01-03 -> 2026-10-08: 952,523.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
@@ -20,7 +20,7 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 - Superperformer model: 30.4% of its top-10% picks gained >= 40% within 3 months vs 7.2% for all stocks (4.2x), AUC 0.834. Driven by: adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range.
 - GOAL +10% before -10%: all stocks hit it 49% of the time; the model's top 10% 52% (break-even ~50%), avg net return per trade +0.7%. Point-in-time S&P 500 top 10%: 53%, +1.1% per trade (n=7387).
 - GOAL +20% before -10%: all stocks hit it 23% of the time; the model's top 10% 37% (break-even ~33%), avg net return per trade +2.2%. Point-in-time S&P 500 top 10%: 37%, +2.9% per trade (n=5040).
-- Best portfolio 2018->today: RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10% at 33.9% CAGR (max drawdown -35.4%) vs SPY 14.6%.
+- Best portfolio 2018->today: RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10% at 31.8% CAGR (max drawdown -35.4%) vs SPY 14.6%.
 - Best return per unit of drawdown: REGIME 3-day market model: skip ['rest'] / +20% -10% (6.7% CAGR, -6.8% max DD).
 - Workflow PDF rockets as written (regime sizing) / wf_rocket: 2.3% CAGR, -11% DD, 190 trades.
 - Workflow PDF rockets, QQQ 21/50 regime / wf_rocket: 1.5% CAGR, -9% DD, 192 trades.
@@ -50,11 +50,11 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 - Regime gate distance above the 21 EMA (skip 0-5%, 5-10%, > 15%): 11.7% CAGR, -51% DD; point-in-time S&P 500 14.1%, -28%.
 - Regime gate ADR% (skip < 3%): 23.1% CAGR, -40% DD; point-in-time S&P 500 15.2%, -33%.
 - Regime gate ADR% (only stocks trading >= $10M/day) (skip < 3%): 21.4% CAGR, -42% DD; point-in-time S&P 500 15.2%, -32%.
-- Regime gate fundamental inflection (all 4) (skip no, yes): 15.5% CAGR, -25% DD; point-in-time S&P 500 4.1%, -12%.
-- Regime gate revenue growth accelerating (skip 1 quarter, no (decelerating)): 20.3% CAGR, -40% DD; point-in-time S&P 500 10.1%, -27%.
-- Regime gate operating income outgrowing revenue (skip no, yes): 16.8% CAGR, -41% DD; point-in-time S&P 500 14.3%, -21%.
-- Regime gate operating margin vs a year ago (skip expanding, shrinking): 16.1% CAGR, -41% DD; point-in-time S&P 500 14.3%, -21%.
-- Regime gate FCF margin vs a year ago (skip improving, worse): 15.5% CAGR, -31% DD; point-in-time S&P 500 5.4%, -13%.
+- Regime gate fundamental inflection (all 4) (skip no): 18.8% CAGR, -32% DD; point-in-time S&P 500 6.8%, -20%.
+- Regime gate revenue growth accelerating (skip 1 quarter, no (decelerating)): 19.5% CAGR, -40% DD; point-in-time S&P 500 11.6%, -22%.
+- Regime gate operating income outgrowing revenue (skip no, yes): 18.6% CAGR, -48% DD; point-in-time S&P 500 13.9%, -21%.
+- Regime gate operating margin vs a year ago (skip expanding, shrinking): 17.8% CAGR, -48% DD; point-in-time S&P 500 13.9%, -21%.
+- Regime gate FCF margin vs a year ago (skip improving, worse): 12.8% CAGR, -33% DD; point-in-time S&P 500 6.2%, -13%.
 - Regime gate up/down volume, 50 days (skip 1.0-1.3, > 1.3 (accumulation)): 15.8% CAGR, -41% DD; point-in-time S&P 500 12.8%, -29%.
 - Regime gate price vs 200-day (skip 0-10% above, 10-30% above, 30-50% above, > 50% above): 23.6% CAGR, -39% DD; point-in-time S&P 500 16.1%, -28%.
 - Regime gate 6-month gain (skip 0-20%, 20-50%, 50-100%, > 100%): 26.1% CAGR, -36% DD; point-in-time S&P 500 13.5%, -31%.
@@ -79,16 +79,16 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 - Filter RULE: ADR% 5-12% (the infographic's sweet spot): 21.6% CAGR, -52% DD; point-in-time S&P 500 11.4%, -26%.
 - Filter RULE: ADR% <= 15% (skip the wildest): 26.9% CAGR, -45% DD; point-in-time S&P 500 10.7%, -33%.
 - Filter RULE: ADR% 5-12% and >= $10M/day: 17.4% CAGR, -56% DD; point-in-time S&P 500 11.4%, -26%.
-- Filter RULE: fundamental inflection (rev accel 2q + op leverage + margin + FCF up): 19.2% CAGR, -25% DD; point-in-time S&P 500 1.8%, -19%.
-- Filter RULE: revenue growth accelerating 2+ quarters: 33.9% CAGR, -35% DD; point-in-time S&P 500 9.6%, -26%.
+- Filter RULE: fundamental inflection (rev accel 2q + op leverage + margin + FCF up): 20.3% CAGR, -25% DD; point-in-time S&P 500 2.4%, -16%.
+- Filter RULE: revenue growth accelerating 2+ quarters: 31.8% CAGR, -35% DD; point-in-time S&P 500 11.2%, -22%.
 - Filter RULE: accumulation (up/down volume 50d > 1): 14.1% CAGR, -43% DD; point-in-time S&P 500 3.7%, -33%.
 - Filter RULE: not extended (< 30% above the 200-day): 23.4% CAGR, -42% DD; point-in-time S&P 500 15.1%, -31%.
 - Filter RULE: not already up 50%+ in 6 months: 27.8% CAGR, -45% DD; point-in-time S&P 500 16.0%, -31%.
 - Filter RULE: price rules only (accumulation + not extended + not up 50%): 21.0% CAGR, -45% DD; point-in-time S&P 500 5.2%, -38%.
-- Filter RULE: user's full method (inflection + price rules): 4.8% CAGR, -14% DD; point-in-time S&P 500 -0.6%, -16%.
-- Filter METHOD: user's method alone, no model (inflection + price rules): 9.8% CAGR, -26% DD; point-in-time S&P 500 2.2%, -20%.
-- Filter METHOD: fundamental inflection alone, no model: 11.2% CAGR, -38% DD; point-in-time S&P 500 8.9%, -27%.
-- Filter MODEL + fundamentals as features, top 10%: 28.7% CAGR, -44% DD; point-in-time S&P 500 11.3%, -38%.
+- Filter RULE: user's full method (inflection + price rules): 5.0% CAGR, -15% DD; point-in-time S&P 500 -0.2%, -16%.
+- Filter METHOD: user's method alone, no model (inflection + price rules): 9.2% CAGR, -26% DD; point-in-time S&P 500 3.4%, -20%.
+- Filter METHOD: fundamental inflection alone, no model: 15.1% CAGR, -37% DD; point-in-time S&P 500 9.8%, -24%.
+- Filter MODEL + fundamentals as features, top 10%: 25.2% CAGR, -42% DD; point-in-time S&P 500 14.3%, -28%.
 - Filter SIZE: position scaled by 6% / ADR (x0.4-1.5): 21.4% CAGR, -35% DD; point-in-time S&P 500 16.3%, -32%.
 - Regime gate (no gate) (skip nothing): 27.0% CAGR, -40% DD; point-in-time S&P 500 10.5%, -33%.
 
@@ -106,18 +106,18 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 
 **Run history** (each run should move these numbers):
 
-| run_utc          | commit   |   tickers |   signals |   rank_corr |   top20_oos |   baseline_oos | edge_entries                                                                                                                                                                                                                                                                                | no_edge_entries                                                            | best_exit   | helpful_filters                                                                                              |   ml_auc |   ml_rank_corr |   ml_monotonic |   ml_gap | top_features                                                       | filters_lifting_baseline                  |   rules_held | best_portfolio                                                                    |   best_cagr |   spy_cagr | best_calmar                                                                       |   super_auc |   super_lift | super_features                                                  |   goal_b10_top_hit |   goal_b10_top_ret |   goal_b20_top_hit |   goal_b20_top_ret | menu_choice   |   menu_choice_oos_ret |
-|:-----------------|:---------|----------:|----------:|------------:|------------:|---------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|:------------|:-------------------------------------------------------------------------------------------------------------|---------:|---------------:|---------------:|---------:|:-------------------------------------------------------------------|:------------------------------------------|-------------:|:----------------------------------------------------------------------------------|------------:|-----------:|:----------------------------------------------------------------------------------|------------:|-------------:|:----------------------------------------------------------------|-------------------:|-------------------:|-------------------:|-------------------:|:--------------|----------------------:|
-| 2026-10-08 15:56 | f522ebc  |      1488 |    669685 |        0.51 |        0.06 |          -0.02 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, falling_wedge, ep_gap5, ep_gap10, undercut, donchian_20, ep_gap10_vol2, ema_retest, sym_triangle, donchian_55                                                                                                      | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.04 |     0.04 | sma200_slope, rates_rising, sector_rs, industry_rs, sma150_slope   | early_stage, rs80_early, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5238 signals) / sma50_close |        0.46 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5238 signals) / sma50_close |        0.83 |         4.29 | adr_pct, dist_52w_high, above_52w_low, atr_pct, mkt_above200    |               0.55 |               0.01 |               0.37 |               0.02 | nan           |                nan    |
-| 2026-10-09 05:05 | 00c2b0a  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | nan           |                nan    |
-| 2026-10-09 11:57 | 4ad9589  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
-| 2026-10-09 12:54 | 5ce3166  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
-| 2026-10-09 14:16 | e1db28d  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
-| 2026-10-09 15:34 | 246a119  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
-| 2026-10-09 16:26 | c39a032  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
-| 2026-10-10 02:25 | 404aae3  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
-| 2026-10-10 13:16 | 7a7fe02  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme                          |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.34 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
-| 2026-10-10 15:18 | 3de3b4a  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme                          |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.34 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
+| run_utc          | commit   |   tickers |   signals |   rank_corr |   top20_oos |   baseline_oos | edge_entries                                                                                                                                                                                                                                                                                | no_edge_entries                                                            | best_exit   | helpful_filters                                                                                              |   ml_auc |   ml_rank_corr |   ml_monotonic |   ml_gap | top_features                                                       | filters_lifting_baseline      |   rules_held | best_portfolio                                                                    |   best_cagr |   spy_cagr | best_calmar                                                                       |   super_auc |   super_lift | super_features                                                  |   goal_b10_top_hit |   goal_b10_top_ret |   goal_b20_top_hit |   goal_b20_top_ret | menu_choice   |   menu_choice_oos_ret |
+|:-----------------|:---------|----------:|----------:|------------:|------------:|---------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|:------------|:-------------------------------------------------------------------------------------------------------------|---------:|---------------:|---------------:|---------:|:-------------------------------------------------------------------|:------------------------------|-------------:|:----------------------------------------------------------------------------------|------------:|-----------:|:----------------------------------------------------------------------------------|------------:|-------------:|:----------------------------------------------------------------|-------------------:|-------------------:|-------------------:|-------------------:|:--------------|----------------------:|
+| 2026-10-09 05:05 | 00c2b0a  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | nan           |                nan    |
+| 2026-10-09 11:57 | 4ad9589  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
+| 2026-10-09 12:54 | 5ce3166  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
+| 2026-10-09 14:16 | e1db28d  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
+| 2026-10-09 15:34 | 246a119  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
+| 2026-10-09 16:26 | c39a032  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
+| 2026-10-10 02:25 | 404aae3  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
+| 2026-10-10 13:16 | 7a7fe02  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme              |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.34 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
+| 2026-10-10 15:18 | 3de3b4a  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme              |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.34 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
+| 2026-10-10 16:44 | 51ff2b3  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme              |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.32 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
 
 ## 1. Did picking the best in-sample strategies work out-of-sample?
 
@@ -751,10 +751,10 @@ Do the new features improve the +20%/-10% goal model? (OOS tiers)
 | tier       |          n |   hit_target |   hit_stop |   avg_net_return |
 |:-----------|-----------:|-------------:|-----------:|-----------------:|
 | all stocks | 284804.000 |        0.231 |      0.455 |            0.013 |
-| top 10%    |  28481.000 |        0.392 |      0.523 |            0.029 |
-| top 5%     |  14241.000 |        0.417 |      0.508 |            0.035 |
-| top 2%     |   5697.000 |        0.456 |      0.484 |            0.044 |
-| top 1%     |   2849.000 |        0.475 |      0.473 |            0.048 |
+| top 10%    |  28481.000 |        0.390 |      0.523 |            0.028 |
+| top 5%     |  14241.000 |        0.420 |      0.506 |            0.035 |
+| top 2%     |   5697.000 |        0.457 |      0.484 |            0.044 |
+| top 1%     |   2849.000 |        0.468 |      0.484 |            0.046 |
 
 **with new features, point-in-time S&P 500**
 
@@ -771,45 +771,99 @@ Do the new features improve the +20%/-10% goal model? (OOS tiers)
 | tier       |         n |   hit_target |   hit_stop |   avg_net_return |
 |:-----------|----------:|-------------:|-----------:|-----------------:|
 | all stocks | 97468.000 |        0.180 |      0.404 |            0.013 |
-| top 10%    |  5078.000 |        0.382 |      0.486 |            0.033 |
-| top 5%     |  2649.000 |        0.410 |      0.473 |            0.038 |
-| top 2%     |  1092.000 |        0.460 |      0.442 |            0.051 |
-| top 1%     |   565.000 |        0.485 |      0.446 |            0.053 |
+| top 10%    |  5250.000 |        0.382 |      0.486 |            0.033 |
+| top 5%     |  2653.000 |        0.424 |      0.463 |            0.042 |
+| top 2%     |  1103.000 |        0.466 |      0.451 |            0.050 |
+| top 1%     |   510.000 |        0.480 |      0.465 |            0.051 |
 
-## 17. Run 25: concentrated leader portfolio (3-5 stocks) on top traders' rules
+## 17. Runs 25-26: concentrated leader portfolio (3-5 stocks) on top traders' rules, with fundamentals
 
-Hold N stocks (equal weight), decided at every close. Leaders only: price >= $10, >= $20M/day, above a rising 50-day that is above the 200-day, within 25% of the 52-week high; S&P 500 members at the time (incl. later-removed ones). Entry: best-ranked leader into an empty slot (optionally only within 3 days of a top-trader setup: episodic pivot / breakout / base / flag / VCP; optionally only while QQQ > 200-day). Exit at the close: below the 10/20/50-day average, 8% below entry, or (rank) out of the top 3N. 0.1% per side. 144 configurations; the winner is chosen on 2007-2017 return / drawdown only.
+Hold N stocks (equal weight), decided at every close. Leaders only: price >= $10, >= $20M/day, above a rising 50-day that is above the 200-day, within 25% of the 52-week high; S&P 500 members at the time (incl. later-removed ones). Entry: best-ranked leader into an empty slot (optionally only within 3 days of a top-trader setup: episodic pivot / breakout / base / flag / VCP; optionally only while QQQ > 200-day). Exit at the close: below the 10/20/50-day average, 8% below entry, or (rank) out of the top 3N. 0.1% per side. 144 configurations x 7 fundamentals filters; the winner is chosen on 2007-2017 return / drawdown only.
 
 Top 10 configurations by IS (2007-2017) CAGR / max drawdown, with their OOS (2018+) results:
 
-|   N | rank by   | exit   | regime     | entry          |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
-|----:|:----------|:-------|:-----------|:---------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
-|   5 | qull_best | sma50  | QQQ > 200d | setup required |     0.055 |     -0.301 |            0.184 |         292 |    0.445 |        40.120 |      0.153 |      -0.287 |             0.533 |          250 |     0.408 |         36.856 |
-|   5 | mom_6m1m  | sma50  | QQQ > 200d | setup required |     0.045 |     -0.299 |            0.151 |         297 |    0.444 |        39.434 |      0.126 |      -0.238 |             0.532 |          261 |     0.387 |         35.195 |
-|   4 | mom_6m1m  | sma50  | QQQ > 200d | setup required |     0.036 |     -0.283 |            0.127 |         243 |    0.440 |        38.580 |      0.123 |      -0.264 |             0.465 |          216 |     0.356 |         34.060 |
-|   5 | mom_12_1  | sma50  | QQQ > 200d | setup required |     0.038 |     -0.339 |            0.111 |         327 |    0.394 |        35.960 |      0.035 |      -0.323 |             0.108 |          281 |     0.345 |         32.456 |
-|   3 | qull_best | sma50  | QQQ > 200d | setup required |     0.035 |     -0.327 |            0.106 |         187 |    0.428 |        38.070 |      0.217 |      -0.314 |             0.690 |          142 |     0.437 |         39.077 |
-|   4 | mom_6m1m  | sma50  | none       | setup required |     0.041 |     -0.392 |            0.105 |         275 |    0.407 |        37.124 |      0.079 |      -0.271 |             0.291 |          251 |     0.343 |         33.032 |
-|   4 | qull_best | sma50  | QQQ > 200d | setup required |     0.036 |     -0.350 |            0.104 |         243 |    0.428 |        38.786 |      0.188 |      -0.266 |             0.706 |          193 |     0.420 |         38.244 |
-|   4 | mom_12_1  | sma50  | QQQ > 200d | setup required |     0.035 |     -0.374 |            0.094 |         264 |    0.383 |        35.913 |      0.033 |      -0.265 |             0.126 |          227 |     0.348 |         32.154 |
-|   5 | mom_12_1  | sma50  | none       | setup required |     0.038 |     -0.413 |            0.093 |         351 |    0.402 |        36.179 |      0.055 |      -0.294 |             0.188 |          322 |     0.366 |         31.978 |
-|   5 | mom_6m1m  | sma50  | none       | setup required |     0.036 |     -0.397 |            0.090 |         339 |    0.404 |        37.224 |      0.078 |      -0.271 |             0.288 |          308 |     0.370 |         33.513 |
+|   N | rank by   | exit   | regime     | entry          | fundamentals                 |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
+|----:|:----------|:-------|:-----------|:---------------|:-----------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
+|   4 | mom_12_1  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.061 |     -0.216 |            0.283 |         177 |    0.452 |        40.497 |      0.117 |      -0.278 |             0.419 |          206 |     0.388 |         35.049 |
+|   3 | mom_12_1  | sma20  | none       | setup required | EPS growth >= 25% (O'Neil C) |     0.049 |     -0.184 |            0.266 |         296 |    0.446 |        16.916 |      0.115 |      -0.358 |             0.320 |          388 |     0.433 |         14.613 |
+|   5 | qull_best | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.057 |     -0.221 |            0.258 |         209 |    0.474 |        42.354 |      0.095 |      -0.303 |             0.313 |          250 |     0.408 |         35.344 |
+|   5 | mom_6m1m  | sma50  | QQQ > 200d | any leader     | EPS growth >= 25% (O'Neil C) |     0.074 |     -0.293 |            0.251 |         305 |    0.436 |        32.370 |      0.156 |      -0.344 |             0.454 |          326 |     0.374 |         28.442 |
+|   4 | mom_6m1m  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.057 |     -0.233 |            0.244 |         172 |    0.483 |        41.866 |      0.082 |      -0.273 |             0.300 |          207 |     0.401 |         34.362 |
+|   5 | qull_best | sma50  | none       | setup required | EPS growth >= 25% (O'Neil C) |     0.049 |     -0.217 |            0.224 |         224 |    0.446 |        40.478 |      0.095 |      -0.325 |             0.293 |          284 |     0.408 |         34.482 |
+|   5 | mom_6m1m  | sma50  | none       | any leader     | EPS growth >= 25% (O'Neil C) |     0.076 |     -0.343 |            0.221 |         336 |    0.432 |        31.167 |      0.136 |      -0.448 |             0.303 |          397 |     0.345 |         26.688 |
+|   5 | mom_6m1m  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.046 |     -0.216 |            0.214 |         218 |    0.468 |        40.798 |      0.083 |      -0.261 |             0.318 |          252 |     0.417 |         35.155 |
+|   3 | qull_best | sma50  | none       | setup required | EPS growth >= 25% (O'Neil C) |     0.062 |     -0.292 |            0.214 |         133 |    0.474 |        42.556 |      0.129 |      -0.371 |             0.347 |          173 |     0.405 |         34.590 |
+|   3 | mom_6m1m  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.061 |     -0.284 |            0.214 |         130 |    0.485 |        42.023 |      0.116 |      -0.270 |             0.430 |          157 |     0.408 |         34.529 |
+
+Run 26: do fundamentals confirming the move help? Median over the same 144 configurations for each filter (sales growth = revenue YoY from SEC filings; EPS = diluted EPS YoY or turning positive; earnings gap = >= 5% gap up on an earnings day in the last 3 months), and the share of configurations where the filter beat no filter on return / drawdown:
+
+| fundamentals                      |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   share_beating_none_IS |   share_beating_none_OOS |
+|:----------------------------------|----------:|-----------:|-----------------:|-----------:|------------:|------------------:|------------------------:|-------------------------:|
+| none                              |    -0.040 |     -0.651 |           -0.063 |      0.066 |      -0.461 |             0.161 |                   0.000 |                    0.000 |
+| sales growth >= 20%               |     0.007 |     -0.404 |            0.019 |      0.099 |      -0.387 |             0.270 |                   0.861 |                    0.729 |
+| EPS growth >= 25% (O'Neil C)      |     0.020 |     -0.363 |            0.067 |      0.095 |      -0.425 |             0.247 |                   1.000 |                    0.764 |
+| sales >= 20% and EPS >= 25%       |     0.006 |     -0.387 |            0.019 |      0.123 |      -0.340 |             0.403 |                   0.833 |                    0.826 |
+| sales + EPS, revenue accelerating |     0.013 |     -0.339 |            0.043 |      0.065 |      -0.336 |             0.214 |                   0.854 |                    0.667 |
+| earnings gap up in last 3 months  |    -0.018 |     -0.481 |           -0.042 |      0.084 |      -0.367 |             0.237 |                   0.389 |                    0.778 |
+| sales + EPS + earnings gap        |    -0.003 |     -0.303 |           -0.012 |      0.068 |      -0.332 |             0.236 |                   0.708 |                    0.722 |
+
+Best configuration that requires fundamentals (chosen on IS):
+
+|   N | rank by   | exit   | regime     | entry          | fundamentals                 |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
+|----:|:----------|:-------|:-----------|:---------------|:-----------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
+|   4 | mom_12_1  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.061 |     -0.216 |            0.283 |         177 |    0.452 |        40.497 |      0.117 |      -0.278 |             0.419 |          206 |     0.388 |         35.049 |
+
+Case study: trades in NVDA / SNDK-type leaders (NVDA, SNDK, PLTR, SMCI, META, AVGO, VRT, ANET, CRWD, APP):
+
+| version                         | ticker   | date_in             | date_out            |   days |    ret |
+|:--------------------------------|:---------|:--------------------|:--------------------|-------:|-------:|
+| CAN SLIM style (pre-registered) | ANET     | 2019-03-22 00:00:00 | 2019-05-03 00:00:00 |     29 | -0.072 |
+| CAN SLIM style (pre-registered) | ANET     | 2021-12-15 00:00:00 | 2022-01-07 00:00:00 |     16 | -0.066 |
+| IS winner                       | ANET     | 2023-03-09 00:00:00 | 2023-05-02 00:00:00 |     37 | -0.092 |
+| best with fundamentals (IS)     | ANET     | 2023-03-09 00:00:00 | 2023-05-02 00:00:00 |     37 | -0.092 |
+| CAN SLIM style (pre-registered) | ANET     | 2023-08-04 00:00:00 | 2023-09-21 00:00:00 |     33 | -0.010 |
+| CAN SLIM style (pre-registered) | ANET     | 2023-10-31 00:00:00 | 2024-04-12 00:00:00 |    112 |  0.354 |
+| IS winner                       | ANET     | 2023-11-02 00:00:00 | 2024-04-12 00:00:00 |    110 |  0.281 |
+| best with fundamentals (IS)     | ANET     | 2023-11-02 00:00:00 | 2024-04-12 00:00:00 |    110 |  0.281 |
+| CAN SLIM style (pre-registered) | ANET     | 2026-07-07 00:00:00 | 2026-07-29 00:00:00 |     16 | -0.051 |
+| IS winner                       | AVGO     | 2025-09-11 00:00:00 | 2025-09-29 00:00:00 |     12 | -0.087 |
+| best with fundamentals (IS)     | AVGO     | 2025-09-11 00:00:00 | 2025-09-29 00:00:00 |     12 | -0.087 |
+| IS winner                       | CRWD     | 2026-08-27 00:00:00 | 2026-09-02 00:00:00 |      4 | -0.108 |
+| best with fundamentals (IS)     | CRWD     | 2026-08-27 00:00:00 | 2026-09-02 00:00:00 |      4 | -0.108 |
+| CAN SLIM style (pre-registered) | CRWD     | 2026-08-27 00:00:00 | 2026-09-02 00:00:00 |      4 | -0.108 |
+| CAN SLIM style (pre-registered) | META     | 2024-02-02 00:00:00 | 2024-04-19 00:00:00 |     53 |  0.014 |
+| CAN SLIM style (pre-registered) | META     | 2024-07-05 00:00:00 | 2024-07-15 00:00:00 |      6 | -0.081 |
+| IS winner                       | NVDA     | 2024-05-23 00:00:00 | 2024-07-24 00:00:00 |     41 |  0.101 |
+| best with fundamentals (IS)     | NVDA     | 2024-05-23 00:00:00 | 2024-07-24 00:00:00 |     41 |  0.101 |
+| CAN SLIM style (pre-registered) | NVDA     | 2024-05-23 00:00:00 | 2024-07-24 00:00:00 |     41 |  0.101 |
+| CAN SLIM style (pre-registered) | NVDA     | 2025-10-29 00:00:00 | 2025-11-06 00:00:00 |      6 | -0.092 |
+| CAN SLIM style (pre-registered) | NVDA     | 2026-04-29 00:00:00 | 2026-06-10 00:00:00 |     29 | -0.041 |
+| IS winner                       | PLTR     | 2024-12-20 00:00:00 | 2025-01-07 00:00:00 |     10 | -0.131 |
+| best with fundamentals (IS)     | PLTR     | 2024-12-20 00:00:00 | 2025-01-07 00:00:00 |     10 | -0.131 |
+| CAN SLIM style (pre-registered) | PLTR     | 2024-12-20 00:00:00 | 2025-01-07 00:00:00 |     10 | -0.131 |
+| CAN SLIM style (pre-registered) | PLTR     | 2025-02-04 00:00:00 | 2025-02-24 00:00:00 |     13 | -0.127 |
+| IS winner                       | PLTR     | 2025-05-12 00:00:00 | 2025-09-03 00:00:00 |     78 |  0.308 |
+| best with fundamentals (IS)     | PLTR     | 2025-05-12 00:00:00 | 2025-09-03 00:00:00 |     78 |  0.308 |
+| CAN SLIM style (pre-registered) | PLTR     | 2025-05-12 00:00:00 | 2025-09-03 00:00:00 |     78 |  0.308 |
+| IS winner                       | VRT      | 2026-04-08 00:00:00 | 2026-06-05 00:00:00 |     41 |  0.069 |
+| best with fundamentals (IS)     | VRT      | 2026-04-08 00:00:00 | 2026-06-05 00:00:00 |     41 |  0.069 |
 
 Pre-registered trader-style versions (not selected on any results):
 
-|   N | rank by   | exit       | regime     | entry          |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days | style                                                                                 |
-|----:|:----------|:-----------|:-----------|:---------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|:--------------------------------------------------------------------------------------|
-|   4 | qull_best | sma20      | QQQ > 200d | setup required |    -0.011 |     -0.464 |           -0.024 |         559 |    0.422 |        16.182 |      0.073 |      -0.286 |             0.254 |          468 |     0.400 |         15.438 | Qullamaggie style (best-of 1/3/6m RS, setup, 20-day trail, QQQ > 200d, 4 stocks)      |
-|   4 | mom_6m1m  | sma50      | QQQ > 200d | setup required |     0.036 |     -0.283 |            0.127 |         243 |    0.440 |        38.580 |      0.123 |      -0.264 |             0.465 |          216 |     0.356 |         34.060 | Minervini / O'Neil style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, 4 stocks)  |
-|   5 | mom_6m1m  | sma50_rank | none       | any leader     |     0.001 |     -0.725 |            0.002 |         688 |    0.378 |        19.653 |      0.116 |      -0.510 |             0.228 |          590 |     0.378 |         18.193 | Pure leader rotation (6m/1m momentum, any leader, 50-day + rank, no regime, 5 stocks) |
+|   N | rank by   | exit       | regime     | entry          | fundamentals                |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days | style                                                                                          |
+|----:|:----------|:-----------|:-----------|:---------------|:----------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|:-----------------------------------------------------------------------------------------------|
+|   4 | qull_best | sma20      | QQQ > 200d | setup required | none                        |    -0.011 |     -0.464 |           -0.024 |         559 |    0.422 |        16.182 |      0.073 |      -0.286 |             0.254 |          468 |     0.400 |         15.438 | Qullamaggie style (best-of 1/3/6m RS, setup, 20-day trail, QQQ > 200d, 4 stocks)               |
+|   4 | mom_6m1m  | sma50      | QQQ > 200d | setup required | none                        |     0.036 |     -0.283 |            0.127 |         243 |    0.440 |        38.580 |      0.123 |      -0.264 |             0.465 |          216 |     0.356 |         34.060 | Minervini / O'Neil style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, 4 stocks)           |
+|   5 | mom_6m1m  | sma50_rank | none       | any leader     | none                        |     0.001 |     -0.725 |            0.002 |         688 |    0.378 |        19.653 |      0.116 |      -0.510 |             0.228 |          590 |     0.378 |         18.193 | Pure leader rotation (6m/1m momentum, any leader, 50-day + rank, no regime, 5 stocks)          |
+|   4 | mom_6m1m  | sma50      | QQQ > 200d | setup required | sales >= 20% and EPS >= 25% |     0.012 |     -0.291 |            0.040 |         126 |    0.381 |        36.659 |      0.112 |      -0.260 |             0.431 |          169 |     0.373 |         34.118 | CAN SLIM style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, sales + EPS growth, 4 stocks) |
 
-IS winner: 5, qull_best, sma50, QQQ > 200d, setup required. Robustness:
+IS winner: 4, mom_12_1, sma50, QQQ > 200d, setup required, EPS growth >= 25% (O'Neil C). Robustness:
 
 | version                                       |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
 |:----------------------------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
-| IS winner, S&P 500 point-in-time (0.1%/side)  |     0.055 |     -0.301 |            0.184 |         292 |    0.445 |        40.120 |      0.153 |      -0.287 |             0.533 |          250 |     0.408 |         36.856 |
-| IS winner, S&P 500 point-in-time, 0.3%/side   |     0.034 |     -0.323 |            0.106 |         292 |    0.445 |        40.120 |      0.128 |      -0.323 |             0.396 |          250 |     0.408 |         36.856 |
-| IS winner, all stocks (survivorship-inflated) |     0.133 |     -0.409 |            0.324 |         309 |    0.434 |        39.450 |      0.175 |      -0.460 |             0.381 |          280 |     0.346 |         32.189 |
+| IS winner, S&P 500 point-in-time (0.1%/side)  |     0.061 |     -0.216 |            0.283 |         177 |    0.452 |        40.497 |      0.117 |      -0.278 |             0.419 |          206 |     0.388 |         35.049 |
+| IS winner, S&P 500 point-in-time, 0.3%/side   |     0.045 |     -0.239 |            0.188 |         177 |    0.452 |        40.497 |      0.091 |      -0.321 |             0.285 |          206 |     0.388 |         35.049 |
+| IS winner, all stocks (survivorship-inflated) |     0.049 |     -0.363 |            0.134 |         194 |    0.454 |        38.753 |      0.256 |      -0.328 |             0.779 |          232 |     0.371 |         31.379 |
 
 Benchmarks (same periods):
 
@@ -820,42 +874,41 @@ Benchmarks (same periods):
 
 | strategy (2018+)   |   beta |   alpha_annual |   alpha_t |   sharpe |   spy_sharpe |   CAGR |   max_DD |   CAGR_per_DD |   worst_month |
 |:-------------------|-------:|---------------:|----------:|---------:|-------------:|-------:|---------:|--------------:|--------------:|
-| IS winner, PIT     |  0.558 |          0.083 |     1.194 |    0.735 |        0.816 |  0.153 |   -0.287 |         0.533 |        -0.176 |
+| IS winner, PIT     |  0.469 |          0.059 |     0.944 |    0.644 |        0.816 |  0.117 |   -0.278 |         0.419 |        -0.145 |
 
 Year by year (IS winner vs SPY):
 
 |     year |   IS winner |    SPY |
 |---------:|------------:|-------:|
-| 2007.000 |       0.132 |  0.053 |
-| 2008.000 |      -0.149 | -0.368 |
-| 2009.000 |       0.143 |  0.264 |
-| 2010.000 |       0.323 |  0.151 |
-| 2011.000 |      -0.171 |  0.019 |
-| 2012.000 |      -0.023 |  0.160 |
-| 2013.000 |       0.301 |  0.323 |
-| 2014.000 |       0.121 |  0.135 |
-| 2015.000 |      -0.071 |  0.012 |
-| 2016.000 |      -0.048 |  0.120 |
-| 2017.000 |       0.184 |  0.217 |
-| 2018.000 |      -0.122 | -0.046 |
-| 2019.000 |       0.145 |  0.312 |
-| 2020.000 |       0.187 |  0.183 |
-| 2021.000 |       0.046 |  0.287 |
-| 2022.000 |      -0.092 | -0.182 |
-| 2023.000 |       0.099 |  0.262 |
-| 2024.000 |       0.256 |  0.249 |
-| 2025.000 |       0.228 |  0.177 |
-| 2026.000 |       0.819 |  0.151 |
+| 2007.000 |       0.000 |  0.053 |
+| 2008.000 |       0.000 | -0.368 |
+| 2009.000 |       0.121 |  0.264 |
+| 2010.000 |       0.126 |  0.151 |
+| 2011.000 |      -0.055 |  0.019 |
+| 2012.000 |       0.120 |  0.160 |
+| 2013.000 |       0.295 |  0.323 |
+| 2014.000 |       0.096 |  0.135 |
+| 2015.000 |      -0.021 |  0.012 |
+| 2016.000 |      -0.068 |  0.120 |
+| 2017.000 |       0.109 |  0.217 |
+| 2018.000 |      -0.092 | -0.046 |
+| 2019.000 |       0.093 |  0.312 |
+| 2020.000 |       0.034 |  0.183 |
+| 2021.000 |       0.139 |  0.287 |
+| 2022.000 |      -0.066 | -0.182 |
+| 2023.000 |      -0.045 |  0.262 |
+| 2024.000 |       0.427 |  0.249 |
+| 2025.000 |       0.195 |  0.177 |
+| 2026.000 |       0.485 |  0.151 |
 
 Today's portfolio (IS winner, as of the last close):
 
 | ticker   | entry_date          |   entry |    last |   gain |   stop_8% |   trail_level |
 |:---------|:--------------------|--------:|--------:|-------:|----------:|--------------:|
-| CRL      | 2026-08-11 00:00:00 | 282.000 | 301.790 |  0.070 |   259.440 |       283.169 |
-| CRWD     | 2026-09-01 00:00:00 | 215.070 | 275.040 |  0.279 |   197.864 |       228.702 |
-| AMD      | 2026-09-23 00:00:00 | 614.610 | 608.100 | -0.011 |   565.441 |       528.921 |
-| NTAP     | 2026-09-28 00:00:00 | 203.950 | 237.150 |  0.163 |   187.634 |       197.832 |
-| PANW     | 2026-09-30 00:00:00 | 397.310 | 418.780 |  0.054 |   365.525 |       370.852 |
+| VLO      | 2026-09-02 00:00:00 | 366.090 | 433.750 |  0.185 |   336.803 |       367.502 |
+| CRWD     | 2026-09-11 00:00:00 | 206.740 | 275.040 |  0.330 |   190.201 |       228.702 |
+| PLTR     | 2026-09-22 00:00:00 | 184.990 | 209.050 |  0.130 |   170.191 |       176.980 |
+| NTAP     | 2026-09-30 00:00:00 | 209.607 | 237.150 |  0.131 |   192.839 |       197.832 |
 
 ## 16. Run 24: consolidated tests
 
@@ -1374,17 +1427,17 @@ Model top 10%, +20/-10, by market regime at entry (breadth terciles and the 3-da
 | ADR% (only stocks trading >= $10M/day) | 5-8%                 |  2969.000 |           0.345 |               0.005 |  6109.000 |            0.434 |                0.032 |
 | ADR% (only stocks trading >= $10M/day) | 8-12%                |   549.000 |           0.377 |               0.012 |   725.000 |            0.432 |                0.031 |
 | ADR% (only stocks trading >= $10M/day) | < 3%                 |  4112.000 |           0.278 |               0.021 |  3260.000 |            0.312 |                0.019 |
-| fundamental inflection (all 4)         | no                   | 12380.000 |           0.326 |               0.019 | 24861.000 |            0.389 |                0.028 |
-| fundamental inflection (all 4)         | yes                  |   593.000 |           0.331 |               0.025 |  1304.000 |            0.398 |                0.032 |
-| revenue growth accelerating            | 1 quarter            |  3274.000 |           0.312 |               0.014 |  6224.000 |            0.404 |                0.033 |
-| revenue growth accelerating            | 2+ quarters          |  2829.000 |           0.366 |               0.032 |  5781.000 |            0.391 |                0.028 |
-| revenue growth accelerating            | no (decelerating)    |  6870.000 |           0.316 |               0.017 | 14160.000 |            0.382 |                0.026 |
-| operating income outgrowing revenue    | no                   |  6240.000 |           0.330 |               0.018 | 13253.000 |            0.394 |                0.027 |
-| operating income outgrowing revenue    | yes                  |  4584.000 |           0.317 |               0.018 |  9148.000 |            0.381 |                0.027 |
-| operating margin vs a year ago         | expanding            |  5513.000 |           0.330 |               0.019 | 11897.000 |            0.379 |                0.024 |
-| operating margin vs a year ago         | shrinking            |  5294.000 |           0.319 |               0.016 | 10456.000 |            0.400 |                0.030 |
-| FCF margin vs a year ago               | improving            |  6192.000 |           0.317 |               0.017 | 13647.000 |            0.386 |                0.027 |
-| FCF margin vs a year ago               | worse                |  5607.000 |           0.326 |               0.020 | 11944.000 |            0.397 |                0.030 |
+| fundamental inflection (all 4)         | no                   | 12108.000 |           0.324 |               0.019 | 24495.000 |            0.389 |                0.028 |
+| fundamental inflection (all 4)         | yes                  |   573.000 |           0.337 |               0.027 |  1295.000 |            0.398 |                0.033 |
+| revenue growth accelerating            | 1 quarter            |  3243.000 |           0.307 |               0.013 |  6093.000 |            0.404 |                0.033 |
+| revenue growth accelerating            | 2+ quarters          |  2736.000 |           0.366 |               0.032 |  5710.000 |            0.392 |                0.029 |
+| revenue growth accelerating            | no (decelerating)    |  6702.000 |           0.317 |               0.017 | 13987.000 |            0.382 |                0.026 |
+| operating income outgrowing revenue    | no                   |  6056.000 |           0.329 |               0.017 | 12937.000 |            0.394 |                0.027 |
+| operating income outgrowing revenue    | yes                  |  4471.000 |           0.316 |               0.018 |  9088.000 |            0.381 |                0.027 |
+| operating margin vs a year ago         | expanding            |  5328.000 |           0.328 |               0.019 | 11677.000 |            0.379 |                0.024 |
+| operating margin vs a year ago         | shrinking            |  5182.000 |           0.319 |               0.016 | 10300.000 |            0.400 |                0.030 |
+| FCF margin vs a year ago               | improving            |  6021.000 |           0.315 |               0.017 | 13445.000 |            0.386 |                0.027 |
+| FCF margin vs a year ago               | worse                |  5480.000 |           0.325 |               0.020 | 11765.000 |            0.397 |                0.031 |
 | up/down volume, 50 days                | 0.8-1.0              |  4678.000 |           0.340 |               0.019 |  7177.000 |            0.391 |                0.029 |
 | up/down volume, 50 days                | 1.0-1.3              |  5719.000 |           0.324 |               0.016 |  7288.000 |            0.386 |                0.027 |
 | up/down volume, 50 days                | < 0.8 (distribution) |  5377.000 |           0.339 |               0.018 |  8434.000 |            0.390 |                0.028 |
@@ -1477,17 +1530,17 @@ Same, S&P 500 stocks only after they joined the index (point-in-time survivorshi
 | ADR% (only stocks trading >= $10M/day) | 5-8%                 |  644.000 |           0.339 |               0.005 |  661.000 |            0.424 |                0.030 |
 | ADR% (only stocks trading >= $10M/day) | 8-12%                |  185.000 |           0.373 |               0.011 |   60.000 |            0.517 |                0.055 |
 | ADR% (only stocks trading >= $10M/day) | < 3%                 | 1410.000 |           0.261 |               0.022 |  986.000 |            0.311 |                0.021 |
-| fundamental inflection (all 4)         | no                   | 2770.000 |           0.304 |               0.018 | 4215.000 |            0.382 |                0.032 |
-| fundamental inflection (all 4)         | yes                  |   94.000 |           0.255 |               0.021 |  239.000 |            0.331 |                0.013 |
-| revenue growth accelerating            | 1 quarter            |  775.000 |           0.272 |               0.009 | 1004.000 |            0.385 |                0.033 |
-| revenue growth accelerating            | 2+ quarters          |  562.000 |           0.351 |               0.039 |  944.000 |            0.359 |                0.023 |
-| revenue growth accelerating            | no (decelerating)    | 1527.000 |           0.299 |               0.015 | 2506.000 |            0.385 |                0.034 |
-| operating income outgrowing revenue    | no                   | 1221.000 |           0.301 |               0.013 | 2031.000 |            0.397 |                0.033 |
-| operating income outgrowing revenue    | yes                  |  898.000 |           0.297 |               0.019 | 1664.000 |            0.349 |                0.019 |
-| operating margin vs a year ago         | expanding            |  967.000 |           0.297 |               0.018 | 1797.000 |            0.352 |                0.019 |
-| operating margin vs a year ago         | shrinking            | 1151.000 |           0.302 |               0.013 | 1897.000 |            0.397 |                0.034 |
-| FCF margin vs a year ago               | improving            | 1153.000 |           0.295 |               0.019 | 2080.000 |            0.358 |                0.024 |
-| FCF margin vs a year ago               | worse                | 1410.000 |           0.292 |               0.014 | 2316.000 |            0.402 |                0.038 |
+| fundamental inflection (all 4)         | no                   | 2743.000 |           0.303 |               0.018 | 4174.000 |            0.381 |                0.032 |
+| fundamental inflection (all 4)         | yes                  |   94.000 |           0.255 |               0.021 |  235.000 |            0.336 |                0.016 |
+| revenue growth accelerating            | 1 quarter            |  764.000 |           0.274 |               0.011 |  986.000 |            0.379 |                0.031 |
+| revenue growth accelerating            | 2+ quarters          |  552.000 |           0.350 |               0.039 |  942.000 |            0.363 |                0.025 |
+| revenue growth accelerating            | no (decelerating)    | 1521.000 |           0.298 |               0.014 | 2481.000 |            0.385 |                0.034 |
+| operating income outgrowing revenue    | no                   | 1215.000 |           0.301 |               0.013 | 2001.000 |            0.394 |                0.033 |
+| operating income outgrowing revenue    | yes                  |  890.000 |           0.294 |               0.018 | 1652.000 |            0.349 |                0.019 |
+| operating margin vs a year ago         | expanding            |  958.000 |           0.293 |               0.017 | 1785.000 |            0.352 |                0.020 |
+| operating margin vs a year ago         | shrinking            | 1146.000 |           0.303 |               0.014 | 1867.000 |            0.394 |                0.033 |
+| FCF margin vs a year ago               | improving            | 1143.000 |           0.292 |               0.019 | 2058.000 |            0.359 |                0.024 |
+| FCF margin vs a year ago               | worse                | 1405.000 |           0.293 |               0.014 | 2293.000 |            0.399 |                0.037 |
 | up/down volume, 50 days                | 0.8-1.0              | 1125.000 |           0.333 |               0.023 | 1305.000 |            0.390 |                0.033 |
 | up/down volume, 50 days                | 1.0-1.3              | 1269.000 |           0.318 |               0.017 | 1166.000 |            0.378 |                0.032 |
 | up/down volume, 50 days                | < 0.8 (distribution) | 1344.000 |           0.292 |               0.010 | 1441.000 |            0.389 |                0.037 |
@@ -1580,17 +1633,17 @@ All stocks (no model), +20/-10, by the same splits: does a leading sector help o
 | ADR% (only stocks trading >= $10M/day) | 5-8%                 |  10053.000 |           0.315 |              -0.001 |  18839.000 |            0.402 |                0.024 |
 | ADR% (only stocks trading >= $10M/day) | 8-12%                |   2758.000 |           0.280 |              -0.018 |   3297.000 |            0.451 |                0.038 |
 | ADR% (only stocks trading >= $10M/day) | < 3%                 | 128385.000 |           0.125 |               0.024 | 157032.000 |            0.156 |                0.009 |
-| fundamental inflection (all 4)         | no                   | 127363.000 |           0.166 |               0.024 | 244649.000 |            0.234 |                0.013 |
-| fundamental inflection (all 4)         | yes                  |   6638.000 |           0.171 |               0.034 |  14143.000 |            0.242 |                0.018 |
-| revenue growth accelerating            | 1 quarter            |  35534.000 |           0.163 |               0.025 |  65701.000 |            0.241 |                0.018 |
-| revenue growth accelerating            | 2+ quarters          |  31163.000 |           0.172 |               0.030 |  61139.000 |            0.230 |                0.013 |
-| revenue growth accelerating            | no (decelerating)    |  67304.000 |           0.164 |               0.023 | 131952.000 |            0.233 |                0.011 |
-| operating income outgrowing revenue    | no                   |  48874.000 |           0.187 |               0.027 | 102792.000 |            0.258 |                0.015 |
-| operating income outgrowing revenue    | yes                  |  54039.000 |           0.154 |               0.024 | 102598.000 |            0.226 |                0.011 |
-| operating margin vs a year ago         | expanding            |  56345.000 |           0.163 |               0.024 | 111510.000 |            0.236 |                0.011 |
-| operating margin vs a year ago         | shrinking            |  46280.000 |           0.178 |               0.027 |  93709.000 |            0.250 |                0.016 |
-| FCF margin vs a year ago               | improving            |  63479.000 |           0.162 |               0.027 | 134794.000 |            0.239 |                0.015 |
-| FCF margin vs a year ago               | worse                |  57995.000 |           0.168 |               0.025 | 119602.000 |            0.231 |                0.012 |
+| fundamental inflection (all 4)         | no                   | 125852.000 |           0.165 |               0.024 | 242406.000 |            0.234 |                0.013 |
+| fundamental inflection (all 4)         | yes                  |   6560.000 |           0.169 |               0.034 |  14044.000 |            0.243 |                0.019 |
+| revenue growth accelerating            | 1 quarter            |  35103.000 |           0.164 |               0.025 |  64999.000 |            0.240 |                0.018 |
+| revenue growth accelerating            | 2+ quarters          |  30857.000 |           0.172 |               0.030 |  60474.000 |            0.229 |                0.013 |
+| revenue growth accelerating            | no (decelerating)    |  66452.000 |           0.163 |               0.022 | 130977.000 |            0.233 |                0.012 |
+| operating income outgrowing revenue    | no                   |  48073.000 |           0.187 |               0.027 | 101263.000 |            0.257 |                0.015 |
+| operating income outgrowing revenue    | yes                  |  53465.000 |           0.153 |               0.024 | 102110.000 |            0.226 |                0.011 |
+| operating margin vs a year ago         | expanding            |  55638.000 |           0.162 |               0.024 | 110417.000 |            0.236 |                0.011 |
+| operating margin vs a year ago         | shrinking            |  45618.000 |           0.178 |               0.027 |  92791.000 |            0.249 |                0.016 |
+| FCF margin vs a year ago               | improving            |  62758.000 |           0.161 |               0.027 | 133392.000 |            0.238 |                0.015 |
+| FCF margin vs a year ago               | worse                |  57164.000 |           0.167 |               0.025 | 118727.000 |            0.230 |                0.012 |
 | up/down volume, 50 days                | 0.8-1.0              |  49120.000 |           0.185 |               0.020 |  68542.000 |            0.238 |                0.015 |
 | up/down volume, 50 days                | 1.0-1.3              |  65219.000 |           0.169 |               0.021 |  87642.000 |            0.215 |                0.011 |
 | up/down volume, 50 days                | < 0.8 (distribution) |  40571.000 |           0.225 |               0.021 |  56145.000 |            0.275 |                0.018 |
@@ -1636,11 +1689,11 @@ Regime gates, one family at a time: skip the buckets of that family that were be
 | distance above the 21 EMA                                                   | 0-5%, 5-10%, > 15%                                   |  0.117 |   -0.505 |     1151 |      0.141 |       -0.279 |
 | ADR%                                                                        | < 3%                                                 |  0.231 |   -0.396 |     1227 |      0.152 |       -0.329 |
 | ADR% (only stocks trading >= $10M/day)                                      | < 3%                                                 |  0.214 |   -0.416 |     1220 |      0.152 |       -0.320 |
-| fundamental inflection (all 4)                                              | no, yes                                              |  0.155 |   -0.252 |      741 |      0.041 |       -0.119 |
-| revenue growth accelerating                                                 | 1 quarter, no (decelerating)                         |  0.203 |   -0.403 |     1080 |      0.101 |       -0.268 |
-| operating income outgrowing revenue                                         | no, yes                                              |  0.168 |   -0.413 |      901 |      0.143 |       -0.212 |
-| operating margin vs a year ago                                              | expanding, shrinking                                 |  0.161 |   -0.413 |      917 |      0.143 |       -0.212 |
-| FCF margin vs a year ago                                                    | improving, worse                                     |  0.155 |   -0.307 |      817 |      0.054 |       -0.128 |
+| fundamental inflection (all 4)                                              | no                                                   |  0.188 |   -0.320 |      908 |      0.068 |       -0.197 |
+| revenue growth accelerating                                                 | 1 quarter, no (decelerating)                         |  0.195 |   -0.404 |     1078 |      0.116 |       -0.225 |
+| operating income outgrowing revenue                                         | no, yes                                              |  0.186 |   -0.477 |      932 |      0.139 |       -0.211 |
+| operating margin vs a year ago                                              | expanding, shrinking                                 |  0.178 |   -0.477 |      948 |      0.139 |       -0.211 |
+| FCF margin vs a year ago                                                    | improving, worse                                     |  0.128 |   -0.334 |      853 |      0.062 |       -0.130 |
 | up/down volume, 50 days                                                     | 1.0-1.3, > 1.3 (accumulation)                        |  0.158 |   -0.411 |     1126 |      0.128 |       -0.287 |
 | price vs 200-day                                                            | 0-10% above, 10-30% above, 30-50% above, > 50% above |  0.236 |   -0.390 |     1106 |      0.161 |       -0.284 |
 | 6-month gain                                                                | 0-20%, 20-50%, 50-100%, > 100%                       |  0.261 |   -0.364 |     1086 |      0.135 |       -0.314 |
@@ -1665,16 +1718,16 @@ Regime gates, one family at a time: skip the buckets of that family that were be
 | RULE: ADR% 5-12% (the infographic's sweet spot)                             | nothing                                              |  0.216 |   -0.521 |     1421 |      0.114 |       -0.257 |
 | RULE: ADR% <= 15% (skip the wildest)                                        | nothing                                              |  0.269 |   -0.448 |     1183 |      0.107 |       -0.328 |
 | RULE: ADR% 5-12% and >= $10M/day                                            | nothing                                              |  0.174 |   -0.555 |     1381 |      0.114 |       -0.257 |
-| RULE: fundamental inflection (rev accel 2q + op leverage + margin + FCF up) | nothing                                              |  0.192 |   -0.253 |      570 |      0.018 |       -0.186 |
-| RULE: revenue growth accelerating 2+ quarters                               | nothing                                              |  0.339 |   -0.354 |      984 |      0.096 |       -0.258 |
+| RULE: fundamental inflection (rev accel 2q + op leverage + margin + FCF up) | nothing                                              |  0.203 |   -0.253 |      569 |      0.024 |       -0.157 |
+| RULE: revenue growth accelerating 2+ quarters                               | nothing                                              |  0.318 |   -0.354 |      966 |      0.112 |       -0.220 |
 | RULE: accumulation (up/down volume 50d > 1)                                 | nothing                                              |  0.141 |   -0.427 |     1057 |      0.037 |       -0.334 |
 | RULE: not extended (< 30% above the 200-day)                                | nothing                                              |  0.234 |   -0.425 |     1164 |      0.151 |       -0.309 |
 | RULE: not already up 50%+ in 6 months                                       | nothing                                              |  0.278 |   -0.446 |     1186 |      0.160 |       -0.307 |
 | RULE: price rules only (accumulation + not extended + not up 50%)           | nothing                                              |  0.210 |   -0.452 |      969 |      0.052 |       -0.377 |
-| RULE: user's full method (inflection + price rules)                         | nothing                                              |  0.048 |   -0.137 |      242 |     -0.006 |       -0.159 |
-| METHOD: user's method alone, no model (inflection + price rules)            | nothing                                              |  0.098 |   -0.257 |      579 |      0.022 |       -0.202 |
-| METHOD: fundamental inflection alone, no model                              | nothing                                              |  0.112 |   -0.382 |      723 |      0.089 |       -0.273 |
-| MODEL + fundamentals as features, top 10%                                   | nothing                                              |  0.287 |   -0.440 |     1194 |      0.113 |       -0.384 |
+| RULE: user's full method (inflection + price rules)                         | nothing                                              |  0.050 |   -0.150 |      240 |     -0.002 |       -0.159 |
+| METHOD: user's method alone, no model (inflection + price rules)            | nothing                                              |  0.092 |   -0.263 |      581 |      0.034 |       -0.202 |
+| METHOD: fundamental inflection alone, no model                              | nothing                                              |  0.151 |   -0.367 |      718 |      0.098 |       -0.242 |
+| MODEL + fundamentals as features, top 10%                                   | nothing                                              |  0.252 |   -0.422 |     1181 |      0.143 |       -0.279 |
 | SIZE: position scaled by 6% / ADR (x0.4-1.5)                                | nothing                                              |  0.214 |   -0.351 |     1159 |      0.163 |       -0.317 |
 | (no gate)                                                                   | nothing                                              |  0.270 |   -0.401 |     1190 |      0.105 |       -0.328 |
 
@@ -1824,16 +1877,16 @@ Scan = top 3% performer over 1, 3 or 6 months with ADR >= 4%. Regime = QQQ above
 | REGIME ADR%, S&P 500 point-in-time only / +20% -10%                                                                |   0.15 |    -0.33 |             -0.32 |   740.00 |   0.43 |            7.14 |               0.64 |
 | REGIME ADR% (only stocks trading >= $10M/day): skip ['< 3%'] / +20% -10%                                           |   0.21 |    -0.42 |             -0.41 |  1220.00 |   0.41 |            9.04 |               0.60 |
 | REGIME ADR% (only stocks trading >= $10M/day), S&P 500 point-in-time only / +20% -10%                              |   0.15 |    -0.32 |             -0.31 |   740.00 |   0.43 |            7.14 |               0.64 |
-| REGIME fundamental inflection (all 4): skip ['no', 'yes'] / +20% -10%                                              |   0.16 |    -0.25 |             -0.22 |   741.00 |   0.43 |            6.94 |               0.49 |
-| REGIME fundamental inflection (all 4), S&P 500 point-in-time only / +20% -10%                                      |   0.04 |    -0.12 |             -0.08 |   101.00 |   0.50 |            1.32 |               0.55 |
-| REGIME revenue growth accelerating: skip ['1 quarter', 'no (decelerating)'] / +20% -10%                            |   0.20 |    -0.40 |             -0.36 |  1080.00 |   0.42 |            8.50 |               0.67 |
-| REGIME revenue growth accelerating, S&P 500 point-in-time only / +20% -10%                                         |   0.10 |    -0.27 |             -0.25 |   487.00 |   0.43 |            5.60 |               0.42 |
-| REGIME operating income outgrowing revenue: skip ['no', 'yes'] / +20% -10%                                         |   0.17 |    -0.41 |             -0.38 |   901.00 |   0.42 |            8.26 |               0.68 |
-| REGIME operating income outgrowing revenue, S&P 500 point-in-time only / +20% -10%                                 |   0.14 |    -0.21 |             -0.20 |   341.00 |   0.51 |            4.34 |               0.57 |
-| REGIME operating margin vs a year ago: skip ['expanding', 'shrinking'] / +20% -10%                                 |   0.16 |    -0.41 |             -0.38 |   917.00 |   0.42 |            8.28 |               0.70 |
-| REGIME operating margin vs a year ago, S&P 500 point-in-time only / +20% -10%                                      |   0.14 |    -0.21 |             -0.20 |   341.00 |   0.51 |            4.34 |               0.57 |
-| REGIME FCF margin vs a year ago: skip ['improving', 'worse'] / +20% -10%                                           |   0.15 |    -0.31 |             -0.28 |   817.00 |   0.42 |            7.32 |               0.51 |
-| REGIME FCF margin vs a year ago, S&P 500 point-in-time only / +20% -10%                                            |   0.05 |    -0.13 |             -0.10 |   130.00 |   0.50 |            1.79 |               0.46 |
+| REGIME fundamental inflection (all 4): skip ['no'] / +20% -10%                                                     |   0.19 |    -0.32 |             -0.30 |   908.00 |   0.42 |            7.77 |               0.50 |
+| REGIME fundamental inflection (all 4), S&P 500 point-in-time only / +20% -10%                                      |   0.07 |    -0.20 |             -0.17 |   267.00 |   0.45 |            3.15 |               0.54 |
+| REGIME revenue growth accelerating: skip ['1 quarter', 'no (decelerating)'] / +20% -10%                            |   0.19 |    -0.40 |             -0.36 |  1078.00 |   0.41 |            8.56 |               0.61 |
+| REGIME revenue growth accelerating, S&P 500 point-in-time only / +20% -10%                                         |   0.12 |    -0.22 |             -0.21 |   490.00 |   0.44 |            5.69 |               0.52 |
+| REGIME operating income outgrowing revenue: skip ['no', 'yes'] / +20% -10%                                         |   0.19 |    -0.48 |             -0.45 |   932.00 |   0.42 |            8.32 |               0.60 |
+| REGIME operating income outgrowing revenue, S&P 500 point-in-time only / +20% -10%                                 |   0.14 |    -0.21 |             -0.20 |   346.00 |   0.50 |            4.39 |               0.55 |
+| REGIME operating margin vs a year ago: skip ['expanding', 'shrinking'] / +20% -10%                                 |   0.18 |    -0.48 |             -0.45 |   948.00 |   0.42 |            8.33 |               0.62 |
+| REGIME operating margin vs a year ago, S&P 500 point-in-time only / +20% -10%                                      |   0.14 |    -0.21 |             -0.20 |   346.00 |   0.50 |            4.39 |               0.55 |
+| REGIME FCF margin vs a year ago: skip ['improving', 'worse'] / +20% -10%                                           |   0.13 |    -0.33 |             -0.30 |   853.00 |   0.41 |            7.53 |               0.57 |
+| REGIME FCF margin vs a year ago, S&P 500 point-in-time only / +20% -10%                                            |   0.06 |    -0.13 |             -0.10 |   153.00 |   0.50 |            2.07 |               0.48 |
 | REGIME up/down volume, 50 days: skip ['1.0-1.3', '> 1.3 (accumulation)'] / +20% -10%                               |   0.16 |    -0.41 |             -0.37 |  1126.00 |   0.40 |            8.90 |               0.79 |
 | REGIME up/down volume, 50 days, S&P 500 point-in-time only / +20% -10%                                             |   0.13 |    -0.29 |             -0.27 |   632.00 |   0.43 |            6.76 |               0.61 |
 | REGIME price vs 200-day: skip ['0-10% above', '10-30% above', '30-50% above', '> 50% above'] / +20% -10%           |   0.24 |    -0.39 |             -0.35 |  1106.00 |   0.41 |            8.77 |               0.69 |
@@ -1882,10 +1935,10 @@ Scan = top 3% performer over 1, 3 or 6 months with ADR >= 4%. Regime = QQQ above
 | RULE ADR% <= 15% (skip the wildest), S&P 500 point-in-time only / +20% -10%                                        |   0.11 |    -0.33 |             -0.30 |   737.00 |   0.41 |            7.40 |               0.84 |
 | RULE ADR% 5-12% and >= $10M/day, model top 10% / +20% -10%                                                         |   0.17 |    -0.56 |             -0.54 |  1381.00 |   0.39 |            8.23 |               0.85 |
 | RULE ADR% 5-12% and >= $10M/day, S&P 500 point-in-time only / +20% -10%                                            |   0.11 |    -0.26 |             -0.23 |   441.00 |   0.43 |            2.84 |               0.74 |
-| RULE fundamental inflection (rev accel 2q + op leverage + margin + FCF up), model top 10% / +20% -10%              |   0.19 |    -0.25 |             -0.20 |   570.00 |   0.46 |            5.91 |               0.49 |
-| RULE fundamental inflection (rev accel 2q + op leverage + margin + FCF up), S&P 500 point-in-time only / +20% -10% |   0.02 |    -0.19 |             -0.17 |   172.00 |   0.41 |            1.96 |               1.13 |
-| RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%                                            |   0.34 |    -0.35 |             -0.34 |   984.00 |   0.45 |            8.11 |               0.40 |
-| RULE revenue growth accelerating 2+ quarters, S&P 500 point-in-time only / +20% -10%                               |   0.10 |    -0.26 |             -0.24 |   473.00 |   0.43 |            5.48 |               0.41 |
+| RULE fundamental inflection (rev accel 2q + op leverage + margin + FCF up), model top 10% / +20% -10%              |   0.20 |    -0.25 |             -0.20 |   569.00 |   0.46 |            5.88 |               0.52 |
+| RULE fundamental inflection (rev accel 2q + op leverage + margin + FCF up), S&P 500 point-in-time only / +20% -10% |   0.02 |    -0.16 |             -0.14 |   170.00 |   0.41 |            1.94 |               0.87 |
+| RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%                                            |   0.32 |    -0.35 |             -0.34 |   966.00 |   0.44 |            8.13 |               0.38 |
+| RULE revenue growth accelerating 2+ quarters, S&P 500 point-in-time only / +20% -10%                               |   0.11 |    -0.22 |             -0.18 |   470.00 |   0.44 |            5.51 |               0.42 |
 | RULE accumulation (up/down volume 50d > 1), model top 10% / +20% -10%                                              |   0.14 |    -0.43 |             -0.43 |  1057.00 |   0.40 |            8.68 |               0.72 |
 | RULE accumulation (up/down volume 50d > 1), S&P 500 point-in-time only / +20% -10%                                 |   0.04 |    -0.33 |             -0.31 |   607.00 |   0.38 |            6.40 |               1.37 |
 | RULE not extended (< 30% above the 200-day), model top 10% / +20% -10%                                             |   0.23 |    -0.42 |             -0.41 |  1164.00 |   0.41 |            9.03 |               0.59 |
@@ -1894,11 +1947,11 @@ Scan = top 3% performer over 1, 3 or 6 months with ADR >= 4%. Regime = QQQ above
 | RULE not already up 50%+ in 6 months, S&P 500 point-in-time only / +20% -10%                                       |   0.16 |    -0.31 |             -0.30 |   686.00 |   0.44 |            7.26 |               0.70 |
 | RULE price rules only (accumulation + not extended + not up 50%), model top 10% / +20% -10%                        |   0.21 |    -0.45 |             -0.44 |   969.00 |   0.42 |            8.41 |               0.60 |
 | RULE price rules only (accumulation + not extended + not up 50%), S&P 500 point-in-time only / +20% -10%           |   0.05 |    -0.38 |             -0.36 |   521.00 |   0.39 |            5.90 |               1.13 |
-| RULE user's full method (inflection + price rules), model top 10% / +20% -10%                                      |   0.05 |    -0.14 |             -0.14 |   242.00 |   0.44 |            3.01 |               0.58 |
-| RULE user's full method (inflection + price rules), S&P 500 point-in-time only / +20% -10%                         |  -0.01 |    -0.16 |             -0.14 |    64.00 |   0.39 |            0.91 |             nan    |
-| METHOD user's method alone, no model (inflection + price rules) / +20% -10%                                        |   0.10 |    -0.26 |             -0.22 |   579.00 |   0.46 |            9.10 |               0.65 |
-| METHOD fundamental inflection alone, no model / +20% -10%                                                          |   0.11 |    -0.38 |             -0.33 |   723.00 |   0.44 |            9.45 |               0.58 |
-| MODEL with fundamentals, top 10% / +20% -10%                                                                       |   0.29 |    -0.44 |             -0.43 |  1194.00 |   0.42 |            9.25 |               0.48 |
+| RULE user's full method (inflection + price rules), model top 10% / +20% -10%                                      |   0.05 |    -0.15 |             -0.14 |   240.00 |   0.44 |            3.00 |               0.65 |
+| RULE user's full method (inflection + price rules), S&P 500 point-in-time only / +20% -10%                         |  -0.00 |    -0.16 |             -0.14 |    63.00 |   0.40 |            0.91 |             nan    |
+| METHOD user's method alone, no model (inflection + price rules) / +20% -10%                                        |   0.09 |    -0.26 |             -0.25 |   581.00 |   0.46 |            9.08 |               0.72 |
+| METHOD fundamental inflection alone, no model / +20% -10%                                                          |   0.15 |    -0.37 |             -0.31 |   718.00 |   0.46 |            9.47 |               0.51 |
+| MODEL with fundamentals, top 10% / +20% -10%                                                                       |   0.25 |    -0.42 |             -0.38 |  1181.00 |   0.41 |            9.23 |               0.42 |
 | SIZE model top 10%, position scaled by 6% / ADR / +20% -10%                                                        |   0.21 |    -0.35 |             -0.32 |  1159.00 |   0.41 |            8.74 |               0.51 |
 | QULL scan+setups / qull_sma10                                                                                      |  -0.15 |    -0.80 |             -0.79 |  1151.00 |   0.38 |            3.39 |             nan    |
 | QULL scan+setups / qull_sma20                                                                                      |  -0.12 |    -0.74 |             -0.72 |  1006.00 |   0.39 |            4.07 |             nan    |
@@ -1950,17 +2003,17 @@ Strategies in the 'Top 10 by IS expectancy' portfolio (chosen on pre-2018 data o
 
 Year-by-year returns (best 3 portfolios by CAGR vs SPY):
 
-|      |   RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10% |   GOAL b20: model's top 10% stocks, no setup needed / bracket_20_10 |   MODEL with fundamentals, top 10% / +20% -10% |   SPY |
-|-----:|--------------------------------------------------------------------------:|--------------------------------------------------------------------:|-----------------------------------------------:|------:|
-| 2018 |                                                                       8.1 |                                                                -2.1 |                                           19.1 |  -5.2 |
-| 2019 |                                                                      51.9 |                                                                53.7 |                                           37.5 |  31.2 |
-| 2020 |                                                                      83.5 |                                                                81.2 |                                           81.6 |  18.3 |
-| 2021 |                                                                      49.2 |                                                                25.0 |                                           13.8 |  28.7 |
-| 2022 |                                                                       2.4 |                                                               -26.4 |                                          -18.0 | -18.2 |
-| 2023 |                                                                      34.7 |                                                                66.6 |                                           31.6 |  26.2 |
-| 2024 |                                                                       4.9 |                                                                26.0 |                                           58.1 |  24.9 |
-| 2025 |                                                                      33.6 |                                                                44.0 |                                           38.3 |  17.7 |
-| 2026 |                                                                      48.9 |                                                                23.6 |                                           14.3 |  15.1 |
+|      |   RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10% |   GOAL b20: model's top 10% stocks, no setup needed / bracket_20_10 |   GOAL b20: model top 10% + adaptive sizing / bracket_20_10 |   SPY |
+|-----:|--------------------------------------------------------------------------:|--------------------------------------------------------------------:|------------------------------------------------------------:|------:|
+| 2018 |                                                                       7.0 |                                                                -2.1 |                                                        -7.9 |  -5.2 |
+| 2019 |                                                                      47.7 |                                                                53.7 |                                                        33.0 |  31.2 |
+| 2020 |                                                                      69.6 |                                                                81.2 |                                                       100.7 |  18.3 |
+| 2021 |                                                                      35.0 |                                                                25.0 |                                                        22.5 |  28.7 |
+| 2022 |                                                                      13.2 |                                                               -26.4 |                                                       -22.1 | -18.2 |
+| 2023 |                                                                      31.9 |                                                                66.6 |                                                        76.0 |  26.2 |
+| 2024 |                                                                       4.9 |                                                                26.0 |                                                        30.4 |  24.9 |
+| 2025 |                                                                      33.6 |                                                                44.0 |                                                        29.6 |  17.7 |
+| 2026 |                                                                      48.9 |                                                                23.6 |                                                        30.4 |  15.1 |
 
 ## Appendix: entries and exits
 
