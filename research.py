@@ -16,6 +16,7 @@ import pandas as pd
 from mlalgo.research import analyze as A
 from mlalgo.research import data as D
 from mlalgo.research import engine
+from mlalgo.research import fundamentals as F
 from mlalgo.research.entries import ENTRIES
 from mlalgo.research.insights import append_history, findings
 from mlalgo.research.run import EXIT_NAMES, MENU, run
@@ -240,8 +241,12 @@ def main() -> None:
                     pd.DataFrame({"ticker": list(prices), "index": "file", "status": "current"}))
     else:
         universe, prices, market = D.load_all(a.cache, a.start, tuple(a.indexes.split(",")))
+    # run 22: point-in-time fundamentals from SEC filings (cached next to the prices)
+    fund = F.load_fundamentals(a.cache, list(prices)) if not a.prices_parquet or \
+        (Path(a.cache) / "fundamentals.parquet").exists() else pd.DataFrame()
     if a.download_only:
-        print(f"[research] cached {len(prices)} tickers + {list(market)}")
+        print(f"[research] cached {len(prices)} tickers + {list(market)}, fundamentals for "
+              f"{fund['ticker'].nunique() if len(fund) else 0} tickers")
         return
     if a.limit:
         prices = dict(list(prices.items())[: a.limit])
@@ -257,6 +262,9 @@ def main() -> None:
         if len(sample):
             sample.to_parquet(sample_path, index=False)
     print(f"[research] {len(sig):,} signals ({time.time() - t0:.0f}s)")
+    if len(sample):
+        sample = F.attach(sample, fund)
+        print(f"[research] fundamentals known on {sample['rev_yoy'].notna().mean():.0%} of sample rows")
 
     # ---------------- strategy grid
     lb = A.leaderboard(sig)
@@ -355,6 +363,14 @@ def main() -> None:
             # do the new features improve the +20/-10 goal model?
             sample, _ = A.super_walk_forward(sample, [], label="b20", col="p_b20_ext", features=A.SHORT_ALL)
             goal_ext = {"original": A.goal_tiers(sample, "b20", "p_b20"), "with new features": A.goal_tiers(sample, "b20", "p_b20_ext")}
+            # run 22: do point-in-time fundamentals (and the 200-day extension) improve the goal model?
+            if "rev_yoy" in sample and sample["rev_yoy"].notna().mean() > 0.2:
+                fund_feats = list(dict.fromkeys(A.SHORT_ALL + F.FUND_FEATURES + ["ext_200"]))
+                sample, _ = A.super_walk_forward(sample, [], label="b20", col="p_b20_fund", features=fund_feats)
+                goal_ext["with fundamentals"] = A.goal_tiers(sample, "b20", "p_b20_fund")
+                if pit:
+                    goal_ext["with new features, point-in-time S&P 500"] = A.goal_tiers(sample, "b20", "p_b20_ext", keep=pit(sample))
+                    goal_ext["with fundamentals, point-in-time S&P 500"] = A.goal_tiers(sample, "b20", "p_b20_fund", keep=pit(sample))
         print(f"[research] short-horizon models done ({time.time() - t0:.0f}s)")
 
         # ---------------- run 17: bracket menu and market regime for the goal model's top picks
@@ -508,6 +524,18 @@ def main() -> None:
                     "sector AND sub-industry above 21 EMA": both("up21"),
                     "SPY > 21 & 50 + sector & sub-industry up 5 days": (T["spy_2150"] == 3) & both("ret5"),
                 })
+            # run 22 (user): early fundamental inflection + volume accumulation + not extended
+            if "inflection" in T:
+                price_ok = (T["updown_vol_50"] > 1.0) & (T["ext_200"] < 0.30) & (T["ret_126"] < 0.50)
+                leading.update({
+                    "fundamental inflection (rev accel 2q + op leverage + margin + FCF up)": T["inflection"] == 1,
+                    "revenue growth accelerating 2+ quarters": T["rev_accel_q"] >= 2,
+                    "accumulation (up/down volume 50d > 1)": T["updown_vol_50"] > 1.0,
+                    "not extended (< 30% above the 200-day)": T["ext_200"] < 0.30,
+                    "not already up 50%+ in 6 months": T["ret_126"] < 0.50,
+                    "price rules only (accumulation + not extended + not up 50%)": price_ok,
+                    "user's full method (inflection + price rules)": price_ok & (T["inflection"] == 1),
+                })
             for name, m in leading.items():
                 g = top_rows[m.fillna(False).to_numpy()]
                 if (g["date"] >= A.IS_END).sum() < 50:
@@ -519,6 +547,25 @@ def main() -> None:
                 port_rows.append((f"RULE {name}, model top 10% / +20% -10%", full))
                 if pt is not None:
                     port_rows.append((f"RULE {name}, S&P 500 point-in-time only / +20% -10%", pt))
+            if "inflection" in sample and sample["inflection"].notna().any():
+                S_ = sample[sample["m20_10_ret"].notna() & sample["rev_yoy_d1"].notna()]
+                p_ok = (S_["updown_vol_50"] > 1.0) & (S_["ext_200"] < 0.30) & (S_["ret_126"] < 0.50)
+                for name, m in {"user's method alone, no model (inflection + price rules)": p_ok & (S_["inflection"] == 1),
+                                "fundamental inflection alone, no model": S_["inflection"] == 1}.items():
+                    g = S_[m.fillna(False).to_numpy()]
+                    if (g["date"] >= A.IS_END).sum() < 50:
+                        continue
+                    tr = A.menu_trades(g, "m20_10", 0.10, "rev_yoy_d1", cal, q=0)   # fastest acceleration first
+                    full = A.portfolio(tr, "bracket", "priority", closes=closes)
+                    pt_ = A.portfolio(tr[pit(tr).to_numpy()], "bracket", "priority", closes=closes) if pit else None
+                    regime_gates.append((f"METHOD: {name}", [], full, pt_))
+                    port_rows.append((f"METHOD {name} / +20% -10%", full))
+            if "p_b20_fund" in sample:
+                tr = A.menu_trades(sample, "m20_10", 0.10, "p_b20_fund", cal)
+                full = A.portfolio(tr, "bracket", "priority", closes=closes)
+                pt_ = A.portfolio(tr[pit(tr).to_numpy()], "bracket", "priority", closes=closes) if pit else None
+                regime_gates.append(("MODEL + fundamentals as features, top 10%", [], full, pt_))
+                port_rows.append(("MODEL with fundamentals, top 10% / +20% -10%", full))
             if pit:
                 base_tr = A.menu_trades(sample, "m20_10", 0.10, score_col, cal)
                 regime_gates.append(("(no gate)", [], A.portfolio(base_tr, "bracket", "priority", closes=closes),
@@ -598,7 +645,7 @@ def main() -> None:
             key["menu_choice"], key["menu_choice_oos_ret"] = r["bracket"], float(r["avg_net_return"])
         for f, sk, a, p in regime_gates:
             if a:
-                found.append(f"{'Filter ' + f if f.startswith('RULE') else f'Regime gate {f} (skip ' + (', '.join(map(str, sk)) or 'nothing') + ')'}: {a['CAGR']:.1%} CAGR, "
+                found.append(f"{'Filter ' + f if f.startswith(('RULE', 'METHOD', 'MODEL')) else f'Regime gate {f} (skip ' + (', '.join(map(str, sk)) or 'nothing') + ')'}: {a['CAGR']:.1%} CAGR, "
                              f"{a['max_DD']:.0%} DD" + (f"; point-in-time S&P 500 {p['CAGR']:.1%}, {p['max_DD']:.0%}" if p else "") + ".")
     hist = append_history(out / "history.csv", key, len(prices), len(sig))
     (out / "insights.json").write_text(json.dumps({"findings": found, "next_steps": nxt, "key": key}, indent=2, default=str))

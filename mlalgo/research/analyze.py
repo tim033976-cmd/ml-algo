@@ -634,6 +634,31 @@ def regime_splits(d: pd.DataFrame, ref: pd.DataFrame) -> dict[str, pd.Series]:
             x, y = (d[a] > 0.5) if f == "up21" else (d[a] > 0), (d[b] > 0.5) if f == "up21" else (d[b] > 0)
             lab = np.select([x & y, x | y], ["both", "one of the two"], "neither")
             out[f"sector & sub-industry {name}"] = pd.Series(lab, index=d.index).where(d[a].notna() & d[b].notna())
+    # run 22 (user): early fundamental inflection (SEC filings, point-in-time) and the price rules
+    if "inflection" in d:
+        out["fundamental inflection (all 4)"] = d["inflection"].map({1.0: "yes", 0.0: "no"})
+    if "rev_accel_q" in d:
+        out["revenue growth accelerating"] = pd.cut(d["rev_accel_q"], [-np.inf, 0.5, 1.5, np.inf],
+                                                    labels=["no (decelerating)", "1 quarter", "2+ quarters"])
+    if "op_lev" in d:
+        lev = (d["op_lev"] > 0) | (d.get("op_turn_pos", pd.Series(0, index=d.index)) == 1)
+        out["operating income outgrowing revenue"] = pd.Series(np.where(lev, "yes", "no"), index=d.index).where(
+            d["op_lev"].notna() | d.get("op_turn_pos", pd.Series(np.nan, index=d.index)).notna())
+    if "op_margin_chg" in d:
+        out["operating margin vs a year ago"] = pd.Series(np.where(d["op_margin_chg"] > 0, "expanding", "shrinking"),
+                                                          index=d.index).where(d["op_margin_chg"].notna())
+    if "fcf_margin_chg" in d:
+        out["FCF margin vs a year ago"] = pd.Series(np.where(d["fcf_margin_chg"] > 0, "improving", "worse"),
+                                                    index=d.index).where(d["fcf_margin_chg"].notna())
+    if "updown_vol_50" in d:
+        out["up/down volume, 50 days"] = pd.cut(d["updown_vol_50"], [-np.inf, 0.8, 1.0, 1.3, np.inf],
+                                                labels=["< 0.8 (distribution)", "0.8-1.0", "1.0-1.3", "> 1.3 (accumulation)"])
+    if "ext_200" in d:
+        out["price vs 200-day"] = pd.cut(d["ext_200"], [-np.inf, 0, 0.1, 0.3, 0.5, np.inf],
+                                         labels=["below", "0-10% above", "10-30% above", "30-50% above", "> 50% above"])
+    if "ret_126" in d:
+        out["6-month gain"] = pd.cut(d["ret_126"], [-np.inf, 0, 0.2, 0.5, 1.0, np.inf],
+                                     labels=["< 0", "0-20%", "20-50%", "50-100%", "> 100%"])
     # run 19: stock-level group strength (median RS rank of the group, percentile among groups)
     if "sector_rank" in d:
         out["sector (11 GICS, by median RS)"] = pd.cut(d["sector_rank"], [-np.inf, 0.30, 0.75, np.inf],

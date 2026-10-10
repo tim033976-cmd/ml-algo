@@ -199,6 +199,8 @@ def superperformer_sample(ticker, df, feats_all, rs_rank, grp, warmup=252) -> pd
     out.loc[unknown, ["fwd_max_gain", "fwd_ret_63", "clean_super"] + [f"{b}_{x}" for b in BRACKETS for x in ("hit", "ret")]
             + [f"{m}_ret" for m in MENU]] = np.nan
     out["close"] = c[idx]
+    # run 22 (user): how far price is stretched above its 200-day average
+    out["ext_200"] = c[idx] / pd.Series(c).rolling(200).mean().to_numpy()[idx] - 1
     # short-horizon features (concrete daily/weekly data only) and next 1/3/5-day labels
     from mlalgo.research.shortterm import short_features, short_labels
     sf = short_features(df).iloc[idx].reset_index(drop=True)
