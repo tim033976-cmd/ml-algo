@@ -1,5 +1,13 @@
 # Research log (newest first)
 
+## Run 26 — 2026-10-10 (commit c234172): fundamentals must confirm the leader portfolio (user)
+Same 144 configurations x 7 pre-registered filters (SEC point-in-time: revenue YoY, diluted EPS YoY / turning positive, earnings-day gap up).
+- **Caveat:** SEC XBRL data starts ~2009-2011, so filtered versions hold cash in 2007-2008 (they "avoid" the crash for lack of data). IS comparisons flatter the filters; **the OOS 2018+ comparison is clean** (filters fixed in advance, data available).
+- **Fundamentals confirmation clearly helps the concentrated portfolio OOS.** Median over the 144 configurations, 2018+: no filter 6.6% / −46% DD; **sales >= 20% and EPS >= 25%: 12.3% / −34%** (return/DD 0.16 → 0.40; better than no filter in **83%** of configurations); sales only 9.9% / −39% (73%); EPS only 9.5% / −43% (76%); earnings gap 8.4% / −37% (78%); accelerating revenue 6.5% / −34%; all three 6.8% / −33%.
+- **But no concentrated version beats the benchmarks:** best fundamentals config chosen on IS (4 stocks, 12-1 momentum, setup, 50-day, QQQ > 200d, EPS >= 25%) IS 6.1% / −22%, OOS 11.7% / −28% (alpha 5.9%/yr, t 0.94; beta 0.47); CAN SLIM pre-registered 1.2% / −29% IS, 11.2% / −26% OOS. SPY 14.6% / −34%, QQQ 20.2% / −35%, simple top-10 momentum 22.4% / −41%. Strong years 2024 (+43%) / 2026 (+49%), weak 2019-2023 vs SPY.
+- **Case study (NVDA / SNDK-type leaders):** the strategies caught pieces, not the big runs. NVDA once (May-Jul 2024, +10%) plus two stop-outs; PLTR +31% (May-Sep 2025) after two −13% stop-outs; ANET +28-35% (Nov 2023-Apr 2024); CRWD, AVGO, META mostly 8% stops; SNDK and APP never held. The 8% stop and setup-only entries shake out of volatile leaders before their big moves.
+- **Decision:** keep "sales >= 20% and EPS >= 25%" as the fundamentals rule. Concentrating in 3-5 names costs return; next (run 27): a diversified 10-20 stock momentum book with the fundamentals rule, the 50-day exit, a wider/ADR-based stop instead of a fixed 8%, and comparisons started in 2010 (when filings exist).
+
 ## Run 25 — 2026-10-10 (commit 3de3b4a): concentrated 3-5 stock leader portfolio on top traders' rules
 144 configurations, S&P 500 point-in-time incl. former members, chosen on 2007-2017 return / drawdown.
 - **Most configurations lose money in-sample:** median IS CAGR −6.8% (any leader) / −2.8% (setup required); median OOS +8.2% / +5.6%. Concentrating in 3-5 leaders is fragile.

@@ -68,5 +68,9 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - Simple raw momentum (top 10 by 0.7 x 6m + 0.3 x 1m return, monthly) PIT: 22% OOS / 9% IS vs SPY 15% / 8%,
   but -41% to -61% drawdowns. Volatility-adjusting it made it worse.
 - Episodic pivots work because of earnings: earnings-day gaps +0.44R OOS vs +0.10R for non-earnings gaps.
+- Concentrated 3-5 stock leader portfolios (runs 25-26) don't beat SPY/QQQ or a 10-stock momentum book PIT;
+  the structure that works is setup entry + 50-day exit + QQQ > 200d. Requiring sales >= 20% and EPS >= 25%
+  growth (SEC point-in-time) improves them OOS in 83% of configurations (median 6.6% -> 12.3%, DD -46% -> -34%).
+  Fixed 8% stops shake out of volatile leaders (NVDA, PLTR) before their big moves.
 - ADR-scaled sizing (x 6%/ADR) improved the PIT goal-model portfolio (16% vs 10.5%). Fundamentals
   (inflection) don't work as filters; as model features they add a little at the top tiers.
