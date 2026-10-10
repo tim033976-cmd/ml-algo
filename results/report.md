@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-10 13:16 UTC in 80 min.
+Generated 2026-10-10 15:18 UTC in 78 min.
 Universe: 1540 stocks with data (sp500: 657, sp600: 537, sp400: 346; 158 former S&P 500 members). Signals 2006-01-03 -> 2026-10-08: 952,523.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
@@ -108,7 +108,6 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 
 | run_utc          | commit   |   tickers |   signals |   rank_corr |   top20_oos |   baseline_oos | edge_entries                                                                                                                                                                                                                                                                                | no_edge_entries                                                            | best_exit   | helpful_filters                                                                                              |   ml_auc |   ml_rank_corr |   ml_monotonic |   ml_gap | top_features                                                       | filters_lifting_baseline                  |   rules_held | best_portfolio                                                                    |   best_cagr |   spy_cagr | best_calmar                                                                       |   super_auc |   super_lift | super_features                                                  |   goal_b10_top_hit |   goal_b10_top_ret |   goal_b20_top_hit |   goal_b20_top_ret | menu_choice   |   menu_choice_oos_ret |
 |:-----------------|:---------|----------:|----------:|------------:|------------:|---------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|:------------|:-------------------------------------------------------------------------------------------------------------|---------:|---------------:|---------------:|---------:|:-------------------------------------------------------------------|:------------------------------------------|-------------:|:----------------------------------------------------------------------------------|------------:|-----------:|:----------------------------------------------------------------------------------|------------:|-------------:|:----------------------------------------------------------------|-------------------:|-------------------:|-------------------:|-------------------:|:--------------|----------------------:|
-| 2026-10-08 14:27 | e7af2f7  |      1488 |    659965 |        0.54 |        0.06 |          -0.04 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, falling_wedge, ep_gap5, ep_gap10, undercut, donchian_20, ep_gap10_vol2, ema_retest, sym_triangle, donchian_55                                                                                                      | high52, multi_touch, pocket_pivot, stage2                                  | sma50_close | rs80_early, rs80_early_theme, early_stage, rs80                                                              |     0.51 |           0.00 |          -0.30 |     0.02 | rates_rising, sma200_slope, above_52w_low, sector_rs, adr_pct      | early_stage, rs80_early, rs80_early_theme |            2 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5163 signals) / sma50_close |        0.83 |         4.28 | adr_pct, above_52w_low, dist_52w_high, leg2_range, atr_pct      |               0.56 |               0.02 |               0.38 |               0.03 | nan           |                nan    |
 | 2026-10-08 15:56 | f522ebc  |      1488 |    669685 |        0.51 |        0.06 |          -0.02 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, falling_wedge, ep_gap5, ep_gap10, undercut, donchian_20, ep_gap10_vol2, ema_retest, sym_triangle, donchian_55                                                                                                      | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.04 |     0.04 | sma200_slope, rates_rising, sector_rs, industry_rs, sma150_slope   | early_stage, rs80_early, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5238 signals) / sma50_close |        0.46 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5238 signals) / sma50_close |        0.83 |         4.29 | adr_pct, dist_52w_high, above_52w_low, atr_pct, mkt_above200    |               0.55 |               0.01 |               0.37 |               0.02 | nan           |                nan    |
 | 2026-10-09 05:05 | 00c2b0a  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | nan           |                nan    |
 | 2026-10-09 11:57 | 4ad9589  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
@@ -118,6 +117,7 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 | 2026-10-09 16:26 | c39a032  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 | 2026-10-10 02:25 | 404aae3  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme             |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 | 2026-10-10 13:16 | 7a7fe02  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme                          |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.34 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
+| 2026-10-10 15:18 | 3de3b4a  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme                          |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.34 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
 
 ## 1. Did picking the best in-sample strategies work out-of-sample?
 
@@ -775,6 +775,87 @@ Do the new features improve the +20%/-10% goal model? (OOS tiers)
 | top 5%     |  2649.000 |        0.410 |      0.473 |            0.038 |
 | top 2%     |  1092.000 |        0.460 |      0.442 |            0.051 |
 | top 1%     |   565.000 |        0.485 |      0.446 |            0.053 |
+
+## 17. Run 25: concentrated leader portfolio (3-5 stocks) on top traders' rules
+
+Hold N stocks (equal weight), decided at every close. Leaders only: price >= $10, >= $20M/day, above a rising 50-day that is above the 200-day, within 25% of the 52-week high; S&P 500 members at the time (incl. later-removed ones). Entry: best-ranked leader into an empty slot (optionally only within 3 days of a top-trader setup: episodic pivot / breakout / base / flag / VCP; optionally only while QQQ > 200-day). Exit at the close: below the 10/20/50-day average, 8% below entry, or (rank) out of the top 3N. 0.1% per side. 144 configurations; the winner is chosen on 2007-2017 return / drawdown only.
+
+Top 10 configurations by IS (2007-2017) CAGR / max drawdown, with their OOS (2018+) results:
+
+|   N | rank by   | exit   | regime     | entry          |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
+|----:|:----------|:-------|:-----------|:---------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
+|   5 | qull_best | sma50  | QQQ > 200d | setup required |     0.055 |     -0.301 |            0.184 |         292 |    0.445 |        40.120 |      0.153 |      -0.287 |             0.533 |          250 |     0.408 |         36.856 |
+|   5 | mom_6m1m  | sma50  | QQQ > 200d | setup required |     0.045 |     -0.299 |            0.151 |         297 |    0.444 |        39.434 |      0.126 |      -0.238 |             0.532 |          261 |     0.387 |         35.195 |
+|   4 | mom_6m1m  | sma50  | QQQ > 200d | setup required |     0.036 |     -0.283 |            0.127 |         243 |    0.440 |        38.580 |      0.123 |      -0.264 |             0.465 |          216 |     0.356 |         34.060 |
+|   5 | mom_12_1  | sma50  | QQQ > 200d | setup required |     0.038 |     -0.339 |            0.111 |         327 |    0.394 |        35.960 |      0.035 |      -0.323 |             0.108 |          281 |     0.345 |         32.456 |
+|   3 | qull_best | sma50  | QQQ > 200d | setup required |     0.035 |     -0.327 |            0.106 |         187 |    0.428 |        38.070 |      0.217 |      -0.314 |             0.690 |          142 |     0.437 |         39.077 |
+|   4 | mom_6m1m  | sma50  | none       | setup required |     0.041 |     -0.392 |            0.105 |         275 |    0.407 |        37.124 |      0.079 |      -0.271 |             0.291 |          251 |     0.343 |         33.032 |
+|   4 | qull_best | sma50  | QQQ > 200d | setup required |     0.036 |     -0.350 |            0.104 |         243 |    0.428 |        38.786 |      0.188 |      -0.266 |             0.706 |          193 |     0.420 |         38.244 |
+|   4 | mom_12_1  | sma50  | QQQ > 200d | setup required |     0.035 |     -0.374 |            0.094 |         264 |    0.383 |        35.913 |      0.033 |      -0.265 |             0.126 |          227 |     0.348 |         32.154 |
+|   5 | mom_12_1  | sma50  | none       | setup required |     0.038 |     -0.413 |            0.093 |         351 |    0.402 |        36.179 |      0.055 |      -0.294 |             0.188 |          322 |     0.366 |         31.978 |
+|   5 | mom_6m1m  | sma50  | none       | setup required |     0.036 |     -0.397 |            0.090 |         339 |    0.404 |        37.224 |      0.078 |      -0.271 |             0.288 |          308 |     0.370 |         33.513 |
+
+Pre-registered trader-style versions (not selected on any results):
+
+|   N | rank by   | exit       | regime     | entry          |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days | style                                                                                 |
+|----:|:----------|:-----------|:-----------|:---------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|:--------------------------------------------------------------------------------------|
+|   4 | qull_best | sma20      | QQQ > 200d | setup required |    -0.011 |     -0.464 |           -0.024 |         559 |    0.422 |        16.182 |      0.073 |      -0.286 |             0.254 |          468 |     0.400 |         15.438 | Qullamaggie style (best-of 1/3/6m RS, setup, 20-day trail, QQQ > 200d, 4 stocks)      |
+|   4 | mom_6m1m  | sma50      | QQQ > 200d | setup required |     0.036 |     -0.283 |            0.127 |         243 |    0.440 |        38.580 |      0.123 |      -0.264 |             0.465 |          216 |     0.356 |         34.060 | Minervini / O'Neil style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, 4 stocks)  |
+|   5 | mom_6m1m  | sma50_rank | none       | any leader     |     0.001 |     -0.725 |            0.002 |         688 |    0.378 |        19.653 |      0.116 |      -0.510 |             0.228 |          590 |     0.378 |         18.193 | Pure leader rotation (6m/1m momentum, any leader, 50-day + rank, no regime, 5 stocks) |
+
+IS winner: 5, qull_best, sma50, QQQ > 200d, setup required. Robustness:
+
+| version                                       |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
+|:----------------------------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
+| IS winner, S&P 500 point-in-time (0.1%/side)  |     0.055 |     -0.301 |            0.184 |         292 |    0.445 |        40.120 |      0.153 |      -0.287 |             0.533 |          250 |     0.408 |         36.856 |
+| IS winner, S&P 500 point-in-time, 0.3%/side   |     0.034 |     -0.323 |            0.106 |         292 |    0.445 |        40.120 |      0.128 |      -0.323 |             0.396 |          250 |     0.408 |         36.856 |
+| IS winner, all stocks (survivorship-inflated) |     0.133 |     -0.409 |            0.324 |         309 |    0.434 |        39.450 |      0.175 |      -0.460 |             0.381 |          280 |     0.346 |         32.189 |
+
+Benchmarks (same periods):
+
+| benchmark   |   IS_CAGR |   IS_maxDD |   OOS_CAGR |   OOS_maxDD |
+|:------------|----------:|-----------:|-----------:|------------:|
+| SPY         |     0.082 |     -0.552 |      0.146 |      -0.337 |
+| QQQ         |     0.134 |     -0.534 |      0.202 |      -0.351 |
+
+| strategy (2018+)   |   beta |   alpha_annual |   alpha_t |   sharpe |   spy_sharpe |   CAGR |   max_DD |   CAGR_per_DD |   worst_month |
+|:-------------------|-------:|---------------:|----------:|---------:|-------------:|-------:|---------:|--------------:|--------------:|
+| IS winner, PIT     |  0.558 |          0.083 |     1.194 |    0.735 |        0.816 |  0.153 |   -0.287 |         0.533 |        -0.176 |
+
+Year by year (IS winner vs SPY):
+
+|     year |   IS winner |    SPY |
+|---------:|------------:|-------:|
+| 2007.000 |       0.132 |  0.053 |
+| 2008.000 |      -0.149 | -0.368 |
+| 2009.000 |       0.143 |  0.264 |
+| 2010.000 |       0.323 |  0.151 |
+| 2011.000 |      -0.171 |  0.019 |
+| 2012.000 |      -0.023 |  0.160 |
+| 2013.000 |       0.301 |  0.323 |
+| 2014.000 |       0.121 |  0.135 |
+| 2015.000 |      -0.071 |  0.012 |
+| 2016.000 |      -0.048 |  0.120 |
+| 2017.000 |       0.184 |  0.217 |
+| 2018.000 |      -0.122 | -0.046 |
+| 2019.000 |       0.145 |  0.312 |
+| 2020.000 |       0.187 |  0.183 |
+| 2021.000 |       0.046 |  0.287 |
+| 2022.000 |      -0.092 | -0.182 |
+| 2023.000 |       0.099 |  0.262 |
+| 2024.000 |       0.256 |  0.249 |
+| 2025.000 |       0.228 |  0.177 |
+| 2026.000 |       0.819 |  0.151 |
+
+Today's portfolio (IS winner, as of the last close):
+
+| ticker   | entry_date          |   entry |    last |   gain |   stop_8% |   trail_level |
+|:---------|:--------------------|--------:|--------:|-------:|----------:|--------------:|
+| CRL      | 2026-08-11 00:00:00 | 282.000 | 301.790 |  0.070 |   259.440 |       283.169 |
+| CRWD     | 2026-09-01 00:00:00 | 215.070 | 275.040 |  0.279 |   197.864 |       228.702 |
+| AMD      | 2026-09-23 00:00:00 | 614.610 | 608.100 | -0.011 |   565.441 |       528.921 |
+| NTAP     | 2026-09-28 00:00:00 | 203.950 | 237.150 |  0.163 |   187.634 |       197.832 |
+| PANW     | 2026-09-30 00:00:00 | 397.310 | 418.780 |  0.054 |   365.525 |       370.852 |
 
 ## 16. Run 24: consolidated tests
 
