@@ -302,7 +302,33 @@ TRADER_SETUPS = ["ep_gap10", "ep_gap8_hold", "ep_gap10_vol2", "ep_gap15", "wf_ro
                  "flag_30", "flag_60", "htf", "vcp"]
 
 
-def run25(sig, prices, market, sp_hist, out):
+FUND_FILTERS = ("none", "sales growth >= 20%", "EPS growth >= 25% (O'Neil C)", "sales >= 20% and EPS >= 25%",
+                "sales + EPS, revenue accelerating", "earnings gap up in last 3 months", "sales + EPS + earnings gap")
+FOCUS = ["NVDA", "SNDK", "PLTR", "SMCI", "META", "AVGO", "VRT", "ANET", "CRWD", "APP"]
+
+
+def fund_filters(fund, earn, prices, index, columns):
+    """Run 26: dates x tickers masks for 'the fundamentals confirm the move' (CAN SLIM-style: growth already
+    visible in the filings, or the market's earnings-gap reaction). Unknown fundamentals fail the filter."""
+    from mlalgo.research import rotation as RT
+    out = {"none": None}
+    if fund is None or not len(fund):
+        return out
+    g = lambda m: RT.fund_daily(fund, index, columns, m) if m in fund else pd.DataFrame(np.nan, index=index, columns=columns)
+    rev, d1, eps, turn = g("rev_yoy"), g("rev_yoy_d1"), g("eps_yoy"), g("eps_turn_pos")
+    sales = (rev >= 0.20).to_numpy()
+    epsok = ((eps >= 0.25) | (turn == 1)).to_numpy()
+    opens = pd.DataFrame({t: df["open"] for t, df in prices.items()}).reindex(index=index, columns=columns)
+    closes = pd.DataFrame({t: df["close"] for t, df in prices.items()}).reindex(index=index, columns=columns)
+    egap = RT.earnings_gap_mask(opens, closes, earn).to_numpy()
+    out.update({"sales growth >= 20%": sales, "EPS growth >= 25% (O'Neil C)": epsok,
+                "sales >= 20% and EPS >= 25%": sales & epsok,
+                "sales + EPS, revenue accelerating": sales & epsok & (d1 > 0).to_numpy(),
+                "earnings gap up in last 3 months": egap, "sales + EPS + earnings gap": sales & epsok & egap})
+    return out
+
+
+def run25(sig, prices, market, sp_hist, out, fund=None, earn=None):
     """Run 25: concentrated (3-5 stocks) leader portfolio run on top traders' rules, updated at every
     close; grid selected on 2007-2017 (IS), judged on 2018+ (OOS), point-in-time S&P 500 incl. former members."""
     from mlalgo.research import rotation as RT
@@ -321,18 +347,30 @@ def run25(sig, prices, market, sp_hist, out):
         piv = piv.reindex(index=closes.index, columns=closes.columns).fillna(False).astype(float)
         setup = piv.rolling(3, min_periods=1).max() > 0          # a setup fired today or in the last 2 days
     setup = setup.to_numpy()
+    filters = fund_filters(fund, earn, prices, closes.index, closes.columns)
     rows, results = [], {}
-    for n in (3, 4, 5):
-        for score in RT.SCORES:
-            for ex in RT.EXITS:
-                for reg_name, reg in (("none", None), ("QQQ > 200d", regime)):
-                    for entry_name, st in (("any leader", None), ("setup required", setup)):
-                        key = (n, score, ex, reg_name, entry_name)
-                        res = RT.run(P, n=n, score=score, exit_rule=ex, regime=reg, setup=st)
-                        results[key] = res
-                        rows.append({"N": n, "rank by": score, "exit": ex, "regime": reg_name, "entry": entry_name,
-                                     **RT.stats(res, A.IS_END)})
+    for fname, fmask in filters.items():
+        for n in (3, 4, 5):
+            for score in RT.SCORES:
+                for ex in RT.EXITS:
+                    for reg_name, reg in (("none", None), ("QQQ > 200d", regime)):
+                        for entry_name, st in (("any leader", None), ("setup required", setup)):
+                            key = (n, score, ex, reg_name, entry_name, fname)
+                            res = RT.run(P, n=n, score=score, exit_rule=ex, regime=reg, setup=st, filt=fmask)
+                            results[key] = res
+                            rows.append({"N": n, "rank by": score, "exit": ex, "regime": reg_name, "entry": entry_name,
+                                         "fundamentals": fname, **RT.stats(res, A.IS_END)})
     grid = pd.DataFrame(rows)
+    # run 26: average effect of each fundamentals filter over the same 144 configurations
+    cols = ["IS_CAGR", "IS_maxDD", "IS_CAGR_per_DD", "OOS_CAGR", "OOS_maxDD", "OOS_CAGR_per_DD"]
+    eff = grid.groupby("fundamentals", sort=False)[cols].median()
+    base = grid[grid["fundamentals"] == "none"].set_index(["N", "rank by", "exit", "regime", "entry"])
+    beat = {}
+    for fname, gg in grid.groupby("fundamentals", sort=False):
+        x = gg.set_index(["N", "rank by", "exit", "regime", "entry"])
+        beat[fname] = {"share_beating_none_IS": (x["IS_CAGR_per_DD"] > base["IS_CAGR_per_DD"]).mean(),
+                       "share_beating_none_OOS": (x["OOS_CAGR_per_DD"] > base["OOS_CAGR_per_DD"]).mean()}
+    r["fund_effect"] = eff.join(pd.DataFrame(beat).T).reset_index()
     grid.to_csv(out / "run25_grid.csv", index=False)
     ok = grid[grid["IS_trades"] >= 30]
     best = ok.sort_values("IS_CAGR_per_DD", ascending=False).head(10)
@@ -341,17 +379,21 @@ def run25(sig, prices, market, sp_hist, out):
     defaults = {"Qullamaggie style (best-of 1/3/6m RS, setup, 20-day trail, QQQ > 200d, 4 stocks)": (4, "qull_best", "sma20", "QQQ > 200d", "setup required"),
                 "Minervini / O'Neil style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, 4 stocks)": (4, "mom_6m1m", "sma50", "QQQ > 200d", "setup required"),
                 "Pure leader rotation (6m/1m momentum, any leader, 50-day + rank, no regime, 5 stocks)": (5, "mom_6m1m", "sma50_rank", "none", "any leader")}
-    m = lambda k: (grid["N"] == k[0]) & (grid["rank by"] == k[1]) & (grid["exit"] == k[2]) & (grid["regime"] == k[3]) & (grid["entry"] == k[4])
+    defaults["CAN SLIM style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, sales + EPS growth, 4 stocks)"] = \
+        (4, "mom_6m1m", "sma50", "QQQ > 200d", "setup required", "sales >= 20% and EPS >= 25%")
+    m = lambda k: ((grid["N"] == k[0]) & (grid["rank by"] == k[1]) & (grid["exit"] == k[2]) & (grid["regime"] == k[3])
+                   & (grid["entry"] == k[4]) & (grid["fundamentals"] == (k[5] if len(k) > 5 else "none")))
     r["defaults"] = pd.concat([grid[m(k)].assign(style=name) for name, k in defaults.items()])
     # the IS winner: robustness checks and today's portfolio
     b = best.iloc[0]
-    key = (int(b["N"]), b["rank by"], b["exit"], b["regime"], b["entry"])
+    key = (int(b["N"]), b["rank by"], b["exit"], b["regime"], b["entry"], b["fundamentals"])
+    fm = filters[key[5]]
     reg = regime if key[3] != "none" else None
     st = setup if key[4] == "setup required" else None
     win = results[key]
     checks = {"IS winner, S&P 500 point-in-time (0.1%/side)": win,
-              "IS winner, S&P 500 point-in-time, 0.3%/side": RT.run(P, n=key[0], score=key[1], exit_rule=key[2], regime=reg, setup=st, cost=0.003),
-              "IS winner, all stocks (survivorship-inflated)": RT.run(P_all, n=key[0], score=key[1], exit_rule=key[2], regime=reg, setup=st)}
+              "IS winner, S&P 500 point-in-time, 0.3%/side": RT.run(P, n=key[0], score=key[1], exit_rule=key[2], regime=reg, setup=st, cost=0.003, filt=fm),
+              "IS winner, all stocks (survivorship-inflated)": RT.run(P_all, n=key[0], score=key[1], exit_rule=key[2], regime=reg, setup=st, filt=fm)}
     r["checks"] = pd.DataFrame([{"version": k, **RT.stats(v, A.IS_END)} for k, v in checks.items()])
     bench = {}
     for name in ("SPY", "QQQ"):
@@ -368,26 +410,57 @@ def run25(sig, prices, market, sp_hist, out):
     r["years"] = yr.rename_axis("year").reset_index()
     r["winner"] = ", ".join(map(str, key))
     r["today"] = win["open"]
-    for k in ("best_is", "defaults", "checks", "bench", "years", "today"):
-        r[k].to_csv(out / f"run25_{k}.csv", index=False)
+    # run 26: best configuration that requires fundamentals, and the trades in NVDA / SNDK-type leaders
+    fb = ok[ok["fundamentals"] != "none"].sort_values("IS_CAGR_per_DD", ascending=False).head(1)
+    case = []
+    focus_keys = {"IS winner": key}
+    if len(fb):
+        f0 = fb.iloc[0]
+        focus_keys["best with fundamentals (IS)"] = (int(f0["N"]), f0["rank by"], f0["exit"], f0["regime"], f0["entry"], f0["fundamentals"])
+        r["best_fund"] = fb
+    focus_keys["CAN SLIM style (pre-registered)"] = defaults["CAN SLIM style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, sales + EPS growth, 4 stocks)"]
+    for label, k in focus_keys.items():
+        if k in results:
+            t = results[k]["trades"]
+            t = t[t["ticker"].isin(FOCUS)]
+            case.append(t.assign(version=label)[["version", "ticker", "date_in", "date_out", "days", "ret"]])
+    r["case"] = pd.concat(case).sort_values(["ticker", "date_in"]) if case else pd.DataFrame()
+    for k in ("best_is", "defaults", "checks", "bench", "years", "today", "fund_effect", "case"):
+        if isinstance(r.get(k), pd.DataFrame):
+            r[k].to_csv(out / f"run25_{k}.csv", index=False)
     return r
 
 
 def _run25_section(r, md):
     T = lambda k: md(r[k], floatfmt=".3f") if isinstance(r.get(k), pd.DataFrame) and len(r[k]) else "(not available)"
     return [
-        "## 17. Run 25: concentrated leader portfolio (3-5 stocks) on top traders' rules",
+        "## 17. Runs 25-26: concentrated leader portfolio (3-5 stocks) on top traders' rules, with fundamentals",
         "",
         "Hold N stocks (equal weight), decided at every close. Leaders only: price >= $10, >= $20M/day, above a "
         "rising 50-day that is above the 200-day, within 25% of the 52-week high; S&P 500 members at the time "
         "(incl. later-removed ones). Entry: best-ranked leader into an empty slot (optionally only within 3 days of "
         "a top-trader setup: episodic pivot / breakout / base / flag / VCP; optionally only while QQQ > 200-day). "
         "Exit at the close: below the 10/20/50-day average, 8% below entry, or (rank) out of the top 3N. 0.1% per "
-        "side. 144 configurations; the winner is chosen on 2007-2017 return / drawdown only.",
+        "side. 144 configurations x 7 fundamentals filters; the winner is chosen on 2007-2017 return / drawdown only.",
         "",
         "Top 10 configurations by IS (2007-2017) CAGR / max drawdown, with their OOS (2018+) results:",
         "",
         T("best_is"),
+        "",
+        "Run 26: do fundamentals confirming the move help? Median over the same 144 configurations for each "
+        "filter (sales growth = revenue YoY from SEC filings; EPS = diluted EPS YoY or turning positive; earnings gap "
+        "= >= 5% gap up on an earnings day in the last 3 months), and the share of configurations where the filter "
+        "beat no filter on return / drawdown:",
+        "",
+        T("fund_effect"),
+        "",
+        "Best configuration that requires fundamentals (chosen on IS):",
+        "",
+        T("best_fund"),
+        "",
+        "Case study: trades in NVDA / SNDK-type leaders (" + ", ".join(FOCUS) + "):",
+        "",
+        T("case"),
         "",
         "Pre-registered trader-style versions (not selected on any results):",
         "",
@@ -948,7 +1021,7 @@ def main() -> None:
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
 
     # ---------------- run 24: consolidated tests
-    r25 = run25(sig, prices, market, sp_hist, out)
+    r25 = run25(sig, prices, market, sp_hist, out, fund=fund, earn=earn)
     print(f"[research] run 25 portfolio grid done ({time.time() - t0:.0f}s)")
     r24 = run24(sig, sample, lb, closes, prices, market, pit, pit_current, sp_hist,
                 score_col if menu is not None else None, out)

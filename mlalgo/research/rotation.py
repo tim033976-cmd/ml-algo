@@ -40,10 +40,13 @@ def prepare(closes: pd.DataFrame, dollar_vol: pd.DataFrame, members: pd.DataFram
 
 
 def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", regime: np.ndarray | None = None,
-        setup: np.ndarray | None = None, stop: float = 0.08, cost: float = 0.001, start: str = "2007-01-01") -> dict:
+        setup: np.ndarray | None = None, stop: float = 0.08, cost: float = 0.001, start: str = "2007-01-01",
+        filt: np.ndarray | None = None) -> dict:
     """Simulate one configuration. `regime`: bool per date (True = new entries allowed). `setup`: bool
     dates x tickers (True = a setup fired that day); None = any leader may be bought."""
     dates, c, sc, lead = P["dates"], P["c"], P["scores"][score], P["leader"]
+    if filt is not None:                       # run 26: e.g. fundamentals must confirm (sales / EPS growth)
+        lead = lead & filt
     trail = P["sma"][{"sma10": 10, "sma20": 20, "sma50": 50, "sma50_rank": 50}[exit_rule]]
     t0 = int(np.searchsorted(dates.values, np.datetime64(pd.Timestamp(start))))
     cash, hold = 1.0, {}                       # ticker index -> [shares, entry price, entry t, last price, last t]
@@ -88,6 +91,8 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
     tr = pd.DataFrame(trades, columns=["t_in", "t_out", "j", "ret"])
     tr["days"] = tr["t_out"] - tr["t_in"]
     tr["date_in"] = dates[tr["t_in"].to_numpy()] if len(tr) else pd.Series(dtype="datetime64[ns]")
+    tr["date_out"] = dates[tr["t_out"].to_numpy()] if len(tr) else pd.Series(dtype="datetime64[ns]")
+    tr["ticker"] = P["tickers"][tr["j"].to_numpy()] if len(tr) else pd.Series(dtype=object)
     open_pos = [{"ticker": P["tickers"][j], "entry_date": dates[h[2]], "entry": h[1], "last": h[3],
                  "gain": h[3] / h[1] - 1, "stop_8%": h[1] * (1 - stop), "trail_level": trail[len(dates) - 1, j]}
                 for j, h in hold.items()]
@@ -109,3 +114,34 @@ def stats(res: dict, is_end: pd.Timestamp) -> dict:
                     f"{name}_trades": len(t), f"{name}_win": (t["ret"] > 0).mean() if len(t) else np.nan,
                     f"{name}_avg_days": t["days"].mean() if len(t) else np.nan})
     return out
+
+
+def fund_daily(fund: pd.DataFrame, index: pd.DatetimeIndex, columns, metric: str, max_days: int = 140) -> pd.DataFrame:
+    """dates x tickers value of a fundamental metric as known on each day (from the day after the filing),
+    dropped once it is more than `max_days` trading days old."""
+    f = fund.dropna(subset=["avail"]).sort_values(["avail", "end"]).drop_duplicates(["ticker", "avail"], keep="last")
+    f = f.assign(avail=f["avail"].astype("datetime64[ns]"))
+    w = f.pivot(index="avail", columns="ticker", values=metric)
+    w = w.reindex(w.index.union(index)).ffill(limit=max_days * 2).reindex(index)
+    age = f.assign(one=1.0).pivot(index="avail", columns="ticker", values="one")
+    age = age.reindex(age.index.union(index)).reindex(index).notna()
+    fresh = pd.DataFrame(np.where(age, 1.0, np.nan), index=index, columns=age.columns).ffill(limit=max_days).notna()
+    return w.where(fresh).reindex(columns=columns)
+
+
+def earnings_gap_mask(opens: pd.DataFrame, closes: pd.DataFrame, earn: pd.DataFrame, gap: float = 0.05,
+                      lookback: int = 63) -> pd.DataFrame:
+    """True where the stock gapped up >= `gap` on an earnings reaction day (the filing day or the next
+    trading day) within the last `lookback` trading days: the market confirming the numbers."""
+    idx = closes.index
+    e = np.zeros(closes.shape, dtype=bool)
+    if earn is not None and len(earn):
+        pos = np.searchsorted(idx.values, earn["date"].astype("datetime64[ns]").values)
+        ok = pos < len(idx)
+        for k in (0, 1):
+            p = np.minimum(pos[ok] + k, len(idx) - 1)
+            cols = earn["ticker"].to_numpy()[ok]
+            keep = np.isin(cols, closes.columns)
+            e[p[keep], closes.columns.get_indexer(cols[keep])] = True
+    g = (opens / closes.shift(1) - 1) >= gap
+    return (g & e).astype(float).rolling(lookback, min_periods=1).max() > 0

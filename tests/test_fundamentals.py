@@ -90,3 +90,17 @@ def test_earnings_filings_and_tagging():
     t = F.tag_earnings(d, earn)
     assert list(t["earnings_gap"].iloc[:3]) == [1.0, 0.0, 1.0] and np.isnan(t.loc[3, "earnings_gap"])
     assert t.loc[1, "days_to_earnings"] == 80          # 2021-05-10 -> 2021-07-29
+
+
+def test_eps_growth_from_per_share_facts():
+    def year(y, qs):
+        return [{"start": f"{y}-{m1}", "end": f"{y}-{m2}", "val": v, "filed": f"{y}-{m2[:2]}-28" if m2[:2] != "12" else f"{y + 1}-02-20",
+                 "form": "10-Q" if m2[:2] != "12" else "10-K"}
+                for (m1, m2), v in zip((("01-01", "03-31"), ("04-01", "06-30"), ("07-01", "09-30"), ("10-01", "12-31")), qs)]
+    rev = [dict(f, val=100.0) for f in year(2020, [1, 1, 1, 1]) + year(2021, [1, 1, 1, 1])]
+    eps = year(2020, [0.10, -0.05, 0.20, 0.20]) + year(2021, [0.15, 0.10, 0.10, 0.30])
+    company = {"facts": {"us-gaap": {"Revenues": {"units": {"USD": rev}},
+                                     "EarningsPerShareDiluted": {"units": {"USD/shares": eps}}}}}
+    m = F.company_metrics(company).set_index("end")
+    assert np.isclose(m.loc["2021-03-31", "eps_yoy"], 0.5)          # 0.15 vs 0.10
+    assert np.isnan(m.loc["2021-06-30", "eps_yoy"]) and m.loc["2021-06-30", "eps_turn_pos"] == 1   # -0.05 -> 0.10

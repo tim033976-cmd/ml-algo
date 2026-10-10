@@ -33,9 +33,12 @@ CONCEPTS = {  # metric -> us-gaap tags, in order of preference (companies switch
     "opinc": ["OperatingIncomeLoss"],
     "ocf": ["NetCashProvidedByUsedInOperatingActivities", "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
     "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"],
+    # run 26: O'Neil's 'C' (current quarterly EPS growth)
+    "eps": ["EarningsPerShareDiluted", "EarningsPerShareBasic"],
 }
+UNITS = {"eps": "USD/shares"}
 FUND_FEATURES = ["rev_yoy", "rev_yoy_d1", "rev_accel_q", "op_margin", "op_margin_chg", "op_lev",
-                 "op_turn_pos", "fcf_margin", "fcf_margin_chg", "inflection", "fund_age"]
+                 "op_turn_pos", "fcf_margin", "fcf_margin_chg", "inflection", "eps_yoy", "eps_turn_pos", "fund_age"]
 
 
 def _get(url: str, dest: Path | None = None, tries: int = 4) -> bytes | None:
@@ -57,13 +60,13 @@ def _get(url: str, dest: Path | None = None, tries: int = 4) -> bytes | None:
     return None
 
 
-def _facts(company: dict, tags: list[str]) -> pd.DataFrame:
+def _facts(company: dict, tags: list[str], unit: str = "USD") -> pd.DataFrame:
     """Duration facts in USD for the tags, one row per (start, end) using the most preferred tag that
     reports it and the earliest filing of that value."""
     gaap = company.get("facts", {}).get("us-gaap", {})
     rows = []
     for rank, tag in enumerate(tags):
-        for f in gaap.get(tag, {}).get("units", {}).get("USD", []):
+        for f in gaap.get(tag, {}).get("units", {}).get(unit, []):
             if "start" in f and f.get("val") is not None and str(f.get("form", "")).startswith(("10-Q", "10-K")):
                 rows.append((f["start"], f["end"], float(f["val"]), f["filed"], rank))
     if not rows:
@@ -157,14 +160,18 @@ def metrics(q: dict[str, pd.DataFrame]) -> pd.DataFrame:
     lev_ok = (m["op_lev"] > 0) | (m["op_turn_pos"] == 1)
     m["inflection"] = ((m["rev_accel_q"] >= 2) & lev_ok & (m["op_margin_chg"] > 0)
                        & (m["fcf_margin_chg"] > 0)).astype(float).where(m["rev_accel_q"].notna())
-    filed = pd.concat([q[k]["filed"].reindex(ends) for k in ("rev", "opinc", "ocf", "capex") if k in q and not q[k].empty], axis=1)
+    eps = get("eps")
+    prev_eps = _lag(eps, ends, 364)
+    m["eps_yoy"] = np.where(prev_eps > 0, eps / prev_eps - 1, np.nan)               # O'Neil: >= 25%
+    m["eps_turn_pos"] = ((eps > 0) & (prev_eps <= 0)).astype(float).where(eps.notna() & prev_eps.notna())
+    filed = pd.concat([q[k]["filed"].reindex(ends) for k in ("rev", "opinc", "ocf", "capex", "eps") if k in q and not q[k].empty], axis=1)
     m["avail"] = filed.max(axis=1) + pd.Timedelta(days=1)       # usable from the day after the filing
     m.index.name = "end"
     return m.reset_index()
 
 
 def company_metrics(company: dict) -> pd.DataFrame:
-    return metrics({k: quarterly(_facts(company, tags)) for k, tags in CONCEPTS.items()})
+    return metrics({k: quarterly(_facts(company, tags, UNITS.get(k, "USD"))) for k, tags in CONCEPTS.items()})
 
 
 def load_fundamentals(cache_dir: str, tickers: list[str], max_age_days: int = 6) -> pd.DataFrame:
@@ -173,7 +180,9 @@ def load_fundamentals(cache_dir: str, tickers: list[str], max_age_days: int = 6)
     cache.mkdir(parents=True, exist_ok=True)
     out = cache / "fundamentals.parquet"
     if out.exists() and (time.time() - out.stat().st_mtime) < max_age_days * 86400:
-        return pd.read_parquet(out)
+        f = pd.read_parquet(out)
+        if "eps_yoy" in f.columns:                     # older caches lack the run-26 EPS metrics
+            return f
     raw = _get(TICKERS_URL)
     if raw is None:
         print("[fund] could not get the SEC ticker list; fundamentals skipped")

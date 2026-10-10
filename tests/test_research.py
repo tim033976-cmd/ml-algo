@@ -504,3 +504,21 @@ def test_leader_rotation_mechanics():
     assert res["curve"].iloc[-1] > 1.0
     s = R.stats(res, pd.Timestamp("2011-06-01"))
     assert {"IS_CAGR", "OOS_CAGR", "OOS_maxDD"} <= set(s)
+
+
+def test_fund_daily_and_earnings_gap_mask_are_point_in_time():
+    from mlalgo.research import rotation as R
+    idx = pd.bdate_range("2021-01-01", periods=300)
+    fund = pd.DataFrame({"ticker": ["A", "A"], "end": pd.to_datetime(["2020-12-31", "2021-03-31"]),
+                         "avail": pd.to_datetime(["2021-02-10", "2021-05-05"]), "rev_yoy": [0.1, 0.3]})
+    f = R.fund_daily(fund, idx, ["A", "B"], "rev_yoy", max_days=140)
+    assert np.isnan(f.loc["2021-02-09", "A"]) and f.loc["2021-02-10", "A"] == 0.1 and f.loc["2021-05-05", "A"] == 0.3
+    assert f["B"].isna().all() and f.iloc[-1].isna().all()            # stale after 140 trading days
+    closes = pd.DataFrame({"A": np.full(300, 100.0), "B": np.full(300, 100.0)}, index=idx)
+    opens = closes.copy()
+    opens.loc[idx[50], "A"] = 108.0          # earnings gap (filing the evening before)
+    opens.loc[idx[120], "B"] = 108.0         # gap without earnings
+    earn = pd.DataFrame({"ticker": ["A", "B"], "date": [idx[49], idx[10]]})
+    m = R.earnings_gap_mask(opens, closes, earn)
+    assert m.loc[idx[50], "A"] and m.loc[idx[112], "A"] and not m.loc[idx[113], "A"] and not m.loc[idx[49], "A"]
+    assert not m["B"].any()
