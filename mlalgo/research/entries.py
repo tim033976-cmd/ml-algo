@@ -255,6 +255,95 @@ def wf_scan_base(b):
     return _frame(t, lo[t] * 0.995, base_depth=depth[t])
 
 
+# ------------------------------------------------------------------ run 24: Techno Charts course setups
+def tc_ema_cross_base(b, window=60):
+    """21/50 EMA bullish crossover, then the FIRST breakout from a tight 10-day base (<= 12% deep) on
+    >= 1.5x volume within 60 days, while the 21 EMA is still above the 50. Stop: the base low."""
+    e21, e50 = b["ema21"], b["ema50"]
+    cross = (e21 > e50) & (_shift(e21, 1) <= _shift(e50, 1))
+    hi, lo = _rmax(b["h"], 10), _rmin(b["l"], 10)
+    brk = ((b["c"] > hi) & ((hi - lo) / hi <= 0.12) & (b["v"] >= 1.5 * b["vol50prev"]) & (e21 > e50))
+    out, stops, last = [], [], -1
+    for x in np.flatnonzero(cross):
+        if x <= last:
+            continue
+        cand = np.flatnonzero(brk[x + 5:x + window + 1])
+        if len(cand):
+            t = x + 5 + cand[0]
+            out.append(t)
+            stops.append(lo[t])
+            last = t
+    return _frame(out, stops)
+
+
+def _supertrend_dir(h, l, c, period=7, mult=2.0):
+    """Supertrend direction (+1 up / -1 down) on HLC/3, as in the course's settings (7, 2)."""
+    n = len(c)
+    prev_c = np.r_[c[0], c[:-1]]
+    tr = np.maximum(h - l, np.maximum(np.abs(h - prev_c), np.abs(l - prev_c)))
+    atr = pd.Series(tr).ewm(alpha=1 / period, adjust=False).mean().to_numpy()
+    mid = (h + l + c) / 3
+    up, dn = mid - mult * atr, mid + mult * atr
+    d = np.ones(n)
+    fu, fd = up.copy(), dn.copy()
+    for i in range(1, n):
+        fu[i] = max(up[i], fu[i - 1]) if c[i - 1] > fu[i - 1] else up[i]
+        fd[i] = min(dn[i], fd[i - 1]) if c[i - 1] < fd[i - 1] else dn[i]
+        d[i] = 1 if c[i] > fd[i - 1] else (-1 if c[i] < fu[i - 1] else d[i - 1])
+    return d, fu
+
+
+def tc_supertrend_ema(b):
+    """Supertrend (7, 2, HLC/3) flips to buy on the SAME candle that closes back above the 21 EMA.
+    The course claims a 60-70% win rate. Stop: the Supertrend line."""
+    d, fu = _supertrend_dir(b["h"], b["l"], b["c"])
+    flip = (d == 1) & (_shift(d, 1) == -1)
+    cross = (b["c"] > b["ema21"]) & (_shift(b["c"], 1) <= _shift(b["ema21"], 1))
+    t = np.flatnonzero(flip & cross)
+    return _frame(t, fu[t])
+
+
+def tc_reversal_base(b):
+    """Reversal: >= 35% below the 52-week high, but back above the 50 EMA with the 21 EMA above the
+    50 and rising; buy the close above a 20-day base (<= 20% deep). Stop: the base low."""
+    hh52 = _rmax(b["h"], 252, shift=0)
+    hi, lo = _rmax(b["h"], 20), _rmin(b["l"], 20)
+    sig = ((b["c"] <= 0.65 * hh52) & (b["c"] > b["ema50"]) & (b["ema21"] > b["ema50"])
+           & (b["ema21"] > _shift(b["ema21"], 5)) & (b["c"] > hi) & (_shift(b["c"], 1) <= _shift(hi, 1))
+           & ((hi - lo) / hi <= 0.20))
+    t = np.flatnonzero(sig)
+    return _frame(t, lo[t])
+
+
+def tc_ema200_second_pullback(b, min_below=60):
+    """After a stock closes back above its 200 EMA (having been below it for >= 60 days), skip the
+    first pullback to the 200 EMA and buy the second: a low within 1% of the 200 EMA, then a close
+    above the prior day's high while still above the 200 EMA. Stop 6% below the 200 EMA."""
+    c, l, h = b["c"], b["l"], b["h"]
+    e200 = pd.Series(c).ewm(span=200, adjust=False).mean().to_numpy()
+    below = (c < e200).astype(int)
+    run = pd.Series(below).groupby((below == 0).cumsum()).cumsum().to_numpy()   # days below so far
+    out, stops = [], []
+    n = len(c)
+    t = 200
+    while t < n:
+        if c[t] > e200[t] and c[t - 1] <= e200[t - 1] and run[t - 1] >= min_below:
+            touches, k, in_touch = 0, t + 1, False
+            while k < min(n, t + 150) and c[k] > e200[k] * 0.97:
+                touch = l[k] <= e200[k] * 1.01
+                if touch and not in_touch:
+                    touches += 1
+                in_touch = touch or (in_touch and c[k] <= h[k - 1])
+                if touches >= 2 and c[k] > h[k - 1] and c[k] > e200[k]:
+                    out.append(k)
+                    stops.append(e200[k] * 0.94)
+                    break
+                k += 1
+            t = k
+        t += 1
+    return _frame(out, stops)
+
+
 def random_uptrend(b, seed):
     """Baseline: random days while price is above a rising 50-day average. Same stop rule."""
     rng = np.random.default_rng(seed)
@@ -301,6 +390,10 @@ ENTRIES = {
     "wf_rocket_gap": (wf_gap_hold, {}, False, "Workflow PDF rockets: gap >= 5% (2x vol) holding its low 2 days"),
     "wf_scan_pullback": (wf_scan_pullback, {}, False, "Workflow PDF scanner: uptrend pullback to 21EMA/50SMA, close > prior high"),
     "wf_scan_base": (wf_scan_base, {}, False, "Workflow PDF scanner: uptrend, breakout from a 4-week base"),
+    "tc_ema_cross_base": (tc_ema_cross_base, {}, False, "Course: 21/50 EMA crossover, then the first base breakout"),
+    "tc_supertrend_ema": (tc_supertrend_ema, {}, False, "Course: Supertrend flip + close above 21 EMA, same candle"),
+    "tc_reversal_base": (tc_reversal_base, {}, False, "Course: reversal, 35%+ off the high, EMAs turned up, base breakout"),
+    "tc_ema200_2nd": (tc_ema200_second_pullback, {}, False, "Course: second pullback to the 200 EMA after reclaiming it"),
     "random_uptrend": (random_uptrend, {"seed": 0}, False, "BASELINE: random entries in an uptrend"),
 }
 

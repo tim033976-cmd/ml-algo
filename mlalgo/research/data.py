@@ -16,6 +16,22 @@ WIKI = {
     "sp600": "https://en.wikipedia.org/wiki/List_of_S%26P_600_companies",
 }
 SP500_FALLBACK = "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
+# run 24: every S&P 500 membership spell since 1996 (ticker, start_date, end_date), incl. removed members
+SP500_HISTORY = "https://raw.githubusercontent.com/fja05680/sp500/master/sp500_ticker_start_end.csv"
+
+
+def sp500_history(since: str = "2006-01-01") -> pd.DataFrame:
+    """Membership spells that were still active on or after `since` (end NaN = still a member).
+    Empty frame if the file can't be fetched."""
+    try:
+        h = pd.read_csv(SP500_HISTORY)
+        h = pd.DataFrame({"ticker": [_yahoo_symbol(t) for t in h["ticker"]],
+                          "start": pd.to_datetime(h["start_date"], errors="coerce"),
+                          "end": pd.to_datetime(h["end_date"], errors="coerce")})
+        return h[h["end"].isna() | (h["end"] >= since)].reset_index(drop=True)
+    except Exception as e:
+        print(f"[universe] S&P 500 history unavailable ({e})")
+        return pd.DataFrame(columns=["ticker", "start", "end"])
 UA = {"User-Agent": "Mozilla/5.0 (research script; contact via GitHub)"}
 
 
@@ -95,6 +111,10 @@ def index_members(name: str) -> tuple[pd.DataFrame, list[str]]:
                 break
         if name == "sp500":
             removed = _removed_from_changes(tables)
+            # run 24: former members (removed since 2006) from the membership history; those that
+            # still trade have Yahoo prices, the rest (bankrupt / acquired) are lost to survivorship
+            hist = sp500_history()
+            removed = sorted(set(removed) | (set(hist["ticker"]) - set(current["ticker"])))
     except Exception as e:  # network / layout change
         print(f"[universe] {name}: wikipedia failed ({e})")
     if current.empty and name == "sp500":
@@ -185,3 +205,24 @@ def load_all(cache_dir: str, start: str, indexes=("sp500", "sp400", "sp600"), ma
     market = {k: prices.pop(k) for k in ("SPY", "QQQ", "^IRX", "^VIX", "^VIX3M") if k in prices}
     universe = universe[universe["ticker"].isin(prices)]
     return universe, prices, market
+
+
+def in_sp500(d: pd.DataFrame, hist: pd.DataFrame) -> pd.Series:
+    """True where row (ticker, date) falls inside one of the ticker's S&P 500 membership spells."""
+    h = hist.dropna(subset=["start"]).assign(start=lambda x: x["start"].astype("datetime64[ns]"),
+                                             end=lambda x: x["end"].astype("datetime64[ns]")).sort_values("start")
+    left = d[["ticker", "date"]].reset_index().rename(columns={"index": "_row"})
+    left["date"] = left["date"].astype("datetime64[ns]")
+    m = pd.merge_asof(left.sort_values("date"), h, left_on="date", right_on="start", by="ticker", direction="backward")
+    ok = m["start"].notna() & (m["end"].isna() | (m["date"] <= m["end"]))
+    return pd.Series(ok.to_numpy(), index=m["_row"].to_numpy()).reindex(d.index).fillna(False)
+
+
+def sp500_mask(hist: pd.DataFrame, index: pd.DatetimeIndex, columns) -> pd.DataFrame:
+    """dates x tickers: True while the ticker was in the S&P 500 (membership spells)."""
+    m = pd.DataFrame(False, index=index, columns=columns)
+    for r in hist.dropna(subset=["start"]).itertuples():
+        if r.ticker in m.columns:
+            end = r.end if pd.notna(r.end) else index[-1]
+            m.loc[(index >= r.start) & (index <= end), r.ticker] = True
+    return m

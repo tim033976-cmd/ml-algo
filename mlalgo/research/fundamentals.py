@@ -227,3 +227,79 @@ def attach(d: pd.DataFrame, fund: pd.DataFrame, max_stale_days: int = 200) -> pd
                       tolerance=pd.Timedelta(days=max_stale_days), direction="backward")
     m = m.assign(fund_age=(m["date"] - m["avail"]).dt.days).astype({c: "float32" for c in FUND_FEATURES})
     return m.drop(columns="avail").sort_values("_row").set_index("_row").rename_axis(None)
+
+
+# ------------------------------------------------------------------ run 24: earnings release dates
+SUBMISSIONS_URL = "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.zip"
+
+
+def earnings_from_filings(filings: dict) -> list[str]:
+    """Filing dates of 8-Ks with Item 2.02 (Results of Operations), i.e. earnings releases, from one
+    'filings' block of the SEC submissions JSON (columnar lists)."""
+    forms, items, dates = filings.get("form", []), filings.get("items", []), filings.get("filingDate", [])
+    return [d for f, it, d in zip(forms, items, dates) if str(f).startswith("8-K") and "2.02" in str(it or "")]
+
+
+def load_earnings(cache_dir: str, tickers: list[str], max_age_days: int = 6) -> pd.DataFrame:
+    """ticker, date: earnings-release filing dates (8-K Item 2.02). Empty frame if the SEC can't be reached."""
+    cache = Path(cache_dir)
+    out = cache / "earnings.parquet"
+    if out.exists() and (time.time() - out.stat().st_mtime) < max_age_days * 86400:
+        return pd.read_parquet(out)
+    raw = _get(TICKERS_URL)
+    if raw is None:
+        return pd.DataFrame()
+    cik = {v["ticker"].upper().replace(".", "-"): int(v["cik_str"]) for v in json.loads(raw).values()}
+    zpath = cache / "submissions.zip"
+    if _get(SUBMISSIONS_URL, dest=zpath) is None:
+        print("[fund] could not download submissions.zip; earnings dates skipped")
+        return pd.DataFrame()
+    rows = []
+    with zipfile.ZipFile(zpath) as z:
+        names = set(z.namelist())
+        for t in tickers:
+            c = cik.get(t.upper())
+            if not c or f"CIK{c:010d}.json" not in names:
+                continue
+            try:
+                main = json.load(io.TextIOWrapper(z.open(f"CIK{c:010d}.json"), encoding="utf-8"))
+                dates = earnings_from_filings(main.get("filings", {}).get("recent", {}))
+                for extra in main.get("filings", {}).get("files", []):   # older filings live in extra files
+                    if extra.get("name") in names:
+                        dates += earnings_from_filings(json.load(io.TextIOWrapper(z.open(extra["name"]), encoding="utf-8")))
+            except Exception as e:
+                print(f"[fund] earnings {t}: {e}")
+                continue
+            rows += [(t, d) for d in set(dates)]
+    zpath.unlink(missing_ok=True)
+    if not rows:
+        return pd.DataFrame()
+    e = pd.DataFrame(rows, columns=["ticker", "date"])
+    e["date"] = pd.to_datetime(e["date"], errors="coerce")
+    e = e.dropna().sort_values(["ticker", "date"]).reset_index(drop=True)
+    print(f"[fund] earnings dates: {len(e):,} for {e['ticker'].nunique()} tickers")
+    e.to_parquet(out, index=False)
+    return e
+
+
+def tag_earnings(d: pd.DataFrame, earn: pd.DataFrame, window_days: int = 3) -> pd.DataFrame:
+    """Adds `earnings_gap` (an earnings release filed on the row's date or up to `window_days` calendar
+    days before: the reaction day of an after-close or pre-market release) and `days_to_earnings`
+    (calendar days to the next release; release dates are usually announced weeks ahead)."""
+    d = d.copy()
+    if earn is None or earn.empty or d.empty:
+        d["earnings_gap"], d["days_to_earnings"] = np.nan, np.nan
+        return d
+    e = earn.assign(edate=earn["date"].astype("datetime64[ns]"))[["ticker", "edate"]].sort_values("edate")
+    left = d[["ticker", "date"]].reset_index().rename(columns={"index": "_row"})
+    left["date"] = left["date"].astype("datetime64[ns]")
+    left = left.sort_values("date")
+    back = pd.merge_asof(left, e, left_on="date", right_on="edate", by="ticker", direction="backward")
+    fwd = pd.merge_asof(left, e, left_on="date", right_on="edate", by="ticker", direction="forward",
+                        allow_exact_matches=False)
+    known = left["ticker"].isin(set(e["ticker"])).to_numpy()
+    gap = ((back["date"] - back["edate"]).dt.days <= window_days).astype(float).where(known)
+    nxt = (fwd["edate"] - fwd["date"]).dt.days.astype(float).where(known)
+    d.loc[left["_row"].to_numpy(), "earnings_gap"] = gap.to_numpy()
+    d.loc[left["_row"].to_numpy(), "days_to_earnings"] = nxt.to_numpy()
+    return d

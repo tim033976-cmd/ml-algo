@@ -78,3 +78,15 @@ def test_attach_handles_mixed_datetime_resolutions():
     d = pd.DataFrame({"ticker": ["X"], "date": pd.to_datetime(["2021-06-01"]).astype("datetime64[us]")})
     a = F.attach(d, fund)
     assert np.isclose(a.loc[0, "rev_yoy"], 0.1) and a.loc[0, "fund_age"] == 31
+
+
+def test_earnings_filings_and_tagging():
+    filings = {"form": ["8-K", "8-K", "10-Q", "8-K/A"], "items": ["2.02,9.01", "5.02", "", "2.02"],
+               "filingDate": ["2021-04-28", "2021-05-10", "2021-04-30", "2021-07-29"]}
+    assert F.earnings_from_filings(filings) == ["2021-04-28", "2021-07-29"]
+    earn = pd.DataFrame({"ticker": ["X", "X"], "date": pd.to_datetime(["2021-04-28", "2021-07-29"]).astype("datetime64[ms]")})
+    d = pd.DataFrame({"ticker": ["X", "X", "X", "Y"],
+                      "date": pd.to_datetime(["2021-04-29", "2021-05-10", "2021-07-29", "2021-04-29"])})
+    t = F.tag_earnings(d, earn)
+    assert list(t["earnings_gap"].iloc[:3]) == [1.0, 0.0, 1.0] and np.isnan(t.loc[3, "earnings_gap"])
+    assert t.loc[1, "days_to_earnings"] == 80          # 2021-05-10 -> 2021-07-29

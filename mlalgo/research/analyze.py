@@ -639,6 +639,10 @@ def regime_splits(d: pd.DataFrame, ref: pd.DataFrame) -> dict[str, pd.Series]:
             x, y = (d[a] > 0.5) if f == "up21" else (d[a] > 0), (d[b] > 0.5) if f == "up21" else (d[b] > 0)
             lab = np.select([x & y, x | y], ["both", "one of the two"], "neither")
             out[f"sector & sub-industry {name}"] = pd.Series(lab, index=d.index).where(d[a].notna() & d[b].notna())
+    # run 24 (course): don't chase more than ~10% above the 21 EMA
+    if "dist_ema21" in d:
+        out["distance above the 21 EMA"] = pd.cut(d["dist_ema21"], [-np.inf, 0, 0.05, 0.10, 0.15, np.inf],
+                                                  labels=["below", "0-5%", "5-10%", "10-15%", "> 15%"])
     # run 23 (user's ADR% infographic): minimum 5%, sweet spot 5-12%, > 15% often fails, needs $10M+/day
     if "adr_pct" in d:
         out["ADR%"] = pd.cut(d["adr_pct"], ADR_BINS, labels=ADR_LABELS)
@@ -775,3 +779,143 @@ def setups_by_adr(sig: pd.DataFrame, exit_name: str = "sma50_close", min_dollar_
     t["_o"] = t["ADR%"].map(order)
     return t.sort_values(["setups", "_o"]).drop(columns="_o")[
         ["setups", "ADR%"] + [c for c in ("IS_n", "IS_avgR", "IS_win", "OOS_n", "OOS_avgR", "OOS_win") if c in t]]
+
+
+# ------------------------------------------------------------------ run 24: course portfolio ideas
+def _curve_stats(eq: pd.Series) -> dict:
+    eq = eq.dropna()
+    if len(eq) < 30:
+        return {"CAGR": np.nan, "max_DD": np.nan}
+    yrs = (eq.index[-1] - eq.index[0]).days / 365.25
+    return {"CAGR": (eq.iloc[-1] / eq.iloc[0]) ** (1 / yrs) - 1, "max_DD": (eq / eq.cummax() - 1).min()}
+
+
+def split_stats(daily_ret: pd.Series, start="2007-01-01") -> dict:
+    """CAGR / max drawdown before 2018 (IS) and from 2018 (OOS) for a daily return series."""
+    r = daily_ret[daily_ret.index >= start].fillna(0.0)
+    out = {}
+    for name, m in (("IS", r.index < IS_END), ("OOS", r.index >= IS_END)):
+        st = _curve_stats((1 + r[m]).cumprod())
+        out[f"{name}_CAGR"], out[f"{name}_maxDD"] = st["CAGR"], st["max_DD"]
+    return out
+
+
+def momentum_portfolio(closes: pd.DataFrame, dollar_vol: pd.DataFrame, top: int = 10, vol_adj: bool = True,
+                       members: pd.DataFrame | None = None, cost: float = 0.001, min_dv: float = 5e6) -> pd.Series:
+    """Course lesson 9.8: score = 0.7 x 6-month return + 0.3 x 1-month return, each divided by the
+    stock's volatility (126-day std of daily returns); hold the top N equally weighted, rebalanced at
+    the close of each month's last trading day. Costs on traded weight. Returns daily portfolio returns."""
+    rets = closes.pct_change(fill_method=None)
+    vol = rets.rolling(126, min_periods=100).std() * np.sqrt(252)
+    r126, r21 = closes / closes.shift(126) - 1, closes / closes.shift(21) - 1
+    score = (0.7 * r126 + 0.3 * r21) / (vol if vol_adj else 1.0)
+    ok = (closes >= 5) & (dollar_vol >= min_dv) & score.notna()
+    if members is not None:
+        ok &= members.reindex(index=closes.index, columns=closes.columns).fillna(False).astype(bool)
+    month_end = closes.index.to_series().groupby(closes.index.to_period("M")).max()
+    w = pd.DataFrame(0.0, index=closes.index, columns=closes.columns)
+    prev = pd.Series(0.0, index=closes.columns)
+    costs = pd.Series(0.0, index=closes.index)
+    days = list(closes.index)
+    pos = {d: i for i, d in enumerate(days)}
+    ends = [d for d in month_end if pos[d] + 1 < len(days)]
+    for k, d in enumerate(ends):
+        sc = score.loc[d].where(ok.loc[d])
+        pick = sc.nlargest(top).index
+        new = pd.Series(0.0, index=closes.columns)
+        if len(pick):
+            new[pick] = 1.0 / len(pick)
+        nxt = ends[k + 1] if k + 1 < len(ends) else days[-1]
+        a, b = pos[d] + 1, pos[nxt] + 1
+        w.iloc[a:b] = new.to_numpy()
+        costs.iloc[a] = cost * (new - prev).abs().sum()
+        prev = new
+    return (w * rets.fillna(0.0)).sum(axis=1) - costs
+
+
+def breadth_timing(spy_close: pd.Series, breadth: pd.Series, buy_below: float = 0.2, sell_above: float = 0.6,
+                   irx: pd.Series | None = None) -> pd.Series:
+    """Course lesson 2.2: buy the index when < 20% of stocks are above their 20-day average (washed out),
+    sell when > 60% are (stretched); in T-bills (or cash) otherwise. Decided at the close, held from the next day."""
+    b = breadth.reindex(spy_close.index).ffill()
+    state, s = np.zeros(len(b)), 0
+    for i, x in enumerate(b.to_numpy()):
+        if x == x:
+            s = 1 if x < buy_below else (0 if x > sell_above else s)
+        state[i] = s
+    held = pd.Series(state, index=spy_close.index).shift(1).fillna(0)
+    cash = (irx.reindex(spy_close.index).ffill() / 100 / 252).fillna(0) if irx is not None else 0.0
+    return held * spy_close.pct_change().fillna(0) + (1 - held) * cash
+
+
+def vol_matched_years(sample: pd.DataFrame, col: str, key: str = "b20", q: float = 0.9, keep=None) -> pd.DataFrame:
+    """Run 24: the volatility-matched edge year by year (is it consistent or one or two lucky years?)."""
+    d = sample[sample[col].notna() & sample[f"{key}_ret"].notna() & sample["adr_pct"].notna() & sample["ret_126"].notna()].copy()
+    yr = d["date"].dt.year
+    d["_a"] = d.groupby(yr)["adr_pct"].transform(lambda x: pd.qcut(x, 10, labels=False, duplicates="drop"))
+    d["_m"] = d.groupby(yr)["ret_126"].transform(lambda x: pd.qcut(x, 5, labels=False, duplicates="drop"))
+    d["_eh"] = d.groupby([yr, d["_a"], d["_m"]])[f"{key}_hit"].transform("mean")
+    d["_er"] = d.groupby([yr, d["_a"], d["_m"]])[f"{key}_ret"].transform("mean")
+    top = _top(d, col, q)
+    if keep is not None:
+        top = top[keep(top).to_numpy()]
+    g = top.groupby(top["date"].dt.year)
+    return pd.DataFrame({"n": g.size(), "hit": g[f"{key}_hit"].mean(), "matched_hit": g["_eh"].mean(),
+                         "edge_hit": g[f"{key}_hit"].mean() - g["_eh"].mean(),
+                         "edge_ret": g[f"{key}_ret"].mean() - g["_er"].mean()})
+
+
+def alpha_beta(curve: pd.Series, spy_close: pd.Series) -> dict:
+    """Run 24: market-adjusted performance of a daily equity curve vs SPY: beta, annual alpha (and its
+    t-stat), Sharpe of both, return / max drawdown, worst month."""
+    r = curve.pct_change().dropna()
+    m = spy_close.pct_change().reindex(r.index).fillna(0)
+    if len(r) < 60:
+        return {}
+    X = np.c_[np.ones(len(m)), m.to_numpy()]
+    coef, *_ = np.linalg.lstsq(X, r.to_numpy(), rcond=None)
+    resid = r.to_numpy() - X @ coef
+    se = np.sqrt(resid.var(ddof=2) * np.linalg.inv(X.T @ X)[0, 0])
+    st = _curve_stats(curve)
+    monthly = (1 + r).groupby(r.index.to_period("M")).prod() - 1
+    sh = lambda x: x.mean() / x.std() * np.sqrt(252) if x.std() > 0 else np.nan
+    return {"beta": coef[1], "alpha_annual": coef[0] * 252, "alpha_t": coef[0] / se if se > 0 else np.nan,
+            "sharpe": sh(r), "spy_sharpe": sh(m), "CAGR": st["CAGR"], "max_DD": st["max_DD"],
+            "CAGR_per_DD": st["CAGR"] / abs(st["max_DD"]) if st["max_DD"] else np.nan, "worst_month": monthly.min()}
+
+
+# ------------------------------------------------------------------ run 24: replay of the daily picks tool
+def replay_picks(sample: pd.DataFrame, start="2023-01-01", features=None, retrain_days: int = 91,
+                 top: int = 10, key: str = "b20") -> pd.DataFrame:
+    """Replays picks.py's rule on past dates: train the goal model only on rows whose label window had
+    closed (retrained every `retrain_days`), score every liquid stock on the replay date, take the top 10
+    overall and the top 10 'leaders' (RS >= 0.7, within 25% of the 52w high, above the 50-day), and score
+    their real +20/-10 outcomes. One row per pick."""
+    d = sample[sample[f"{key}_ret"].notna()]
+    dates = sorted(d.loc[d["date"] >= start, "date"].unique())
+    rows, model, trained_at = [], None, None
+    for day in dates:
+        day = pd.Timestamp(day)
+        if model is None or (day - trained_at).days >= retrain_days:
+            tr = sample[(sample["label_end"] < day) & sample["fwd_max_gain"].notna()]
+            tr = tr.sample(min(300_000, len(tr)), random_state=0)
+            model = _super_model().fit(*_xy(tr, key, features))
+            trained_at = day
+        x = d[(d["date"] == day) & (d["close"] >= 5) & (d["dollar_vol_50"] >= 5e6)]
+        if len(x) < 100:
+            continue
+        x = x.assign(_score=model.predict_proba(_xy(x, features=features)[0])[:, 1])
+        leader = (x["rs_rank"] >= 0.70) & (x["dist_52w_high"] >= -0.25) & (x["dist_sma50"] > 0)
+        for name, g in (("all", x), ("leaders", x[leader])):
+            p = g.nlargest(top, "_score")
+            rows.append(p[["date", "ticker", f"{key}_hit", f"{key}_ret", "_score"]].assign(list=name))
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+
+
+def replay_summary(rep: pd.DataFrame, key: str = "b20") -> pd.DataFrame:
+    if rep.empty:
+        return pd.DataFrame()
+    g = rep.groupby("list")
+    return pd.DataFrame({"dates": g["date"].nunique(), "picks": g.size(), "hit": g[f"{key}_hit"].mean(),
+                         "avg_ret": g[f"{key}_ret"].mean(), "median_ret": g[f"{key}_ret"].median(),
+                         "share_dates_hit_ge_33%": g.apply(lambda x: (x.groupby("date")[f"{key}_hit"].mean() >= 1 / 3).mean())})

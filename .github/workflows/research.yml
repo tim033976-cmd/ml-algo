@@ -25,7 +25,7 @@ concurrency:
 jobs:
   research:
     runs-on: ubuntu-24.04  # pinned: ubuntu-latest moves to 26.04 on 2026-10-19
-    timeout-minutes: 150
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data/
-          key: prices-v4-${{ steps.week.outputs.key }}
+          key: prices-v5-${{ steps.week.outputs.key }}
 
       - name: Download prices
         run: python research.py --cache data --download-only
@@ -63,7 +63,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data/
-          key: prices-v4-${{ steps.week.outputs.key }}
+          key: prices-v5-${{ steps.week.outputs.key }}
 
       - name: Run research
         run: python research.py --cache data --out results --limit "${{ github.event.inputs.limit || '0' }}"

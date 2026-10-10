@@ -184,6 +184,166 @@ def workflow_test(sig, lb, closes, market, pit):
     return out
 
 
+def run24(sig, sample, lb, closes, prices, market, pit, pit_current, hist, score_col, out):
+    """Run 24 (consolidated): earnings placebo, hold-through-earnings, survivorship, momentum and
+    breadth-timing portfolios, edge vs risk part 2, cost stress, picks replay, course setups."""
+    from mlalgo.research.run import market_internals
+    r = {"ports": []}
+    period = lambda d: np.where(d["date"] < A.IS_END, "IS", "OOS")
+    # 1) earnings placebo: do gaps drift because of earnings news (post-earnings drift), or regardless?
+    if "earnings_gap" in sig and sig["earnings_gap"].notna().any():
+        g = sig[(sig["entry_name"].str.startswith("ep_") | sig["entry_name"].isin(["wf_rocket_gap", A.BASELINE]))
+                & sig["earnings_gap"].notna()].copy()
+        g["group"] = np.where(g["entry_name"] == A.BASELINE, "random entries",
+                              np.where(g["entry_name"] == "wf_rocket_gap", "gap >= 5% holding 2 days", "episodic pivots (ep_*)"))
+        g["earnings"] = np.where(g["earnings_gap"] == 1, "earnings release", "no earnings")
+        g["period"] = period(g)
+        t = g.groupby(["group", "earnings", "period"]).agg(n=("R_sma50_close", "size"), avgR_sma50=("R_sma50_close", "mean"),
+                                                           win_sma50=("R_sma50_close", lambda x: (x > 0).mean()),
+                                                           avgR_b20=("R_bracket_20_10", "mean")).unstack("period")
+        t.columns = [f"{p}_{m}" for m, p in t.columns]
+        r["placebo"] = t.reset_index()
+    # 2) hold through earnings: model picks by days to the next earnings release
+    if score_col and "days_to_earnings" in sample and sample["days_to_earnings"].notna().any():
+        o = A._top(sample[sample[score_col].notna() & sample["b20_ret"].notna()], score_col, 0.9)
+        o = o[o["days_to_earnings"].notna()]
+        b = pd.cut(o["days_to_earnings"], [-1, 7, 30, 63, np.inf], labels=["<= 7 days", "8-30 days", "31-63 days", "> 63 days"])
+        t = o.groupby([b, period(o)], observed=True).agg(n=("b20_ret", "size"), hit=("b20_hit", "mean"),
+                                                         avg_ret=("b20_ret", "mean")).unstack()
+        t.columns = [f"{p}_{m}" for m, p in t.columns]
+        r["earnings_hold"] = t.reset_index().rename(columns={"days_to_earnings": "next earnings in"})
+    cal = closes.index
+    spy = market["SPY"]["close"] if "SPY" in market else None
+    # 3) survivorship: point-in-time with current members only vs incl. former members
+    if score_col and pit is not None and pit_current is not None:
+        tr = A.menu_trades(sample, "m20_10", 0.10, score_col, cal)
+        rows = []
+        for name, fn in (("current members only (as before)", pit_current), ("incl. former members (membership history)", pit)):
+            sub = tr[fn(tr).to_numpy()]
+            res = A.portfolio(sub, "bracket", "priority", closes=closes)
+            o = sub[sub["date"] >= A.IS_END]
+            rows.append({"point-in-time S&P 500": name, "trades_OOS": len(o), "hit_OOS": (o["ret_bracket"] >= 0.197).mean(),
+                         "avg_ret_OOS": o["ret_bracket"].mean(), "CAGR": res["CAGR"], "max_DD": res["max_DD"]})
+            r["ports"].append((f"SURVIVORSHIP goal model top 10%, PIT {name} / +20% -10%", res))
+        r["survivorship"] = pd.DataFrame(rows)
+    # 4) course: volatility-adjusted momentum portfolio and breadth timing of the index
+    dv = pd.DataFrame({t: (df["close"] * df["volume"]).rolling(50).mean() for t, df in prices.items()}).reindex(cal)
+    mom = {}
+    members = D.sp500_mask(hist, cal, closes.columns) if hist is not None and len(hist) else None
+    for name, kw in (("top 10, vol-adjusted (course 9.8)", {}), ("top 20, vol-adjusted", {"top": 20}),
+                     ("top 10, raw momentum (not vol-adjusted)", {"vol_adj": False})):
+        mom[f"{name}, all stocks"] = A.momentum_portfolio(closes, dv, **kw)
+        if members is not None:
+            mom[f"{name}, S&P 500 point-in-time"] = A.momentum_portfolio(closes, dv, members=members, **kw)
+    internals = market_internals(prices)
+    irx = market["^IRX"]["close"] if "^IRX" in market else None
+    if spy is not None:
+        mom["SPY buy & hold"] = spy.pct_change().fillna(0)
+        mom["SPY timed by breadth: buy < 20% above 20d, sell > 60% (course 2.2)"] = A.breadth_timing(spy, internals["breadth_20"], irx=irx)
+        b50 = (pd.DataFrame({t: (df["close"] > df["close"].rolling(50).mean()).where(df["close"].rolling(50).count() == 50)
+                             for t, df in prices.items()}).mean(axis=1))
+        mom["SPY timed by % above 50d (same thresholds)"] = A.breadth_timing(spy, b50, irx=irx)
+    r["course_ports"] = pd.DataFrame([{"strategy": k, **A.split_stats(v)} for k, v in mom.items()])
+    # 5) edge vs risk part 2: year by year, and market-adjusted (alpha / beta vs SPY)
+    if score_col:
+        yrs = {"full universe": A.vol_matched_years(sample, score_col)}
+        if pit is not None:
+            yrs["S&P 500 point-in-time"] = A.vol_matched_years(sample, score_col, keep=pit)
+        r["years"] = pd.concat([v.assign(sample=k) for k, v in yrs.items()]).reset_index().rename(columns={"date": "year"})
+        ab = []
+        tr = A.menu_trades(sample, "m20_10", 0.10, score_col, cal)
+        if spy is not None:
+            curves = {"goal model top 10%, full universe": A.portfolio(tr, "bracket", "priority", closes=closes)["curve"]}
+            if pit is not None:
+                curves["goal model top 10%, S&P 500 PIT"] = A.portfolio(tr[pit(tr).to_numpy()], "bracket", "priority", closes=closes)["curve"]
+            for k, v in mom.items():
+                if "point-in-time" in k or "breadth" in k or "50d" in k:
+                    eq = (1 + v[v.index >= A.IS_END]).cumprod()
+                    curves[k] = eq
+            curves["SPY"] = spy[spy.index >= A.IS_END]
+            ab = [{"strategy (2018+)": k, **A.alpha_beta(v, spy)} for k, v in curves.items()]
+        r["alpha"] = pd.DataFrame(ab)
+        # 6) cost stress: +0.4% per round trip (0.3% per side instead of 0.1%)
+        rows = []
+        for name, keep in (("goal model top 10%, full universe", None), ("goal model top 10%, S&P 500 PIT", pit)):
+            if name.endswith("PIT") and keep is None:
+                continue
+            t2 = tr if keep is None else tr[keep(tr).to_numpy()]
+            for c_name, extra in (("0.1% per side", 0.0), ("0.3% per side", 0.004)):
+                res = A.portfolio(t2.assign(ret_bracket=t2["ret_bracket"] - extra), "bracket", "priority", closes=closes)
+                rows.append({"strategy": name, "costs": c_name, "CAGR": res["CAGR"], "max_DD": res["max_DD"]})
+        ep = sig[sig["entry_name"].isin(["ep_gap10", "ep_gap8_hold"])]
+        ep = ep[A.FILTERS["rs80"](ep)]
+        for c_name, extra in (("0.1% per side", 0.0), ("0.3% per side", 0.004)):
+            res = A.portfolio(ep.assign(ret_sma50_close=ep["ret_sma50_close"] - extra), "sma50_close", "rs_rank", closes=closes)
+            rows.append({"strategy": "episodic pivots (gap 10% / 8% hold), RS top 20% / sma50", "costs": c_name,
+                         "CAGR": res["CAGR"], "max_DD": res["max_DD"]})
+        r["costs"] = pd.DataFrame(rows)
+        # 7) replay of the picks tool's rule (current features vs the upgraded set)
+        reps = {"picks tool as today (original features)": A.replay_picks(sample),
+                "upgraded features (run-16 set)": A.replay_picks(sample, features=A.SHORT_ALL)}
+        reps = {k: v for k, v in reps.items() if len(v)}
+        if reps:
+            r["replay"] = pd.concat([A.replay_summary(v).assign(model=k) for k, v in reps.items()]).reset_index()
+            pd.concat([v.assign(model=k) for k, v in reps.items()]).to_csv(out / "picks_replay.csv", index=False)
+    # 8) course setups vs random entries (same filter and exit)
+    tc = [e for e in ENTRIES if e.startswith("tc_")]
+    r["course_setups"] = lb[lb["entry"].isin(tc + [A.BASELINE]) & lb["filter"].isin(["all", "rs80"])
+                            & lb["exit"].isin(["sma50_close", "ema21_close", "bracket_20_10"])][
+        ["entry", "filter", "exit", "IS_n", "IS_avgR", "IS_win", "OOS_n", "OOS_avgR", "OOS_win"]].sort_values(["filter", "exit", "entry"])
+    for k in ("placebo", "earnings_hold", "survivorship", "course_ports", "years", "alpha", "costs", "replay", "course_setups"):
+        if k in r and isinstance(r[k], pd.DataFrame):
+            r[k].to_csv(out / f"run24_{k}.csv", index=False)
+    return r
+
+
+def _run24_section(r, md):
+    T = lambda k, f=".3f": md(r[k], floatfmt=f) if isinstance(r.get(k), pd.DataFrame) and len(r[k]) else "(not available)"
+    return [
+        "## 16. Run 24: consolidated tests",
+        "",
+        "### Earnings placebo: do gaps drift because of earnings news?",
+        "Gap setups split by whether an earnings release (SEC 8-K Item 2.02) was filed that day or up to 3 days "
+        "before. If 'no earnings' gaps do as well, post-earnings drift is not the reason the setup works.",
+        "",
+        T("placebo"),
+        "",
+        "### Holding through earnings (course: don't, without a cushion)",
+        "Goal model top 10%, +20/-10, by days from entry to the next earnings release:",
+        "",
+        T("earnings_hold"),
+        "",
+        "### Survivorship: current members only vs incl. former S&P 500 members",
+        "",
+        T("survivorship"),
+        "",
+        "### Is the edge real? Year by year vs same-volatility, same-momentum stocks",
+        "",
+        T("years"),
+        "",
+        "### Market-adjusted (2018+): beta, alpha vs SPY, Sharpe, return / drawdown",
+        "",
+        T("alpha"),
+        "",
+        "### Cost stress (0.3% per side)",
+        "",
+        T("costs"),
+        "",
+        "### Replay of the daily picks tool's rule (top 10 per date, model retrained quarterly, 2023+)",
+        "",
+        T("replay"),
+        "",
+        "### Course portfolios: volatility-adjusted momentum and breadth timing (IS 2007-2017, OOS 2018+)",
+        "",
+        T("course_ports"),
+        "",
+        "### Course setups vs random entries (R multiples)",
+        "",
+        T("course_setups"),
+        "",
+    ]
+
+
 def _workflow_section(wf, md):
     port = pd.DataFrame([{"strategy": k, **{m: v.get(m) for m in ("CAGR", "max_DD", "trades", "win", "avg_positions")}}
                          for k, v in wf["ports"]])
@@ -245,6 +405,8 @@ def main() -> None:
     # run 22: point-in-time fundamentals from SEC filings (cached next to the prices)
     fund = F.load_fundamentals(a.cache, list(prices)) if not a.prices_parquet or \
         (Path(a.cache) / "fundamentals.parquet").exists() else pd.DataFrame()
+    earn = F.load_earnings(a.cache, list(prices)) if not a.prices_parquet or \
+        (Path(a.cache) / "earnings.parquet").exists() else pd.DataFrame()
     if a.download_only:
         print(f"[research] cached {len(prices)} tickers + {list(market)}, fundamentals for "
               f"{fund['ticker'].nunique() if len(fund) else 0} tickers")
@@ -266,6 +428,8 @@ def main() -> None:
     if len(sample):
         sample = F.attach(sample, fund)
         print(f"[research] fundamentals known on {sample['rev_yoy'].notna().mean():.0%} of sample rows")
+        sample = F.tag_earnings(sample, earn)
+    sig = F.tag_earnings(sig, earn)
 
     # ---------------- strategy grid
     lb = A.leaderboard(sig)
@@ -310,7 +474,10 @@ def main() -> None:
     short, goal_ext, short_imp = {}, {}, None
     regime_all = None
     vm_tab = None
-    pit = None
+    pit = pit_current = None
+    hist_file = Path(a.cache) / "sp500_history.csv"          # local smoke tests can supply one
+    sp_hist = D.sp500_history() if not a.prices_parquet else (
+        pd.read_csv(hist_file, parse_dates=["start", "end"]) if hist_file.exists() else None)
     menu = regime = regime_pit = menu_choice = menu_ports = regime_skipped = None
     regime_gates = []
     if len(sample):
@@ -335,8 +502,12 @@ def main() -> None:
         pit = None
         if "date_added" in universe.columns:
             added = pd.to_datetime(universe.set_index("ticker")["date_added"], errors="coerce")
-            sp500 = set(universe.loc[universe["index"] == "sp500", "ticker"])
-            pit = lambda d: d["ticker"].isin(sp500) & (d["date"] >= d["ticker"].map(added))
+            sp500 = set(universe.loc[(universe["index"] == "sp500") & (universe["status"] == "current"), "ticker"])
+            pit_current = lambda d: d["ticker"].isin(sp500) & (d["date"] >= d["ticker"].map(added))
+            pit = pit_current
+        # run 24: membership spells incl. former members (removed since 2006) -> a fuller point-in-time set
+        if sp_hist is not None and len(sp_hist):
+            pit = lambda d: D.in_sp500(d, sp_hist)
         goal_tables = {}
         for g, (gname, breakeven) in A.GOALS.items():
             if f"{g}_hit" not in sample:
@@ -532,6 +703,8 @@ def main() -> None:
                     "sector AND sub-industry above 21 EMA": both("up21"),
                     "SPY > 21 & 50 + sector & sub-industry up 5 days": (T["spy_2150"] == 3) & both("ret5"),
                 })
+            # run 24 (course): don't buy more than ~10% above the 21 EMA
+            leading.update({"<= 10% above the 21 EMA (course rule)": T["dist_ema21"] <= 0.10})
             # run 23 (user's ADR% infographic)
             leading.update({
                 "ADR% >= 5% (the infographic's minimum)": T["adr_pct"] >= 0.05,
@@ -656,6 +829,10 @@ def main() -> None:
         yr["SPY"] = A.yearly(spy_c[spy_c.index >= A.IS_END])
     yr.to_csv(out / "portfolio_yearly.csv")
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
+
+    # ---------------- run 24: consolidated tests
+    r24 = run24(sig, sample, lb, closes, prices, market, pit, pit_current, sp_hist,
+                score_col if menu is not None else None, out)
 
     # ---------------- what this run tells us
     found, nxt, key = findings(lb, sel, vsb, vsb_is, exs, filt, mlr, imp, rules, port, sup,
@@ -844,6 +1021,7 @@ def main() -> None:
             "",
             *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
         ] if short else []),
+        *_run24_section(r24, md),
         "## 15. ADR%, volatility-matched check, parabolic shorts (run 23)",
         "",
         "Is the goal model only picking volatile, strong stocks? Its top 10% vs the average of all stocks in the "

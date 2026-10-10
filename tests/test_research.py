@@ -419,3 +419,64 @@ def test_parabolic_short_signals_do_not_use_future_data():
     after = shorts.signals(tampered)
     key = lambda s: s[s["idx"] < cut][["idx", "variant", "entry", "stop"]].reset_index(drop=True)
     pd.testing.assert_frame_equal(key(base), key(after))
+
+
+def test_momentum_portfolio_picks_vol_adjusted_leaders_and_breadth_timing():
+    from mlalgo.research import analyze as A
+    idx = pd.bdate_range("2015-01-01", periods=400)
+    rng = np.random.default_rng(0)
+    # 'smooth' rises steadily, 'wild' rises the same on average but with big noise, 'flat' doesn't rise
+    smooth = 100 * np.exp(np.cumsum(np.full(400, 0.002)))
+    wild = 100 * np.exp(np.cumsum(0.002 + rng.normal(0, 0.04, 400)))
+    flat = 100 * np.exp(np.cumsum(rng.normal(0, 0.005, 400)))
+    closes = pd.DataFrame({"smooth": smooth, "wild": wild, "flat": flat}, index=idx)
+    r = A.momentum_portfolio(closes, closes * 1e6, top=1, cost=0.0)
+    # after the warm-up, holding 'smooth' only: daily return = its 0.2% drift
+    late = r[r.index >= idx[300]]
+    assert np.allclose(late, np.exp(0.002) - 1, atol=1e-9)
+    # breadth timing: in the market only between a < 20% reading and a > 60% reading, from the next day
+    spy = pd.Series(np.linspace(100, 110, 10), index=idx[:10])
+    br = pd.Series([0.5, 0.1, 0.3, 0.7, 0.5, 0.15, 0.5, 0.5, 0.65, 0.5], index=idx[:10])
+    t = A.breadth_timing(spy, br)
+    held = (t != 0).astype(int).tolist()
+    assert held == [0, 0, 1, 1, 0, 0, 1, 1, 1, 0]
+
+
+def test_in_sp500_uses_membership_spells():
+    from mlalgo.research.data import in_sp500
+    hist = pd.DataFrame({"ticker": ["A", "A", "B"], "start": pd.to_datetime(["2010-01-01", "2015-01-01", "2012-01-01"]),
+                         "end": pd.to_datetime(["2012-01-01", None, "2013-01-01"])})
+    d = pd.DataFrame({"ticker": ["A", "A", "A", "B", "B", "C"],
+                      "date": pd.to_datetime(["2011-06-01", "2013-06-01", "2020-01-01", "2012-06-01", "2014-01-01", "2012-06-01"])})
+    assert in_sp500(d, hist).tolist() == [True, False, True, True, False, False]
+
+
+def test_replay_picks_trains_only_on_closed_labels(monkeypatch):
+    from mlalgo.research import analyze as A
+    rng = np.random.default_rng(0)
+    dates = pd.bdate_range("2020-01-01", periods=60, freq="10B")
+    rows = []
+    for i, d in enumerate(dates):
+        for t in range(150):
+            rows.append({"date": d, "ticker": f"T{t}", "close": 20.0, "dollar_vol_50": 1e7, "rs_rank": rng.random(),
+                         "dist_52w_high": -0.1, "dist_sma50": 0.05, "fwd_max_gain": 0.1, "b20_hit": float(rng.random() < 0.3),
+                         "b20_ret": rng.normal(0, 0.1), "label_end": d + pd.Timedelta(days=91), "f1": rng.random()})
+    s = pd.DataFrame(rows)
+    seen = []
+    real = A._super_model
+
+    class Spy:
+        def fit(self, X, y):
+            seen.append(len(X))
+            self.m = real().fit(X, y)
+            return self
+
+        def predict_proba(self, X):
+            return self.m.predict_proba(X)
+
+    monkeypatch.setattr(A, "_super_model", Spy)
+    rep = A.replay_picks(s, start=str(dates[40].date()), features=["f1"], retrain_days=91)
+    # first training date: only rows whose label window ended before it
+    first = dates[40]
+    assert seen[0] == int((s["label_end"] < first).sum())
+    assert set(rep["list"]) == {"all", "leaders"} and rep.groupby(["date", "list"]).size().max() == 10
