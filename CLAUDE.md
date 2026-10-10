@@ -61,5 +61,12 @@ using ML to test many variations honestly. The user trades breakout / momentum s
 - The goal model's picks hit +20/-10 far more often when VIX is 20-30 (43% IS and OOS) than when VIX < 20
   (~30%): buy the fear, not the calm. Holds point-in-time (run 18), but a VIX>=20 filter only halves the
   trades at the same CAGR; use VIX for sizing, not as a filter.
-- Goal model with run-16 features, top 10%, +20/-10, point-in-time S&P 500: 21% CAGR / -30% DD vs SPY
-  14.5% / -34% (run 18). The original-feature model only made 12% point-in-time.
+- CORRECTION (run 24): with former S&P 500 members in the universe, the goal model's PIT result is
+  10.5% CAGR / -33% DD (12.9% current members only) vs SPY 14.6% / -34%; PIT alpha +1.5%/yr, not
+  significant (beta 0.72). Run 18's 21% was survivorship-flattered. Vs same-ADR, same-momentum stocks the
+  edge is small (+1%/trade OOS, ~0 IS). Always judge PIT incl. former members (data.in_sp500).
+- Simple raw momentum (top 10 by 0.7 x 6m + 0.3 x 1m return, monthly) PIT: 22% OOS / 9% IS vs SPY 15% / 8%,
+  but -41% to -61% drawdowns. Volatility-adjusting it made it worse.
+- Episodic pivots work because of earnings: earnings-day gaps +0.44R OOS vs +0.10R for non-earnings gaps.
+- ADR-scaled sizing (x 6%/ADR) improved the PIT goal-model portfolio (16% vs 10.5%). Fundamentals
+  (inflection) don't work as filters; as model features they add a little at the top tiers.
