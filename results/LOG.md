@@ -1,5 +1,13 @@
 # Research log (newest first)
 
+## Run 22 — 2026-10-10 (commit 404aae3): the user's early-inflection method — price rules only
+- **Fundamentals didn't run: the SEC answered 403 Forbidden** (it rejects clients without a real contact in the User-Agent). Fix: set the repo variable `SEC_USER_AGENT` ("Name email"); the workflow now passes it. Re-run the fundamental tests then.
+- **Up/down volume (50d) "accumulation" doesn't help.** Model top 10%, +20/−10: U/D > 1.3 hit 30.0% IS / 38.0% OOS vs < 0.8 ("distribution") 33.8% / 37.9%; point-in-time S&P 500 30.1% / 37.8% vs 29.4% / 38.4%. All stocks: accumulation 15.7% / 20.7% vs distribution 22.5% / 27.5% (+1.9% / +0.9% vs +2.1% / +1.9% per trade).
+- **"Not extended above the 200-day" is inconsistent:** model picks > 50% above the 200d made −0.5% per trade IS but +3.2% OOS (PIT +1.1% / +3.3%). No stable penalty for extension.
+- **"Already up > 100% in 6 months" is mildly worse:** model picks −0.9% per trade IS, +2.6% OOS (PIT −1.4% / +1.1%) vs +1.1-3.4% for other buckets. Stocks up 50-100% are fine (+1.1% / +3.4%). Weak support for not chasing the biggest movers; "up 50%" is too strict.
+- **As filters on the model's top 10% (+20/−10)** vs no filter (25.3% / −45%; PIT 21.3% / −30%): all three price rules together 22.5% / −34% (PIT 18.7% / −24%), a bit less return for less drawdown in both universes; accumulation alone 20.6% / −43% (PIT 21.2% / −25%); not extended 19.8% / −47% (PIT 21.0% / −30%); not up 50% 27.5% / −44% (PIT 16.3% / −30%, inconsistent).
+- **Decision:** none of the price rules raise the odds. The combined price rules trade a little CAGR for a smaller drawdown; a candidate for a conservative mode, not a default. Fundamentals pending the SEC fix.
+
 ## Run 21 — 2026-10-09 (commit 993b458): 21/50 market trend, breadth, A/D line, sector momentum (user)
 Goal model top 10%, +20/−10; groups = equal-weight median of member stocks; rules fixed in advance.
 - **No rule raises the hit rate in both periods.** SPY above 21 & 50: 31.3% IS / 38.7% OOS vs below both 38.7% / 38.3%. QQQ the same (28.8% / 38.4% vs 38.7% / 38.8%). A/D line above both MAs: 29.2% / 40.0% vs below both 40.4% / 38.0%. % above 20d > 60%: 31.6% / 41.5% vs < 40%: 34.8% / 37.8%. Before 2018 the weak-market buckets were clearly *better*, after 2018 about equal: the run-17 "buy the fear" pattern again.

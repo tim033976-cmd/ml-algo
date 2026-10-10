@@ -55,6 +55,8 @@ jobs:
 
       - name: Download prices
         run: python research.py --cache data --download-only
+        env:
+          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}   # repo variable: "Name email" for SEC EDGAR
 
       - name: Save price cache
         if: steps.cache.outputs.cache-hit != 'true'
@@ -65,6 +67,8 @@ jobs:
 
       - name: Run research
         run: python research.py --cache data --out results --limit "${{ github.event.inputs.limit || '0' }}"
+        env:
+          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
 
       - name: Commit results
         run: |

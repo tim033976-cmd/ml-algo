@@ -24,7 +24,8 @@ import pandas as pd
 BULK_URL = "https://www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip"
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 # SEC asks automated clients to identify themselves; override with the SEC_USER_AGENT env var
-USER_AGENT = os.environ.get("SEC_USER_AGENT", "ml-algo-research research-bot@users.noreply.github.com")
+# (e.g. "Your Name your@email.com"); the SEC returns 403 to clients without a real contact
+USER_AGENT = os.environ.get("SEC_USER_AGENT") or "ml-algo-research research-bot@users.noreply.github.com"
 
 CONCEPTS = {  # metric -> us-gaap tags, in order of preference (companies switch tags over time)
     "rev": ["RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues", "SalesRevenueNet",
