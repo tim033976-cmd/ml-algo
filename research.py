@@ -17,6 +17,7 @@ from mlalgo.research import analyze as A
 from mlalgo.research import data as D
 from mlalgo.research import engine
 from mlalgo.research import fundamentals as F
+from mlalgo.research import shorts as SH
 from mlalgo.research.entries import ENTRIES
 from mlalgo.research.insights import append_history, findings
 from mlalgo.research.run import EXIT_NAMES, MENU, run
@@ -308,6 +309,7 @@ def main() -> None:
     sup = sup_clean = None
     short, goal_ext, short_imp = {}, {}, None
     regime_all = None
+    vm_tab = None
     pit = None
     menu = regime = regime_pit = menu_choice = menu_ports = regime_skipped = None
     regime_gates = []
@@ -388,6 +390,12 @@ def main() -> None:
             # run 19: the same splits for ALL stocks (no model): do leading sectors help on their own?
             regime_all = A.regime_report(sample, score_col, q=0.0)
             regime_all.to_csv(out / "regime_all_stocks.csv")
+            # run 23: is the model's edge just volatility + momentum? (same-ADR, same-momentum comparison)
+            vm = {"goal model (full universe)": A.vol_matched(sample, score_col)}
+            if pit:
+                vm["goal model, S&P 500 point-in-time"] = A.vol_matched(sample, score_col, keep=pit)
+            vm_tab = pd.concat([v.assign(sample=k) for k, v in vm.items()], ignore_index=True)
+            vm_tab.to_csv(out / "vol_matched.csv", index=False)
         print(f"[research] bracket menu + regime done ({time.time() - t0:.0f}s)")
 
     # ---------------- portfolio simulation, 2018 -> today (marked to market daily)
@@ -524,6 +532,13 @@ def main() -> None:
                     "sector AND sub-industry above 21 EMA": both("up21"),
                     "SPY > 21 & 50 + sector & sub-industry up 5 days": (T["spy_2150"] == 3) & both("ret5"),
                 })
+            # run 23 (user's ADR% infographic)
+            leading.update({
+                "ADR% >= 5% (the infographic's minimum)": T["adr_pct"] >= 0.05,
+                "ADR% 5-12% (the infographic's sweet spot)": T["adr_pct"].between(0.05, 0.12),
+                "ADR% <= 15% (skip the wildest)": T["adr_pct"] <= 0.15,
+                "ADR% 5-12% and >= $10M/day": T["adr_pct"].between(0.05, 0.12) & (T["dollar_vol_50"] >= 10e6),
+            })
             # run 22 (user): early fundamental inflection + volume accumulation + not extended
             if "inflection" in T:
                 price_ok = (T["updown_vol_50"] > 1.0) & (T["ext_200"] < 0.30) & (T["ret_126"] < 0.50)
@@ -566,6 +581,13 @@ def main() -> None:
                 pt_ = A.portfolio(tr[pit(tr).to_numpy()], "bracket", "priority", closes=closes) if pit else None
                 regime_gates.append(("MODEL + fundamentals as features, top 10%", [], full, pt_))
                 port_rows.append(("MODEL with fundamentals, top 10% / +20% -10%", full))
+            # run 23: "higher ADR% = smaller position": scale risk by 6% / ADR (x0.4 .. x1.5)
+            tr = A.menu_trades(sample, "m20_10", 0.10, score_col, cal)
+            tr["size_mult"] = (0.06 / tr["adr_pct"]).clip(0.4, 1.5).fillna(1.0)
+            full = A.portfolio(tr, "bracket", "priority", closes=closes)
+            pt_ = A.portfolio(tr[pit(tr).to_numpy()], "bracket", "priority", closes=closes) if pit else None
+            regime_gates.append(("SIZE: position scaled by 6% / ADR (x0.4-1.5)", [], full, pt_))
+            port_rows.append(("SIZE model top 10%, position scaled by 6% / ADR / +20% -10%", full))
             if pit:
                 base_tr = A.menu_trades(sample, "m20_10", 0.10, score_col, cal)
                 regime_gates.append(("(no gate)", [], A.portfolio(base_tr, "bracket", "priority", closes=closes),
@@ -597,6 +619,18 @@ def main() -> None:
                               A.portfolio(sp5, "sma50_close", "super_prob", closes=closes)))
             port_rows.append((f"SURVIVORSHIP S&P 500 names, only after joining the index ({n_oos(after)} signals) / sma50_close",
                               A.portfolio(after, "sma50_close", "super_prob", closes=closes)))
+    # ---------------- run 23: ADR% by setup, and Qullamaggie's parabolic shorts
+    adr_tab = A.setups_by_adr(sig)
+    adr_tab.to_csv(out / "setups_by_adr.csv", index=False)
+    shorts_all = SH.run_all(prices)
+    shorts_tab = SH.report(shorts_all, A.IS_END)
+    shorts_tab.to_csv(out / "parabolic_shorts.csv", index=False)
+    if len(shorts_all):
+        sa = shorts_all[shorts_all["variant"] == "trigger"]
+        shorts_adr = sa.groupby([pd.cut(sa["adr_pct"], A.ADR_BINS, labels=A.ADR_LABELS),
+                                 np.where(sa["date"] < A.IS_END, "IS", "OOS")], observed=True)["R_sma10"].agg(["size", "mean"]).unstack()
+    else:
+        shorts_adr = pd.DataFrame()
     # ---------------- run 20: the user's "Stock Selection Workflow" PDF, price-testable parts
     wf = workflow_test(sig, lb, closes, market, pit)
     for k, res in wf["ports"]:
@@ -633,6 +667,10 @@ def main() -> None:
         b0 = wf["blend"].iloc[0]
         found.append(f"Workflow PDF split (40/25/15/20 cash): {b0['CAGR']:.1%} CAGR, {b0['max_DD']:.0%} DD vs SPY "
                      f"{wf['blend'].iloc[-1]['CAGR']:.1%}, {wf['blend'].iloc[-1]['max_DD']:.0%}.")
+    if vm_tab is not None:   # run 23
+        for r in vm_tab[vm_tab["period"] == "OOS"].itertuples():
+            found.append(f"Volatility-matched check ({r.sample}, OOS): model top 10% hit {r.hit:.1%} vs {r.matched_hit:.1%} "
+                         f"for same-ADR, same-momentum stocks; return {r.ret:+.2%} vs {r.matched_ret:+.2%} per trade.")
     if menu is not None:  # run 17: bracket menu
         oos = menu[(menu["period"] == "OOS") & (menu["tier"] == "top 10%")].set_index("key")
         ch = menu_choice["return per month"]
@@ -645,7 +683,7 @@ def main() -> None:
             key["menu_choice"], key["menu_choice_oos_ret"] = r["bracket"], float(r["avg_net_return"])
         for f, sk, a, p in regime_gates:
             if a:
-                found.append(f"{'Filter ' + f if f.startswith(('RULE', 'METHOD', 'MODEL')) else f'Regime gate {f} (skip ' + (', '.join(map(str, sk)) or 'nothing') + ')'}: {a['CAGR']:.1%} CAGR, "
+                found.append(f"{'Filter ' + f if f.startswith(('RULE', 'METHOD', 'MODEL', 'SIZE')) else f'Regime gate {f} (skip ' + (', '.join(map(str, sk)) or 'nothing') + ')'}: {a['CAGR']:.1%} CAGR, "
                              f"{a['max_DD']:.0%} DD" + (f"; point-in-time S&P 500 {p['CAGR']:.1%}, {p['max_DD']:.0%}" if p else "") + ".")
     hist = append_history(out / "history.csv", key, len(prices), len(sig))
     (out / "insights.json").write_text(json.dumps({"findings": found, "next_steps": nxt, "key": key}, indent=2, default=str))
@@ -806,6 +844,27 @@ def main() -> None:
             "",
             *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
         ] if short else []),
+        "## 15. ADR%, volatility-matched check, parabolic shorts (run 23)",
+        "",
+        "Is the goal model only picking volatile, strong stocks? Its top 10% vs the average of all stocks in the "
+        "same year, ADR decile and 6-month-return quintile (+20/-10). edge = actual - matched:",
+        "",
+        md(vm_tab, floatfmt=".3f") if vm_tab is not None else "",
+        "",
+        "Setups by ADR% (stocks >= $10M/day, exit sma50_close, R multiples). The infographic says: < 5% too slow, "
+        "5-12% the sweet spot, > 15% often fails:",
+        "",
+        md(adr_tab, floatfmt=".3f") if len(adr_tab) else "",
+        "",
+        "Qullamaggie's parabolic shorts (up >= 50% in 10 days, >= 3 up closes of 4, >= 20% above the 10-day; entry = "
+        "first close below the prior day's low within 3 days, or no_trigger = short the parabolic day itself; stop = "
+        "high of the run; cover at the 10- or 20-day average or after 20 days; price >= $5, >= $10M/day; borrow "
+        "fees not included):",
+        "",
+        md(shorts_tab, floatfmt=".3f") if len(shorts_tab) else "(no signals)",
+        "",
+        *(["Parabolic shorts (trigger, cover at the 10-day) by ADR%: count and average R", "",
+           md(shorts_adr, index=True, floatfmt=".3f"), ""] if len(shorts_adr) else []),
         *(_workflow_section(wf, md) if wf.get("trades") is not None else []),
         *(_menu_section(menu, menu_ports, menu_choice, regime, regime_pit, regime_gates, md, regime_all) if menu is not None else []),
         "## 11. Qullamaggie replication (per trade, out-of-sample 2018+; IS in brackets)",

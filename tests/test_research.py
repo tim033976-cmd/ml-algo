@@ -383,3 +383,39 @@ def test_group_momentum_uses_member_median_and_is_point_in_time():
     px2 = {t: d.assign(close=d["close"].where(d.index < idx[40], d["close"] * 0.5)) for t, d in px.items()}
     m2 = group_momentum(px2, g)
     pd.testing.assert_frame_equal(m["ret5"].iloc[:40], m2["ret5"].iloc[:40])
+
+
+def test_parabolic_short_trigger_stop_and_cover():
+    from mlalgo.research import shorts
+    # 40 flat days at 10, then a parabolic run to ~16.5 in 6 days, then weakness and a fade
+    close = [10.0] * 40 + [11, 12, 13.2, 14.5, 15.5, 16.5] + [15.0, 13.0, 12.0, 11.0, 10.5, 10.2, 10.0, 10.0]
+    high = [c * 1.01 for c in close]
+    low = [c * 0.99 for c in close]
+    low[46] = 14.8                       # day 46 closes 15.0 < prior low (16.5 * 0.99): the trigger
+    df = _df(close, high, low, close)
+    s = shorts.signals(df)
+    trig = s[s["variant"] == "trigger"]
+    assert len(trig) == 1 and trig["idx"].iloc[0] == 46
+    assert np.isclose(trig["stop"].iloc[0], 16.5 * 1.01)
+    r = shorts.simulate(df, trig, cost=0.0)
+    # covers when the low reaches yesterday's 10-day average (a profit), never stopped out
+    assert r["R_sma10"].iloc[0] > 0 and r["R_sma20"].iloc[0] >= r["R_sma10"].iloc[0] - 1e-9
+    # a squeeze through the stop is a loss of about -1R or worse (gap fills at the open)
+    close2 = close[:47] + [18.0] * 7
+    df2 = _df(close2, [c * 1.01 for c in close2], [c * 0.99 for c in close2], close2)
+    r2 = shorts.simulate(df2, trig, cost=0.0)
+    assert r2["R_sma10"].iloc[0] <= -1.0
+
+
+def test_parabolic_short_signals_do_not_use_future_data():
+    from mlalgo.research import shorts
+    df = synthetic(1500, seed=3)
+    df["close"] = df["close"] * np.exp(np.r_[np.zeros(700), np.linspace(0, 1.2, 10), np.full(790, 1.2)])
+    df["high"], df["low"], df["open"] = df["close"] * 1.02, df["close"] * 0.98, df["close"]
+    base = shorts.signals(df)
+    cut = 760
+    tampered = df.copy()
+    tampered.iloc[cut:] *= 0.3
+    after = shorts.signals(tampered)
+    key = lambda s: s[s["idx"] < cut][["idx", "variant", "entry", "stop"]].reset_index(drop=True)
+    pd.testing.assert_frame_equal(key(base), key(after))

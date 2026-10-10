@@ -593,7 +593,12 @@ def menu_trades(sample: pd.DataFrame, key: str, stop: float, col: str, calendar:
     exit_date = calendar[np.minimum(pos, len(calendar) - 1)]
     return pd.DataFrame({"date": o["date"].values, "ticker": o["ticker"].values, "entry": o["close"].values,
                          "risk_pct": stop, "exit_bracket": exit_date, "ret_bracket": o[f"{key}_ret"].astype(float).values,
-                         "priority": o[col].values, "rs_rank": o["rs_rank"].values})
+                         "priority": o[col].values, "rs_rank": o["rs_rank"].values,
+                         "adr_pct": o["adr_pct"].values if "adr_pct" in o else np.nan})
+
+
+ADR_BINS = [-np.inf, 0.03, 0.05, 0.08, 0.12, 0.15, np.inf]
+ADR_LABELS = ["< 3%", "3-5%", "5-8%", "8-12%", "12-15%", "> 15%"]
 
 
 def regime_splits(d: pd.DataFrame, ref: pd.DataFrame) -> dict[str, pd.Series]:
@@ -634,6 +639,11 @@ def regime_splits(d: pd.DataFrame, ref: pd.DataFrame) -> dict[str, pd.Series]:
             x, y = (d[a] > 0.5) if f == "up21" else (d[a] > 0), (d[b] > 0.5) if f == "up21" else (d[b] > 0)
             lab = np.select([x & y, x | y], ["both", "one of the two"], "neither")
             out[f"sector & sub-industry {name}"] = pd.Series(lab, index=d.index).where(d[a].notna() & d[b].notna())
+    # run 23 (user's ADR% infographic): minimum 5%, sweet spot 5-12%, > 15% often fails, needs $10M+/day
+    if "adr_pct" in d:
+        out["ADR%"] = pd.cut(d["adr_pct"], ADR_BINS, labels=ADR_LABELS)
+        if "dollar_vol_50" in d:
+            out["ADR% (only stocks trading >= $10M/day)"] = out["ADR%"].where(d["dollar_vol_50"] >= 10e6)
     # run 22 (user): early fundamental inflection (SEC filings, point-in-time) and the price rules
     if "inflection" in d:
         out["fundamental inflection (all 4)"] = d["inflection"].map({1.0: "yes", 0.0: "no"})
@@ -713,3 +723,55 @@ def regime_gate(sample: pd.DataFrame, col: str, table: pd.DataFrame, key: str = 
     for r, b in bad:
         skip |= (pd.Series(splits[r], index=o.index).astype(object) == b).to_numpy()
     return o[~skip], bad
+
+
+# ------------------------------------------------------------------ run 23: is the model just volatility?
+def vol_matched(sample: pd.DataFrame, col: str, key: str = "b20", q: float = 0.9, keep=None) -> pd.DataFrame:
+    """The model's top 10% vs what stocks with the SAME volatility and momentum did: every row is put
+    in a cell (calendar year x ADR decile x 6-month-return quintile, cut-offs per year); a pick's
+    'expected' result is the average of all rows in its cell. If the model's edge is only that it
+    picks volatile, strong stocks, actual minus expected is ~0."""
+    d = sample[sample[col].notna() & sample[f"{key}_ret"].notna() & sample["adr_pct"].notna() & sample["ret_126"].notna()].copy()
+    yr = d["date"].dt.year
+    d["_adr_q"] = d.groupby(yr)["adr_pct"].transform(lambda x: pd.qcut(x, 10, labels=False, duplicates="drop"))
+    d["_mom_q"] = d.groupby(yr)["ret_126"].transform(lambda x: pd.qcut(x, 5, labels=False, duplicates="drop"))
+    cell = [yr, d["_adr_q"], d["_mom_q"]]
+    d["_exp_hit"] = d.groupby(cell)[f"{key}_hit"].transform("mean")
+    d["_exp_ret"] = d.groupby(cell)[f"{key}_ret"].transform("mean")
+    top = _top(d, col, q)
+    if keep is not None:
+        top = top[keep(top).to_numpy()]
+    rows = []
+    for period, m in (("IS", top["date"] < IS_END), ("OOS", top["date"] >= IS_END)):
+        g = top[m]
+        rows.append({"period": period, "n": len(g), "hit": g[f"{key}_hit"].mean(), "matched_hit": g["_exp_hit"].mean(),
+                     "ret": g[f"{key}_ret"].mean(), "matched_ret": g["_exp_ret"].mean()})
+    t = pd.DataFrame(rows)
+    t["edge_hit"], t["edge_ret"] = t["hit"] - t["matched_hit"], t["ret"] - t["matched_ret"]
+    return t
+
+
+def setups_by_adr(sig: pd.DataFrame, exit_name: str = "sma50_close", min_dollar_vol: float = 10e6) -> pd.DataFrame:
+    """Per-trade R of setup groups by ADR% bucket (stocks trading >= $10M/day), IS and OOS."""
+    groups = {"episodic pivots (ep_*)": sig["entry_name"].str.startswith("ep_"),
+              "breakouts (qull / rocket / base / flag)": sig["entry_name"].str.contains("qull_breakout|wf_rocket|base_|flag_|htf"),
+              "all setups": sig["entry_name"] != BASELINE, "random entries": sig["entry_name"] == BASELINE}
+    s = sig[(sig["dollar_vol_50"] >= min_dollar_vol) & sig["adr_pct"].notna()]
+    b = pd.cut(s["adr_pct"], ADR_BINS, labels=ADR_LABELS)
+    rows = []
+    for name, m in groups.items():
+        m = m.reindex(s.index).fillna(False).to_numpy()
+        for period, pm in (("IS", s["date"] < IS_END), ("OOS", s["date"] >= IS_END)):
+            g = s[m & pm.to_numpy()]
+            for lvl, x in g.groupby(b[m & pm.to_numpy()].to_numpy(), observed=True):
+                rows.append({"setups": name, "ADR%": lvl, "period": period, "n": len(x),
+                             "avgR": x[f"R_{exit_name}"].mean(), "win": (x[f"R_{exit_name}"] > 0).mean()})
+    if not rows:
+        return pd.DataFrame()
+    t = pd.DataFrame(rows).pivot_table(index=["setups", "ADR%"], columns="period", values=["n", "avgR", "win"], sort=False)
+    t.columns = [f"{p}_{v}" for v, p in t.columns]
+    order = {k: i for i, k in enumerate(ADR_LABELS)}
+    t = t.reset_index()
+    t["_o"] = t["ADR%"].map(order)
+    return t.sort_values(["setups", "_o"]).drop(columns="_o")[
+        ["setups", "ADR%"] + [c for c in ("IS_n", "IS_avgR", "IS_win", "OOS_n", "OOS_avgR", "OOS_win") if c in t]]
