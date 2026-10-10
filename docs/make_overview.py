@@ -109,15 +109,17 @@ S += [p("ml-algo", TITLE),
           "model made 10.5% a year vs 14.6% for simply holding SPY. A simple momentum portfolio made 22% a year (but "
           "with deep drawdowns).", WARN),
       Spacer(1, 4),
-      box("<b>4. Where we are now:</b> testing a concentrated portfolio of the top 3-5 leaders, run on top traders' "
-          "rules and updated at every close, with fundamentals (sales and EPS growth) required to confirm each pick "
-          "(runs 25-26, in progress). Then 3-6 months of paper trading before any real money.", colors.HexColor("#e7eef8")),
+      box("<b>4. Latest (runs 25-26):</b> a concentrated 3-5 stock leader portfolio on top traders' rules works best "
+          "with a setup entry, a 50-day exit and a QQQ market filter, and requiring sales growth 20%+ and EPS growth 25%+ "
+          "improved it in 83% of versions. But it still did not beat SPY, QQQ or a simple 10-stock momentum portfolio. "
+          "Next: a diversified 10-20 stock momentum book with the fundamentals rule, then 3-6 months of paper trading.",
+          colors.HexColor("#e7eef8")),
       Spacer(1, 8),
       p("Progress at a glance", H2),
       table([["Part", "Status", "Where it stands"],
              ["Finding what works (research)", "~80% done", "26 research runs; the main questions are answered"],
              ["Honest testing (no hidden bias)", "~75% done", "Survivorship mostly fixed; fully clean data still missing"],
-             ["Final strategy design", "In progress", "Concentrated leader portfolio + fundamentals (runs 25-26)"],
+             ["Final strategy design", "In progress", "Fundamentals rule found (run 26); diversified version next (run 27)"],
              ["Daily tool (today's picks)", "Built, needs upgrade", "Works as promised in a replay (42% hit rate) but uses an older model"],
              ["Proof in real time (paper trading)", "Just started", "60 picks logged; needs 3-6 months"]],
             [58 * mm, 32 * mm, 84 * mm], shade={1: GOOD, 2: GOOD, 3: WARN, 4: WARN, 5: BAD}),
@@ -192,6 +194,8 @@ S += [p("3. The honest scoreboard", H1),
              ["ML stock-picking model + size by volatility (ADR)", "16.3%", "-32%", "Beats SPY"],
              ["<b>SPY (S&amp;P 500 index fund)</b>", "<b>14.6%</b>", "<b>-34%</b>", "<b>The bar to beat</b>"],
              ["Episodic pivots (earnings gaps), strong stocks, 50-day exit", "13.0%", "-25%", "Lower risk"],
+             ["3-5 stock leader portfolio, trader rules (run 25 best)", "15.3%", "-29%", "About SPY; weak before 2018"],
+             ["Same + sales/EPS growth required (CAN SLIM style, run 26)", "11.2%", "-26%", "Lower drawdown"],
              ["ML stock-picking model, equal size", "10.5%", "-33%", "Doesn't beat SPY"],
              ["Same model, costs 0.3% per side", "7.0%", "-41%", "Costs matter"],
              ["Breadth timing of SPY (course idea)", "5.2%", "-28%", "Fails"],
@@ -308,23 +312,23 @@ S += [p("7. Timeline of the research runs", H1),
              ["19, 21", "Leading sectors, 21/50 averages, breadth, A/D line", "None help"],
              ["20", "Your workflow PDF", "Rockets work, scanner doesn't, sizing too small"],
              ["22-24", "Fundamentals, ADR, earnings, survivorship, course ideas", "Big survivorship correction; momentum + EP + ADR sizing hold up"],
-             ["25-26", "3-5 stock leader portfolio on traders' rules + fundamentals", "In progress"]],
-            [16 * mm, 70 * mm, 88 * mm], shade={11: colors.HexColor("#e7eef8")}),
+             ["25-26", "3-5 stock leader portfolio on traders' rules + fundamentals", "Setup + 50-day + QQQ filter works; sales/EPS growth helps; still not above SPY"]],
+            [16 * mm, 70 * mm, 88 * mm]),
       PageBreak()]
 
 # ---------------------------------------------------------------- page 9: current work and next steps
-S += [p("8. What's happening now", H1),
+S += [p("8. Latest results and what's next", H1),
       p("Runs 25-26: a concentrated leader portfolio on top traders' rules", H2),
-      *bullets(["Hold <b>3 to 5 stocks</b>, equal weight, decided at each close.",
-                "<b>Leaders only:</b> $10+, $20M+ traded a day, above a rising 50-day that's above the 200-day, within 25% of "
-                "the 52-week high, ranked by momentum.",
-                "<b>Entry:</b> the best-ranked leader fills an empty slot, optionally only on a setup day (EP, breakout, base, "
-                "flag) and only while QQQ is above its 200-day.",
-                "<b>Exit:</b> close below the 10/20/50-day average, 8% below entry, or dropping out of the top ranks.",
-                "<b>Fundamentals must confirm</b> (run 26): sales growth 20%+, EPS growth 25%+, or a recent earnings gap up, "
-                "so NVDA / SNDK-type moves are caught once they are underway.",
-                "1,008 combinations; the winner is picked on 2007-2017 and judged on 2018-today; includes a case study of trades "
-                "in NVDA, SNDK, PLTR, SMCI, META, AVGO, VRT, ANET, CRWD and APP."]),
+      *bullets(["Hold <b>3 to 5 leaders</b> (rising 50-day above the 200-day, near 52-week highs, ranked by momentum), "
+                "equal weight, decided at each close; 1,008 versions tested, picked on 2007-2017, judged on 2018-today.",
+                "<b>What works:</b> buy only on a setup (EP, breakout, base, flag), exit on a close below the 50-day, and pause "
+                "new buys while QQQ is below its 200-day. Fast 10/20-day exits and 'any leader' rotation fail (-50% to -70% drawdowns).",
+                "<b>Fundamentals help:</b> requiring sales growth 20%+ and EPS growth 25%+ (from SEC filings, known at the time) "
+                "improved 83% of versions after 2018: median 6.6% to 12.3% a year, drawdown -46% to -34%.",
+                "<b>But concentration costs return:</b> the best versions made 11-15% a year after 2018 vs SPY 14.6%, QQQ 20.2% and "
+                "a simple 10-stock momentum portfolio 22.4%.",
+                "<b>NVDA / PLTR-type stocks:</b> caught in pieces (PLTR +31%, ANET +35%, NVDA +10%), often after one or two -8% "
+                "stop-outs. A fixed 8% stop is too tight for such volatile leaders."]),
       p("Tools already built", H2),
       table([["Tool", "What it does", "Status"],
              ["Research pipeline (research.py)", "Runs every test on GitHub and writes results/report.md", "Working"],
@@ -333,7 +337,7 @@ S += [p("8. What's happening now", H1),
             [46 * mm, 80 * mm, 48 * mm]),
       p("Next steps", H2),
       table([["#", "Step", "Why"],
-             ["1", "Read runs 25-26; pick the leader-portfolio version", "Decide the final strategy on honest numbers"],
+             ["1", "Run 27: 10-20 stock momentum book + sales/EPS rule + 50-day exit + wider ADR-based stop", "Combine what held up; judge from 2010 when filings exist"],
              ["2", "Turn the daily picks into a 'today's portfolio' list", "Hold these, sell when this level breaks"],
              ["3", "Merge to the main branch", "So the daily list and paper trading run automatically every evening"],
              ["4", "Paper trade for 3-6 months", "The only test the strategy has never seen"],
