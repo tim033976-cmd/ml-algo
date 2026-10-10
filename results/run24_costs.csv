@@ -1,0 +1,7 @@
+strategy,costs,CAGR,max_DD
+"goal model top 10%, full universe",0.1% per side,0.27034934723443493,-0.4013094665396897
+"goal model top 10%, full universe",0.3% per side,0.20660978770219418,-0.4387765870715016
+"goal model top 10%, S&P 500 PIT",0.1% per side,0.1046902956141349,-0.32842149523536945
+"goal model top 10%, S&P 500 PIT",0.3% per side,0.06950239142756454,-0.40546151160531074
+"episodic pivots (gap 10% / 8% hold), RS top 20% / sma50",0.1% per side,0.13005447604364262,-0.246644382765411
+"episodic pivots (gap 10% / 8% hold), RS top 20% / sma50",0.3% per side,0.10371162564218861,-0.25659915036754577
