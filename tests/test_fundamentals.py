@@ -69,3 +69,12 @@ def test_attach_without_data_adds_empty_columns():
     d = pd.DataFrame({"ticker": ["X"], "date": pd.to_datetime(["2021-01-04"])})
     a = F.attach(d, pd.DataFrame())
     assert set(F.FUND_FEATURES) <= set(a.columns) and a[F.FUND_FEATURES].isna().all().all()
+
+
+def test_attach_handles_mixed_datetime_resolutions():
+    fund = pd.DataFrame({"ticker": ["X"], "end": pd.to_datetime(["2021-03-31"]),
+                         "avail": pd.to_datetime(["2021-05-01"]).astype("datetime64[ms]"),
+                         **{c: [0.1] for c in F.FUND_FEATURES if c != "fund_age"}})
+    d = pd.DataFrame({"ticker": ["X"], "date": pd.to_datetime(["2021-06-01"]).astype("datetime64[us]")})
+    a = F.attach(d, fund)
+    assert np.isclose(a.loc[0, "rev_yoy"], 0.1) and a.loc[0, "fund_age"] == 31

@@ -217,7 +217,11 @@ def attach(d: pd.DataFrame, fund: pd.DataFrame, max_stale_days: int = 200) -> pd
     # keep the most recent quarter
     f = fund.dropna(subset=["avail"]).sort_values(["avail", "end"])
     f = f.drop_duplicates(["ticker", "avail"], keep="last")
-    left = d.reset_index().rename(columns={"index": "_row"}).sort_values("date")
+    left = d.reset_index().rename(columns={"index": "_row"})
+    # pandas 3 keeps the resolution of the source (ms from parquet, us/ns elsewhere); merge_asof needs one
+    left["date"] = left["date"].astype("datetime64[ns]")
+    f = f.assign(avail=f["avail"].astype("datetime64[ns]"))
+    left = left.sort_values("date")
     m = pd.merge_asof(left, f[["ticker", "avail"] + [c for c in FUND_FEATURES if c in f and c != "fund_age"]],
                       left_on="date", right_on="avail", by="ticker",
                       tolerance=pd.Timedelta(days=max_stale_days), direction="backward")
