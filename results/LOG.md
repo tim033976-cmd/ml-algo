@@ -1,5 +1,15 @@
 # Research log (newest first)
 
+## Run 25 — 2026-10-10 (commit 3de3b4a): concentrated 3-5 stock leader portfolio on top traders' rules
+144 configurations, S&P 500 point-in-time incl. former members, chosen on 2007-2017 return / drawdown.
+- **Most configurations lose money in-sample:** median IS CAGR −6.8% (any leader) / −2.8% (setup required); median OOS +8.2% / +5.6%. Concentrating in 3-5 leaders is fragile.
+- **One structure works consistently: setup entry + 50-day exit + QQQ > 200d.** All top 10 IS configurations share it. Median return/DD by exit: sma50 +0.06 IS / +0.26 OOS vs sma10 −0.11 / +0.09, sma20 −0.08 / +0.10. The regime rule cuts the median drawdown (IS −57% vs −70%). Ranking: 6m/1m or best-of 1/3/6m; 12-1 momentum is worst.
+- **IS winner (5 stocks, best-of 1/3/6m RS, setup, 50-day, QQQ > 200d):** IS 5.5% / −30% (SPY 8.2% / −55%), **OOS 15.3% / −29%** (SPY 14.6% / −34%, QQQ 20.2% / −35%); beta 0.56, alpha 8.3%/yr (t 1.2, not significant); 41-45% win rate, ~38 days held. 0.3% costs: 12.8% OOS. On all stocks (survivorship) IS 13.3%: point-in-time halves it again. 2026 YTD +82% carries the OOS number; 2018 −12%, 2021 +5% vs SPY +29%.
+- **Pre-registered styles:** Qullamaggie (20-day trail) IS −1.1% / OOS 7.3%; Minervini/O'Neil (50-day) 3.6% / 12.3%; pure leader rotation (no setups, no regime) 0.1% / 11.6% with −72% / −51% drawdowns.
+- **Compared with run 24's simple momentum portfolio (top 10, monthly, PIT): 9.1% IS / 22.4% OOS.** Concentrating to 3-5 names with trader rules did not beat simple diversified momentum; it lowered drawdowns a little but cut returns.
+- Current holdings of the IS winner (last close): CRL, CRWD, AMD, NTAP, PANW.
+- **Decision:** keep the trader structure (setup + 50-day + QQQ regime) but don't expect 3-5 names to beat a diversified momentum book; run 26 tests whether fundamentals confirmation fixes the in-sample weakness.
+
 ## Run 24 — 2026-10-10 (commit 7a7fe02): consolidated tests (also covers the crashed run 23)
 Universe now 1,540 stocks incl. 158 former S&P 500 members (membership spells since 2006); SEC fundamentals for ~1,430 tickers and 8-K Item 2.02 earnings dates worked.
 - **Survivorship correction (most important).** Goal model top 10%, +20/−10, point-in-time S&P 500: **12.9% CAGR / −26% DD** with current members only, **10.5% / −33% incl. former members** vs SPY 14.6% / −34%. The run-18 figure (21.3%) did not survive the bigger, less survivor-biased universe. At 0.3% per side costs: 7.0%.
