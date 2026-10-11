@@ -19,7 +19,8 @@ SCORES = ("mom_6m1m", "mom_12_1", "qull_best")
 EXITS = ("sma10", "sma20", "sma50", "sma50_rank")
 
 
-def prepare(closes: pd.DataFrame, dollar_vol: pd.DataFrame, members: pd.DataFrame | None = None) -> dict:
+def prepare(closes: pd.DataFrame, dollar_vol: pd.DataFrame, members: pd.DataFrame | None = None,
+            adr: pd.DataFrame | None = None) -> dict:
     """Arrays (dates x tickers) shared by every configuration. `closes` must NOT be forward-filled
     (a missing price = not trading; a stock that stops trading is sold at its last price)."""
     c = closes.astype("float64")
@@ -36,18 +37,27 @@ def prepare(closes: pd.DataFrame, dollar_vol: pd.DataFrame, members: pd.DataFram
     if members is not None:
         leader &= members.reindex(index=c.index, columns=c.columns).fillna(False).astype(bool)
     return {"dates": c.index, "tickers": c.columns, "c": c.to_numpy(), "sma": {w: v.to_numpy() for w, v in s.items()},
+            "adr": adr.reindex(index=c.index, columns=c.columns).to_numpy() if adr is not None else None,
             "leader": leader.to_numpy(), "scores": {k: v.reindex(index=c.index, columns=c.columns).to_numpy() for k, v in scores.items()}}
 
 
 def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", regime: np.ndarray | None = None,
         setup: np.ndarray | None = None, stop: float = 0.08, cost: float = 0.001, start: str = "2007-01-01",
-        filt: np.ndarray | None = None) -> dict:
+        filt: np.ndarray | None = None, stop_adr: float | None = None, break_mask: np.ndarray | None = None,
+        entry_days: np.ndarray | None = None, rank_buffer: int | None = None,
+        rebalance_days: np.ndarray | None = None) -> dict:
     """Simulate one configuration. `regime`: bool per date (True = new entries allowed). `setup`: bool
-    dates x tickers (True = a setup fired that day); None = any leader may be bought."""
+    dates x tickers (True = a setup fired that day); None = any leader may be bought.
+    Run 27 (long-term book): exit_rule 'none' / 'sma200'; `stop` None = no fixed stop; `stop_adr` k = stop
+    k x ADR (at entry) below the entry; `break_mask` True = the fundamentals broke -> sell; `entry_days`
+    True = buying allowed that day (e.g. month-ends); `rank_buffer` b = on rebalance days (default: entry
+    days), sell holdings that fell out of the top b x N."""
     dates, c, sc, lead = P["dates"], P["c"], P["scores"][score], P["leader"]
     if filt is not None:                       # run 26: e.g. fundamentals must confirm (sales / EPS growth)
         lead = lead & filt
-    trail = P["sma"][{"sma10": 10, "sma20": 20, "sma50": 50, "sma50_rank": 50}[exit_rule]]
+    trail = P["sma"].get({"sma10": 10, "sma20": 20, "sma50": 50, "sma50_rank": 50, "sma200": 200}.get(exit_rule, 0))
+    if trail is None:                          # 'none': no trailing-average exit
+        trail = np.full(c.shape, -np.inf)
     t0 = int(np.searchsorted(dates.values, np.datetime64(pd.Timestamp(start))))
     cash, hold = 1.0, {}                       # ticker index -> [shares, entry price, entry t, last price, last t]
     eq, trades = np.full(len(dates), np.nan), []
@@ -57,6 +67,10 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
         ranked = np.flatnonzero(ok)
         ranked = ranked[np.argsort(-sc[t, ranked])]
         top_set = set(ranked[:3 * n].tolist()) if exit_rule == "sma50_rank" else None
+        buy_day = entry_days is None or entry_days[t]
+        reb = rebalance_days[t] if rebalance_days is not None else buy_day
+        if rank_buffer and reb:
+            top_set = set(ranked[:rank_buffer * n].tolist())
         # exits
         for j in list(hold):
             h = hold[j]
@@ -68,14 +82,15 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
                     del hold[j]
                 continue
             h[3], h[4] = p, t
-            out = p < trail[t, j] or p <= h[1] * (1 - stop) or (top_set is not None and j not in top_set)
+            out = (p < trail[t, j] or p <= h[5] or (top_set is not None and j not in top_set)
+                   or (break_mask is not None and break_mask[t, j]))
             if out:
                 cash += h[0] * p * (1 - cost)
                 trades.append((h[2], t, j, p / h[1] - 1))
                 del hold[j]
         equity = cash + sum(h[0] * h[3] for h in hold.values())
         # entries
-        if len(hold) < n and (regime is None or regime[t]):
+        if len(hold) < n and (regime is None or regime[t]) and buy_day:
             cand = ranked[setup[t, ranked]] if setup is not None else ranked
             cand = [j for j in cand[: n + len(hold)] if j not in hold]
             for j in cand:
@@ -84,7 +99,12 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
                 alloc = min(equity / n, cash)
                 if alloc < equity * 0.05:
                     break
-                hold[j] = [alloc * (1 - cost) / px[j], px[j], t, px[j], t]
+                lvl = -np.inf
+                if stop:
+                    lvl = px[j] * (1 - stop)
+                if stop_adr and P.get("adr") is not None and not np.isnan(P["adr"][t, j]):
+                    lvl = max(lvl, px[j] * (1 - stop_adr * P["adr"][t, j]))
+                hold[j] = [alloc * (1 - cost) / px[j], px[j], t, px[j], t, lvl]
                 cash -= alloc
         eq[t] = cash + sum(h[0] * h[3] for h in hold.values())
     curve = pd.Series(eq, index=dates).dropna()
@@ -94,7 +114,8 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
     tr["date_out"] = dates[tr["t_out"].to_numpy()] if len(tr) else pd.Series(dtype="datetime64[ns]")
     tr["ticker"] = P["tickers"][tr["j"].to_numpy()] if len(tr) else pd.Series(dtype=object)
     open_pos = [{"ticker": P["tickers"][j], "entry_date": dates[h[2]], "entry": h[1], "last": h[3],
-                 "gain": h[3] / h[1] - 1, "stop_8%": h[1] * (1 - stop), "trail_level": trail[len(dates) - 1, j]}
+                 "gain": h[3] / h[1] - 1, "stop": h[5] if np.isfinite(h[5]) else np.nan,
+                 "trail_level": trail[len(dates) - 1, j] if np.isfinite(trail[len(dates) - 1, j]) else np.nan}
                 for j, h in hold.items()]
     return {"curve": curve, "trades": tr, "open": pd.DataFrame(open_pos)}
 
@@ -102,14 +123,15 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
 def stats(res: dict, is_end: pd.Timestamp) -> dict:
     out = {}
     curve, tr = res["curve"], res["trades"]
-    for name, m in (("IS", curve.index < is_end), ("OOS", curve.index >= is_end)):
+    for name, m in (("IS", curve.index < is_end), ("OOS", curve.index >= is_end),
+                    ("IS10", (curve.index >= "2010-01-01") & (curve.index < is_end))):
         e = curve[m]
         if len(e) < 60:
             continue
         e = e / e.iloc[0]
         yrs = (e.index[-1] - e.index[0]).days / 365.25
         cagr, dd = e.iloc[-1] ** (1 / yrs) - 1, (e / e.cummax() - 1).min()
-        t = tr[(tr["date_in"] < is_end) == (name == "IS")] if len(tr) else tr
+        t = tr[(tr["date_in"] < is_end) == (name != "OOS")] if len(tr) else tr
         out.update({f"{name}_CAGR": cagr, f"{name}_maxDD": dd, f"{name}_CAGR_per_DD": cagr / abs(dd) if dd else np.nan,
                     f"{name}_trades": len(t), f"{name}_win": (t["ret"] > 0).mean() if len(t) else np.nan,
                     f"{name}_avg_days": t["days"].mean() if len(t) else np.nan})

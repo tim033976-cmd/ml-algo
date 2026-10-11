@@ -522,3 +522,28 @@ def test_fund_daily_and_earnings_gap_mask_are_point_in_time():
     m = R.earnings_gap_mask(opens, closes, earn)
     assert m.loc[idx[50], "A"] and m.loc[idx[112], "A"] and not m.loc[idx[113], "A"] and not m.loc[idx[49], "A"]
     assert not m["B"].any()
+
+
+def test_rotation_long_term_exits():
+    from mlalgo.research import rotation as R
+    idx = pd.bdate_range("2010-01-01", periods=500)
+    g = np.arange(500)
+    closes = pd.DataFrame({"a": 50 * np.exp(0.003 * g), "b": 50 * np.exp(0.002 * g)}, index=idx)
+    closes.loc[idx[420]:, "a"] *= 0.5             # a crash on day 420, below the stop
+    adr = pd.DataFrame(0.04, index=idx, columns=closes.columns)
+    P = R.prepare(closes, closes * 1e6, adr=adr)
+    start = str(idx[300].date())
+    # ADR stop 3 x 4% = 12% below entry: the crash sells 'a'; with no stop and no trail it is held
+    r1 = R.run(P, n=2, exit_rule="none", stop=None, stop_adr=3.0, start=start, cost=0.0)
+    assert any((r1["trades"]["ticker"] == "a") & (r1["trades"]["t_out"] == 420))
+    r2 = R.run(P, n=2, exit_rule="none", stop=None, start=start, cost=0.0)
+    assert "a" in set(r2["open"]["ticker"]) and len(r2["trades"]) == 0
+    # fundamentals break: sell 'b' on the first day the mask says so
+    brk = np.zeros(closes.shape, dtype=bool)
+    brk[450, 1] = True
+    r3 = R.run(P, n=2, exit_rule="none", stop=None, break_mask=brk, start=start, cost=0.0)
+    assert any((r3["trades"]["ticker"] == "b") & (r3["trades"]["t_out"] == 450))
+    # buying only on entry days (month-ends)
+    ends = closes.index.to_series().groupby(closes.index.to_period("M")).transform("max") == closes.index
+    r4 = R.run(P, n=2, exit_rule="none", stop=None, entry_days=ends.to_numpy(), rank_buffer=2, start=start, cost=0.0)
+    assert set(r4["trades"]["t_in"]) <= set(np.flatnonzero(ends.to_numpy())) and len(r4["open"]) > 0

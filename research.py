@@ -431,6 +431,158 @@ def run25(sig, prices, market, sp_hist, out, fund=None, earn=None):
     return r
 
 
+EXITS27 = {  # added on top of a monthly rebalance (sell what fell out of the top 2N at month-end)
+    "no stop (monthly rebalance only)": {"exit_rule": "none", "stop": None},
+    "fixed 8% stop": {"exit_rule": "none", "stop": 0.08},
+    "wide stop 2.5 x ADR": {"exit_rule": "none", "stop": None, "stop_adr": 2.5},
+    "wide stop 3 x ADR": {"exit_rule": "none", "stop": None, "stop_adr": 3.0},
+    "close below 50-day": {"exit_rule": "sma50", "stop": None},
+    "50-day + 3 x ADR stop": {"exit_rule": "sma50", "stop": None, "stop_adr": 3.0},
+    "50-day + fundamentals break": {"exit_rule": "sma50", "stop": None, "fund_break": True},
+    "close below 200-day": {"exit_rule": "sma200", "stop": None},
+    "fundamentals break only": {"exit_rule": "none", "stop": None, "fund_break": True},
+}
+
+
+def run27(prices, market, sp_hist, out, fund=None, earn=None):
+    """Run 27: a diversified 10-20 stock momentum book (leaders only, S&P 500 point-in-time incl. former
+    members) and the question 'should a long-term holder use a stop?'. 384 configurations; chosen on
+    2010-2017 (fundamentals exist from ~2010), judged on 2018+."""
+    from mlalgo.research import rotation as RT
+    r = {}
+    closes = pd.DataFrame({t: df["close"] for t, df in prices.items()})
+    idx, cols = closes.index, closes.columns
+    dv = pd.DataFrame({t: (df["close"] * df["volume"]).rolling(50).mean() for t, df in prices.items()}).reindex(idx)
+    adr = pd.DataFrame({t: (df["high"] / df["low"] - 1).rolling(20).mean() for t, df in prices.items()}).reindex(idx)
+    members = D.sp500_mask(sp_hist, idx, cols) if sp_hist is not None and len(sp_hist) else None
+    P = RT.prepare(closes, dv, members, adr=adr)
+    qqq = market["QQQ"]["close"].reindex(idx).ffill() if "QQQ" in market else None
+    regime = (qqq > qqq.rolling(200).mean()).to_numpy() if qqq is not None else None
+    filters = fund_filters(fund, earn, prices, idx, cols)
+    fmask = filters.get("sales >= 20% and EPS >= 25%")
+    brk = None
+    if fund is not None and len(fund) and "eps_yoy" in fund:
+        rev, eps = RT.fund_daily(fund, idx, cols, "rev_yoy"), RT.fund_daily(fund, idx, cols, "eps_yoy")
+        brk = ((rev < 0) | (eps < 0)).to_numpy()            # sales or EPS shrinking year over year
+    month_end = (idx.to_series().groupby(idx.to_period("M")).transform("max") == idx).to_numpy()
+    rows, results = [], {}
+    for n in (10, 15, 20):
+        for score in ("mom_6m1m", "qull_best"):
+            for fname, fm in (("none", None), ("sales + EPS growth", fmask)):
+                if fname != "none" and fm is None:
+                    continue
+                for entry, ed in (("daily", None), ("month-end", month_end)):
+                    for reg_name, reg in (("none", None), ("QQQ > 200d", regime)):
+                        for ex, kw in EXITS27.items():
+                            kw = dict(kw)
+                            if kw.pop("fund_break", False):
+                                if brk is None:
+                                    continue
+                                kw["break_mask"] = brk
+                            res = RT.run(P, n=n, score=score, regime=reg, filt=fm, entry_days=ed, rank_buffer=2,
+                                         rebalance_days=month_end, **kw)
+                            key = (n, score, fname, entry, reg_name, ex)
+                            results[key] = res
+                            rows.append({"N": n, "rank by": score, "fundamentals": fname, "buy": entry, "regime": reg_name,
+                                         "exit": ex, **RT.stats(res, A.IS_END)})
+    grid = pd.DataFrame(rows)
+    grid.to_csv(out / "run27_grid.csv", index=False)
+    cols_ = ["IS10_CAGR", "IS10_maxDD", "IS10_CAGR_per_DD", "OOS_CAGR", "OOS_maxDD", "OOS_CAGR_per_DD", "OOS_win", "OOS_avg_days"]
+    r["by_exit"] = grid.groupby("exit", sort=False)[cols_].median().reset_index()
+    r["by_n"] = grid.groupby("N")[cols_[:6]].median().reset_index()
+    r["by_other"] = pd.concat([grid.groupby(k)[cols_[:6]].median().reset_index().rename(columns={k: "value"}).assign(setting=k)
+                               for k in ("fundamentals", "buy", "regime", "rank by")])
+    ok = grid[grid["IS10_trades"] >= 30]
+    best = ok.sort_values("IS10_CAGR_per_DD", ascending=False)
+    r["best"] = best.head(10)
+    r["best_per_exit"] = best.groupby("exit", sort=False).head(1)
+    b = best.iloc[0]
+    key = (int(b["N"]), b["rank by"], b["fundamentals"], b["buy"], b["regime"], b["exit"])
+    win = results[key]
+    r["winner"] = ", ".join(map(str, key))
+    bench = []
+    for name in ("SPY", "QQQ"):
+        if name in market:
+            px = market[name]["close"]
+            st = A._curve_stats(px[(px.index >= "2010-01-01") & (px.index < A.IS_END)])
+            so = A._curve_stats(px[px.index >= A.IS_END])
+            bench.append({"benchmark": name, "IS10_CAGR": st["CAGR"], "IS10_maxDD": st["max_DD"], "OOS_CAGR": so["CAGR"], "OOS_maxDD": so["max_DD"]})
+    mom = A.momentum_portfolio(closes.ffill(), dv, members=members) if members is not None else None
+    if mom is not None:
+        eq = (1 + mom.fillna(0)).cumprod()
+        st = A._curve_stats(eq[(eq.index >= "2010-01-01") & (eq.index < A.IS_END)])
+        so = A._curve_stats(eq[eq.index >= A.IS_END])
+        bench.append({"benchmark": "simple top-10 momentum, monthly, no stop (run 24)", "IS10_CAGR": st["CAGR"],
+                      "IS10_maxDD": st["max_DD"], "OOS_CAGR": so["CAGR"], "OOS_maxDD": so["max_DD"]})
+    r["bench"] = pd.DataFrame(bench)
+    yr = A.yearly(win["curve"][win["curve"].index >= "2010-01-01"]).rename("winner")
+    if "SPY" in market:
+        spy = market["SPY"]["close"]
+        yr = pd.concat([yr, A.yearly(spy[spy.index >= "2010-01-01"]).rename("SPY")], axis=1)
+        r["alpha"] = pd.DataFrame([{"strategy (2018+)": "run 27 winner, PIT", **A.alpha_beta(win["curve"][win["curve"].index >= A.IS_END], spy)}])
+    yr.index = yr.index.astype(int)
+    r["years"] = yr.rename_axis("year").reset_index()
+    t = win["trades"]
+    r["case"] = t[t["ticker"].isin(FOCUS)][["ticker", "date_in", "date_out", "days", "ret"]].sort_values(["ticker", "date_in"])
+    r["today"] = win["open"]
+    for k in ("by_exit", "by_n", "by_other", "best", "best_per_exit", "bench", "years", "case", "today"):
+        if isinstance(r.get(k), pd.DataFrame):
+            r[k].to_csv(out / f"run27_{k}.csv", index=False)
+    return r
+
+
+def _run27_section(r, md):
+    T = lambda k: md(r[k], floatfmt=".3f") if isinstance(r.get(k), pd.DataFrame) and len(r[k]) else "(not available)"
+    return [
+        "## 18. Run 27: a diversified 10-20 stock momentum book, and should a long-term holder use a stop?",
+        "",
+        "Leaders only (rising 50-day above the 200-day, near 52-week highs, >= $10, >= $20M/day), S&P 500 point-in-time "
+        "incl. former members, equal weight. Every version rebalances monthly (sells what fell out of the top 2N at "
+        "month-end); the exit rules are added on top. 432 configurations: 10/15/20 stocks x 2 momentum ranks x "
+        "fundamentals (none / sales >= 20% and EPS >= 25%) x buying daily or at month-ends x QQQ > 200d rule x 9 exits. Chosen on "
+        "2010-2017 (IS10, when SEC fundamentals exist); judged on 2018+ (OOS). 0.1% per side.",
+        "",
+        "The stop question: median over all configurations for each exit rule:",
+        "",
+        T("by_exit"),
+        "",
+        "Best configuration for each exit rule (chosen on 2010-2017):",
+        "",
+        T("best_per_exit"),
+        "",
+        "Number of stocks (median):",
+        "",
+        T("by_n"),
+        "",
+        "Other settings (median):",
+        "",
+        T("by_other"),
+        "",
+        f"Top 10 overall (by 2010-2017 return / drawdown). Winner: {r.get('winner', '')}",
+        "",
+        T("best"),
+        "",
+        "Benchmarks:",
+        "",
+        T("bench"),
+        "",
+        T("alpha"),
+        "",
+        "Year by year (winner vs SPY):",
+        "",
+        T("years"),
+        "",
+        "Winner's trades in NVDA / SNDK-type leaders:",
+        "",
+        T("case"),
+        "",
+        "Winner's holdings at the last close:",
+        "",
+        T("today"),
+        "",
+    ]
+
+
 def _run25_section(r, md):
     T = lambda k: md(r[k], floatfmt=".3f") if isinstance(r.get(k), pd.DataFrame) and len(r[k]) else "(not available)"
     return [
@@ -1021,6 +1173,8 @@ def main() -> None:
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
 
     # ---------------- run 24: consolidated tests
+    r27 = run27(prices, market, sp_hist, out, fund=fund, earn=earn)
+    print(f"[research] run 27 long-term book done ({time.time() - t0:.0f}s)")
     r25 = run25(sig, prices, market, sp_hist, out, fund=fund, earn=earn)
     print(f"[research] run 25 portfolio grid done ({time.time() - t0:.0f}s)")
     r24 = run24(sig, sample, lb, closes, prices, market, pit, pit_current, sp_hist,
@@ -1213,6 +1367,7 @@ def main() -> None:
             "",
             *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
         ] if short else []),
+        *_run27_section(r27, md),
         *_run25_section(r25, md),
         *_run24_section(r24, md),
         "## 15. ADR%, volatility-matched check, parabolic shorts (run 23)",
