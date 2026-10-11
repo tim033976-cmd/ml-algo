@@ -97,7 +97,7 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
                 if len(hold) >= n:
                     break
                 alloc = min(equity / n, cash)
-                if alloc < equity * 0.05:
+                if alloc < 0.5 * equity / n:     # (was equity * 0.05: float rounding blocked buys at N = 20)
                     break
                 lvl = -np.inf
                 if stop:

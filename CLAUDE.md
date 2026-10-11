@@ -74,3 +74,7 @@ using ML to test many variations honestly. The user trades breakout / momentum s
   Fixed 8% stops shake out of volatile leaders (NVDA, PLTR) before their big moves.
 - ADR-scaled sizing (x 6%/ADR) improved the PIT goal-model portfolio (16% vs 10.5%). Fundamentals
   (inflection) don't work as filters; as model features they add a little at the top tiers.
+- Long-term momentum book (run 27, 10-15 stocks, monthly "still in top 2N" rebalance): adding any stop or trail
+  (8%, 2.5-3x ADR, 50-day, 200-day, fundamentals break) lowered return/DD in almost every config; no stop is best.
+  Best: 15 stocks, 6m/1m, no stop: OOS 19.1% / -39% vs QQQ 20.2% / -35%. Catches NVDA/PLTR/SNDK runs. (N=20 results
+  in run 27 were broken by a rounding bug, fixed.)

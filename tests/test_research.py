@@ -547,3 +547,15 @@ def test_rotation_long_term_exits():
     ends = closes.index.to_series().groupby(closes.index.to_period("M")).transform("max") == closes.index
     r4 = R.run(P, n=2, exit_rule="none", stop=None, entry_days=ends.to_numpy(), rank_buffer=2, start=start, cost=0.0)
     assert set(r4["trades"]["t_in"]) <= set(np.flatnonzero(ends.to_numpy())) and len(r4["open"]) > 0
+
+
+def test_rotation_fills_every_slot():
+    # run 27 bug: equity / 20 < equity * 0.05 by float rounding blocked buys at N = 20
+    from mlalgo.research import rotation as R
+    idx = pd.bdate_range("2010-01-01", periods=400)
+    g = np.arange(400)
+    closes = pd.DataFrame({f"s{k}": 20 * np.exp((0.001 + 0.0001 * k) * g) for k in range(25)}, index=idx)
+    P = R.prepare(closes, closes * 1e6)
+    for n in (10, 15, 20):
+        r = R.run(P, n=n, exit_rule="none", stop=None, start=str(idx[300].date()))
+        assert len(r["open"]) == n

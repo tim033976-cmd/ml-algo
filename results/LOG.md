@@ -1,5 +1,13 @@
 # Research log (newest first)
 
+## Run 27 — 2026-10-11 (commit f92aaf7): diversified 10-20 stock momentum book; should a long-term holder use a stop?
+432 configurations (10/15/20 stocks x 2 ranks x fundamentals none / sales+EPS x buy daily / month-end x QQQ>200d or not x 9 exits), all with the monthly top-2N rebalance; PIT S&P 500 incl. former members; chosen on 2010-2017.
+- **BUG: the 20-stock results are invalid.** The "minimum allocation" check `alloc < equity * 0.05` failed by float rounding for N = 20 (equity/20 < equity*0.05 about 36% of the time), so 20-stock books bought at random and sat partly in cash (median IS10 trades 83 vs 577-719). Fixed (`alloc < 0.5 * equity / n`) with a test; N = 10 and 15 are unaffected. The reported "winner" (N = 20) is therefore not trustworthy; conclusions below use N = 10/15 only.
+- **The stop answer: no stop.** On top of the monthly rebalance, every stop or trail made the book worse in-sample in every paired configuration (0-3% of pairs better for 8% / 2.5-3x ADR / 50-day stops; 19% for the 200-day; 38% for fundamentals break) and OOS in 69-94% of pairs. Stops cut OOS drawdown by only 1-6 points (50-day: 6.5 points) while costing far more return (median OOS CAGR 50-day 8.6% vs no stop 13.7%). The monthly "still in the top 2N?" check already does the job of a stop. Fundamentals as a filter also hurt here (median IS10 2.7% vs 6.7%).
+- **Best valid book (chosen IS10): 15 stocks, 6m/1m momentum, buy daily, no regime, no stop:** IS10 12.2% / −21%, **OOS 19.1% / −39%** vs SPY 14.6% / −34%, QQQ 20.2% / −35%, run-24 top-10 momentum 14.9% / −41% (2010+ start). Roughly QQQ-like return with a deeper drawdown. QQQ>200d improves OOS return/DD in the median (0.43 vs 0.35) but not IS.
+- **It does catch the NVDA / SNDK type** (because nothing shakes it out): NVDA +92% (2023) and +90% (2024), PLTR +133%, SNDK +412% (Dec 2025-Jul 2026), META +39%, ANET +31%. 2026 YTD +83% carries the OOS number; 2018-2025 alone the (N=20) book made ~9%/yr vs SPY 14%.
+- **Decision:** for a long-term momentum book, use the monthly rank check as the exit, no price stop. It still does not clearly beat QQQ; remaining ideas must be tested against QQQ, not SPY. Re-run N = 20 with the fix only as part of the next consolidated run.
+
 ## Run 26 — 2026-10-10 (commit c234172): fundamentals must confirm the leader portfolio (user)
 Same 144 configurations x 7 pre-registered filters (SEC point-in-time: revenue YoY, diluted EPS YoY / turning positive, earnings-day gap up).
 - **Caveat:** SEC XBRL data starts ~2009-2011, so filtered versions hold cash in 2007-2008 (they "avoid" the crash for lack of data). IS comparisons flatter the filters; **the OOS 2018+ comparison is clean** (filters fixed in advance, data available).
