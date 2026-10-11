@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-10 16:44 UTC in 78 min.
+Generated 2026-10-11 05:33 UTC in 67 min.
 Universe: 1540 stocks with data (sp500: 657, sp600: 537, sp400: 346; 158 former S&P 500 members). Signals 2006-01-03 -> 2026-10-08: 952,523.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
@@ -108,7 +108,6 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 
 | run_utc          | commit   |   tickers |   signals |   rank_corr |   top20_oos |   baseline_oos | edge_entries                                                                                                                                                                                                                                                                                | no_edge_entries                                                            | best_exit   | helpful_filters                                                                                              |   ml_auc |   ml_rank_corr |   ml_monotonic |   ml_gap | top_features                                                       | filters_lifting_baseline      |   rules_held | best_portfolio                                                                    |   best_cagr |   spy_cagr | best_calmar                                                                       |   super_auc |   super_lift | super_features                                                  |   goal_b10_top_hit |   goal_b10_top_ret |   goal_b20_top_hit |   goal_b20_top_ret | menu_choice   |   menu_choice_oos_ret |
 |:-----------------|:---------|----------:|----------:|------------:|------------:|---------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|:------------|:-------------------------------------------------------------------------------------------------------------|---------:|---------------:|---------------:|---------:|:-------------------------------------------------------------------|:------------------------------|-------------:|:----------------------------------------------------------------------------------|------------:|-----------:|:----------------------------------------------------------------------------------|------------:|-------------:|:----------------------------------------------------------------|-------------------:|-------------------:|-------------------:|-------------------:|:--------------|----------------------:|
-| 2026-10-09 05:05 | 00c2b0a  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | nan           |                nan    |
 | 2026-10-09 11:57 | 4ad9589  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 | 2026-10-09 12:54 | 5ce3166  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 | 2026-10-09 14:16 | e1db28d  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
@@ -118,6 +117,7 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 | 2026-10-10 13:16 | 7a7fe02  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme              |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.34 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
 | 2026-10-10 15:18 | 3de3b4a  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme              |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.34 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
 | 2026-10-10 16:44 | 51ff2b3  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme              |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.32 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
+| 2026-10-11 05:33 | f92aaf7  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme              |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.32 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
 
 ## 1. Did picking the best in-sample strategies work out-of-sample?
 
@@ -776,24 +776,191 @@ Do the new features improve the +20%/-10% goal model? (OOS tiers)
 | top 2%     |  1103.000 |        0.466 |      0.451 |            0.050 |
 | top 1%     |   510.000 |        0.480 |      0.465 |            0.051 |
 
+## 18. Run 27: a diversified 10-20 stock momentum book, and should a long-term holder use a stop?
+
+Leaders only (rising 50-day above the 200-day, near 52-week highs, >= $10, >= $20M/day), S&P 500 point-in-time incl. former members, equal weight. Every version rebalances monthly (sells what fell out of the top 2N at month-end); the exit rules are added on top. 432 configurations: 10/15/20 stocks x 2 momentum ranks x fundamentals (none / sales >= 20% and EPS >= 25%) x buying daily or at month-ends x QQQ > 200d rule x 9 exits. Chosen on 2010-2017 (IS10, when SEC fundamentals exist); judged on 2018+ (OOS). 0.1% per side.
+
+The stop question: median over all configurations for each exit rule:
+
+| exit                             |   IS10_CAGR |   IS10_maxDD |   IS10_CAGR_per_DD |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_win |   OOS_avg_days |
+|:---------------------------------|------------:|-------------:|-------------------:|-----------:|------------:|------------------:|----------:|---------------:|
+| no stop (monthly rebalance only) |       0.055 |       -0.226 |              0.241 |      0.137 |      -0.349 |             0.468 |     0.465 |         47.004 |
+| fixed 8% stop                    |       0.030 |       -0.256 |              0.148 |      0.127 |      -0.298 |             0.436 |     0.420 |         39.145 |
+| wide stop 2.5 x ADR              |       0.035 |       -0.259 |              0.140 |      0.128 |      -0.308 |             0.401 |     0.415 |         38.194 |
+| wide stop 3 x ADR                |       0.029 |       -0.259 |              0.142 |      0.123 |      -0.326 |             0.405 |     0.430 |         40.070 |
+| close below 50-day               |       0.020 |       -0.263 |              0.088 |      0.086 |      -0.249 |             0.357 |     0.380 |         25.872 |
+| 50-day + 3 x ADR stop            |       0.020 |       -0.258 |              0.084 |      0.087 |      -0.243 |             0.359 |     0.372 |         25.182 |
+| 50-day + fundamentals break      |       0.003 |       -0.247 |              0.051 |      0.055 |      -0.233 |             0.249 |     0.455 |         12.855 |
+| close below 200-day              |       0.043 |       -0.230 |              0.219 |      0.122 |      -0.331 |             0.420 |     0.455 |         44.989 |
+| fundamentals break only          |       0.042 |       -0.227 |              0.166 |      0.107 |      -0.335 |             0.332 |     0.507 |         19.500 |
+
+Best configuration for each exit rule (chosen on 2010-2017):
+
+|   N | rank by   | fundamentals   | buy       | regime     | exit                             |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |   IS10_CAGR |   IS10_maxDD |   IS10_CAGR_per_DD |   IS10_trades |   IS10_win |   IS10_avg_days |
+|----:|:----------|:---------------|:----------|:-----------|:---------------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|------------:|-------------:|-------------------:|--------------:|-----------:|----------------:|
+|  20 | mom_6m1m  | none           | daily     | none       | no stop (monthly rebalance only) |     0.078 |     -0.411 |            0.190 |         962 |    0.472 |        50.989 |      0.162 |      -0.379 |             0.426 |          811 |     0.470 |         47.030 |       0.122 |       -0.186 |              0.653 |           962 |      0.472 |          50.989 |
+|  15 | mom_6m1m  | none           | daily     | none       | close below 200-day              |     0.076 |     -0.453 |            0.167 |         790 |    0.461 |        47.858 |      0.161 |      -0.391 |             0.411 |          671 |     0.455 |         44.001 |       0.117 |       -0.211 |              0.556 |           790 |      0.461 |          47.858 |
+|  15 | mom_6m1m  | none           | month-end | none       | fundamentals break only          |     0.056 |     -0.431 |            0.129 |         979 |    0.525 |        30.590 |      0.108 |      -0.361 |             0.299 |          909 |     0.495 |         23.046 |       0.092 |       -0.167 |              0.551 |           979 |      0.525 |          30.590 |
+|  20 | qull_best | none           | daily     | none       | wide stop 3 x ADR                |     0.059 |     -0.407 |            0.144 |        1143 |    0.444 |        42.629 |      0.136 |      -0.374 |             0.363 |          970 |     0.449 |         38.685 |       0.096 |       -0.219 |              0.439 |          1143 |      0.444 |          42.629 |
+|  15 | qull_best | none           | month-end | none       | fixed 8% stop                    |     0.066 |     -0.385 |            0.172 |         833 |    0.465 |        41.349 |      0.147 |      -0.360 |             0.408 |          719 |     0.459 |         36.140 |       0.108 |       -0.249 |              0.435 |           833 |      0.465 |          41.349 |
+|  20 | mom_6m1m  | none           | daily     | none       | wide stop 2.5 x ADR              |     0.048 |     -0.471 |            0.103 |        1155 |    0.414 |        42.024 |      0.133 |      -0.385 |             0.346 |          983 |     0.415 |         38.193 |       0.100 |       -0.254 |              0.394 |          1155 |      0.414 |          42.024 |
+|  15 | qull_best | none           | daily     | none       | 50-day + 3 x ADR stop            |     0.034 |     -0.452 |            0.076 |        1500 |    0.392 |        25.203 |      0.109 |      -0.406 |             0.268 |         1214 |     0.377 |         24.349 |       0.079 |       -0.268 |              0.295 |          1500 |      0.392 |          25.203 |
+|  15 | qull_best | none           | daily     | none       | close below 50-day               |     0.031 |     -0.466 |            0.067 |        1449 |    0.391 |        25.957 |      0.099 |      -0.410 |             0.243 |         1184 |     0.385 |         25.136 |       0.076 |       -0.286 |              0.265 |          1449 |      0.391 |          25.957 |
+|  15 | qull_best | none           | month-end | QQQ > 200d | 50-day + fundamentals break      |     0.024 |     -0.268 |            0.090 |        1036 |    0.479 |        19.649 |      0.083 |      -0.200 |             0.415 |          865 |     0.489 |         15.408 |       0.037 |       -0.222 |              0.168 |          1036 |      0.479 |          19.649 |
+
+Number of stocks (median):
+
+|      N |   IS10_CAGR |   IS10_maxDD |   IS10_CAGR_per_DD |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |
+|-------:|------------:|-------------:|-------------------:|-----------:|------------:|------------------:|
+| 10.000 |       0.037 |       -0.311 |              0.125 |      0.137 |      -0.370 |             0.409 |
+| 15.000 |       0.041 |       -0.249 |              0.172 |      0.120 |      -0.331 |             0.392 |
+| 20.000 |       0.000 |        0.000 |             -0.103 |      0.000 |       0.000 |             0.261 |
+
+Other settings (median):
+
+| value              |   IS10_CAGR |   IS10_maxDD |   IS10_CAGR_per_DD |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD | setting      |
+|:-------------------|------------:|-------------:|-------------------:|-----------:|------------:|------------------:|:-------------|
+| none               |       0.048 |       -0.254 |              0.236 |      0.130 |      -0.370 |             0.414 | fundamentals |
+| sales + EPS growth |       0.021 |       -0.244 |              0.091 |      0.086 |      -0.273 |             0.373 | fundamentals |
+| daily              |       0.033 |       -0.263 |              0.131 |      0.120 |      -0.328 |             0.413 | buy          |
+| month-end          |       0.022 |       -0.231 |              0.144 |      0.085 |      -0.268 |             0.372 | buy          |
+| QQQ > 200d         |       0.025 |       -0.245 |              0.125 |      0.111 |      -0.270 |             0.429 | regime       |
+| none               |       0.032 |       -0.252 |              0.157 |      0.099 |      -0.337 |             0.345 | regime       |
+| mom_6m1m           |       0.027 |       -0.244 |              0.140 |      0.098 |      -0.300 |             0.372 | rank by      |
+| qull_best          |       0.027 |       -0.255 |              0.135 |      0.110 |      -0.293 |             0.423 | rank by      |
+
+Top 10 overall (by 2010-2017 return / drawdown). Winner: 20, mom_6m1m, none, daily, none, no stop (monthly rebalance only)
+
+|   N | rank by   | fundamentals   | buy       | regime     | exit                             |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |   IS10_CAGR |   IS10_maxDD |   IS10_CAGR_per_DD |   IS10_trades |   IS10_win |   IS10_avg_days |
+|----:|:----------|:---------------|:----------|:-----------|:---------------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|------------:|-------------:|-------------------:|--------------:|-----------:|----------------:|
+|  20 | mom_6m1m  | none           | daily     | none       | no stop (monthly rebalance only) |     0.078 |     -0.411 |            0.190 |         962 |    0.472 |        50.989 |      0.162 |      -0.379 |             0.426 |          811 |     0.470 |         47.030 |       0.122 |       -0.186 |              0.653 |           962 |      0.472 |          50.989 |
+|  15 | mom_6m1m  | none           | daily     | none       | no stop (monthly rebalance only) |     0.078 |     -0.453 |            0.173 |         765 |    0.475 |        49.856 |      0.191 |      -0.393 |             0.486 |          642 |     0.475 |         45.654 |       0.122 |       -0.210 |              0.581 |           765 |      0.475 |          49.856 |
+|  20 | qull_best | none           | daily     | none       | no stop (monthly rebalance only) |     0.083 |     -0.395 |            0.210 |        1030 |    0.499 |        48.027 |      0.178 |      -0.341 |             0.522 |          848 |     0.485 |         44.890 |       0.123 |       -0.214 |              0.575 |          1030 |      0.499 |          48.027 |
+|  15 | mom_6m1m  | none           | daily     | none       | close below 200-day              |     0.076 |     -0.453 |            0.167 |         790 |    0.461 |        47.858 |      0.161 |      -0.391 |             0.411 |          671 |     0.455 |         44.001 |       0.117 |       -0.211 |              0.556 |           790 |      0.461 |          47.858 |
+|  15 | mom_6m1m  | none           | month-end | none       | fundamentals break only          |     0.056 |     -0.431 |            0.129 |         979 |    0.525 |        30.590 |      0.108 |      -0.361 |             0.299 |          909 |     0.495 |         23.046 |       0.092 |       -0.167 |              0.551 |           979 |      0.525 |          30.590 |
+|  15 | mom_6m1m  | none           | month-end | none       | no stop (monthly rebalance only) |     0.074 |     -0.431 |            0.171 |         745 |    0.472 |        50.285 |      0.182 |      -0.392 |             0.463 |          632 |     0.468 |         45.777 |       0.118 |       -0.214 |              0.551 |           745 |      0.472 |          50.285 |
+|  15 | qull_best | none           | daily     | none       | close below 200-day              |     0.069 |     -0.459 |            0.151 |         842 |    0.464 |        44.567 |      0.163 |      -0.380 |             0.427 |          711 |     0.491 |         41.436 |       0.120 |       -0.230 |              0.520 |           842 |      0.464 |          44.567 |
+|  15 | qull_best | none           | daily     | none       | no stop (monthly rebalance only) |     0.074 |     -0.434 |            0.170 |         816 |    0.475 |        46.413 |      0.191 |      -0.374 |             0.510 |          684 |     0.512 |         42.918 |       0.120 |       -0.232 |              0.518 |           816 |      0.475 |          46.413 |
+|  15 | qull_best | none           | month-end | none       | no stop (monthly rebalance only) |     0.075 |     -0.398 |            0.189 |         791 |    0.482 |        47.003 |      0.177 |      -0.374 |             0.473 |          676 |     0.503 |         42.883 |       0.119 |       -0.232 |              0.513 |           791 |      0.482 |          47.003 |
+|  20 | mom_6m1m  | none           | daily     | QQQ > 200d | no stop (monthly rebalance only) |     0.075 |     -0.304 |            0.245 |         891 |    0.469 |        51.706 |      0.158 |      -0.375 |             0.422 |          707 |     0.465 |         48.463 |       0.098 |       -0.192 |              0.511 |           891 |      0.469 |          51.706 |
+
+Benchmarks:
+
+| benchmark                                         |   IS10_CAGR |   IS10_maxDD |   OOS_CAGR |   OOS_maxDD |
+|:--------------------------------------------------|------------:|-------------:|-----------:|------------:|
+| SPY                                               |       0.136 |       -0.186 |      0.146 |      -0.337 |
+| QQQ                                               |       0.177 |       -0.161 |      0.202 |      -0.351 |
+| simple top-10 momentum, monthly, no stop (run 24) |       0.115 |       -0.199 |      0.149 |      -0.412 |
+
+| strategy (2018+)   |   beta |   alpha_annual |   alpha_t |   sharpe |   spy_sharpe |   CAGR |   max_DD |   CAGR_per_DD |   worst_month |
+|:-------------------|-------:|---------------:|----------:|---------:|-------------:|-------:|---------:|--------------:|--------------:|
+| run 27 winner, PIT |  0.912 |          0.047 |     0.647 |    0.684 |        0.816 |  0.162 |   -0.379 |         0.426 |        -0.292 |
+
+Year by year (winner vs SPY):
+
+|     year |   winner |    SPY |
+|---------:|---------:|-------:|
+| 2010.000 |    0.027 |  0.131 |
+| 2011.000 |    0.007 |  0.019 |
+| 2012.000 |    0.168 |  0.160 |
+| 2013.000 |    0.360 |  0.323 |
+| 2014.000 |    0.210 |  0.135 |
+| 2015.000 |   -0.061 |  0.012 |
+| 2016.000 |    0.119 |  0.120 |
+| 2017.000 |    0.196 |  0.217 |
+| 2018.000 |   -0.089 | -0.046 |
+| 2019.000 |    0.112 |  0.312 |
+| 2020.000 |    0.199 |  0.183 |
+| 2021.000 |    0.210 |  0.287 |
+| 2022.000 |   -0.034 | -0.182 |
+| 2023.000 |    0.174 |  0.262 |
+| 2024.000 |    0.101 |  0.249 |
+| 2025.000 |    0.115 |  0.177 |
+| 2026.000 |    0.829 |  0.151 |
+
+Winner's trades in NVDA / SNDK-type leaders:
+
+| ticker   | date_in             | date_out            |   days |    ret |
+|:---------|:--------------------|:--------------------|-------:|-------:|
+| ANET     | 2021-12-01 00:00:00 | 2022-01-31 00:00:00 |     41 |  0.024 |
+| ANET     | 2022-04-01 00:00:00 | 2022-04-29 00:00:00 |     19 | -0.171 |
+| ANET     | 2022-11-30 00:00:00 | 2022-12-30 00:00:00 |     21 | -0.129 |
+| ANET     | 2023-04-03 00:00:00 | 2023-05-31 00:00:00 |     40 | -0.008 |
+| ANET     | 2023-08-31 00:00:00 | 2024-04-30 00:00:00 |    166 |  0.314 |
+| ANET     | 2024-06-28 00:00:00 | 2024-07-31 00:00:00 |     22 | -0.011 |
+| ANET     | 2024-10-31 00:00:00 | 2024-11-29 00:00:00 |     20 |  0.050 |
+| ANET     | 2025-09-02 00:00:00 | 2025-11-28 00:00:00 |     62 | -0.038 |
+| APP      | 2025-09-30 00:00:00 | 2025-11-28 00:00:00 |     42 | -0.166 |
+| APP      | 2025-12-31 00:00:00 | 2026-01-30 00:00:00 |     20 | -0.298 |
+| AVGO     | 2015-07-01 00:00:00 | 2015-07-31 00:00:00 |     21 | -0.076 |
+| AVGO     | 2016-03-31 00:00:00 | 2016-04-29 00:00:00 |     21 | -0.057 |
+| AVGO     | 2019-02-04 00:00:00 | 2019-05-31 00:00:00 |     81 | -0.067 |
+| AVGO     | 2022-01-03 00:00:00 | 2022-01-31 00:00:00 |     19 | -0.117 |
+| AVGO     | 2023-06-07 00:00:00 | 2023-09-29 00:00:00 |     79 |  0.059 |
+| AVGO     | 2024-03-01 00:00:00 | 2024-04-30 00:00:00 |     41 | -0.067 |
+| AVGO     | 2024-06-28 00:00:00 | 2024-08-30 00:00:00 |     44 |  0.014 |
+| AVGO     | 2025-01-02 00:00:00 | 2025-01-31 00:00:00 |     19 | -0.046 |
+| AVGO     | 2025-05-30 00:00:00 | 2025-06-30 00:00:00 |     20 |  0.141 |
+| AVGO     | 2025-09-02 00:00:00 | 2025-12-31 00:00:00 |     84 |  0.165 |
+| CRWD     | 2024-06-28 00:00:00 | 2024-07-31 00:00:00 |     22 | -0.395 |
+| CRWD     | 2025-02-06 00:00:00 | 2025-03-31 00:00:00 |     36 | -0.162 |
+| META     | 2023-04-03 00:00:00 | 2023-08-31 00:00:00 |    104 |  0.389 |
+| META     | 2023-11-01 00:00:00 | 2023-11-30 00:00:00 |     20 |  0.049 |
+| META     | 2024-03-01 00:00:00 | 2024-04-30 00:00:00 |     41 | -0.144 |
+| NVDA     | 2020-07-31 00:00:00 | 2020-10-30 00:00:00 |     64 |  0.181 |
+| NVDA     | 2021-06-30 00:00:00 | 2021-09-30 00:00:00 |     64 |  0.036 |
+| NVDA     | 2021-10-29 00:00:00 | 2022-01-31 00:00:00 |     63 | -0.042 |
+| NVDA     | 2023-03-01 00:00:00 | 2023-09-29 00:00:00 |    147 |  0.917 |
+| NVDA     | 2024-01-31 00:00:00 | 2024-07-31 00:00:00 |    125 |  0.902 |
+| NVDA     | 2024-10-31 00:00:00 | 2024-11-29 00:00:00 |     20 |  0.041 |
+| NVDA     | 2025-08-05 00:00:00 | 2025-11-28 00:00:00 |     81 | -0.007 |
+| PLTR     | 2024-10-01 00:00:00 | 2025-02-28 00:00:00 |    102 |  1.329 |
+| PLTR     | 2025-05-30 00:00:00 | 2025-11-28 00:00:00 |    126 |  0.278 |
+| SMCI     | 2024-04-02 00:00:00 | 2024-04-30 00:00:00 |     20 | -0.150 |
+| SMCI     | 2025-08-05 00:00:00 | 2025-08-29 00:00:00 |     18 | -0.275 |
+| SNDK     | 2025-12-31 00:00:00 | 2026-07-31 00:00:00 |    145 |  4.118 |
+| VRT      | 2026-04-01 00:00:00 | 2026-07-31 00:00:00 |     83 | -0.068 |
+
+Winner's holdings at the last close:
+
+| ticker   | entry_date          |    entry |     last |   gain |   stop |   trail_level |
+|:---------|:--------------------|---------:|---------:|-------:|-------:|--------------:|
+| DELL     | 2026-06-02 00:00:00 |  434.592 |  586.060 |  0.349 |    nan |           nan |
+| HPE      | 2026-06-02 00:00:00 |   55.845 |   73.460 |  0.315 |    nan |           nan |
+| FTNT     | 2026-07-31 00:00:00 |  161.950 |  194.750 |  0.203 |    nan |           nan |
+| MPC      | 2026-07-31 00:00:00 |  315.606 |  455.030 |  0.442 |    nan |           nan |
+| NTAP     | 2026-07-31 00:00:00 |  178.098 |  237.150 |  0.332 |    nan |           nan |
+| PANW     | 2026-07-31 00:00:00 |  331.830 |  418.780 |  0.262 |    nan |           nan |
+| VLO      | 2026-07-31 00:00:00 |  312.900 |  433.750 |  0.386 |    nan |           nan |
+| CRWD     | 2026-07-31 00:00:00 |  190.860 |  275.040 |  0.441 |    nan |           nan |
+| PSX      | 2026-07-31 00:00:00 |  210.562 |  278.180 |  0.321 |    nan |           nan |
+| MRNA     | 2026-08-31 00:00:00 |  140.340 |  225.000 |  0.603 |    nan |           nan |
+| VEEV     | 2026-08-31 00:00:00 |  285.690 |  296.130 |  0.037 |    nan |           nan |
+| CRL      | 2026-08-31 00:00:00 |  288.240 |  301.790 |  0.047 |    nan |           nan |
+| ZBRA     | 2026-08-31 00:00:00 |  353.550 |  387.180 |  0.095 |    nan |           nan |
+| ANET     | 2026-08-31 00:00:00 |  195.690 |  216.740 |  0.108 |    nan |           nan |
+| IQV      | 2026-08-31 00:00:00 |  261.190 |  259.880 | -0.005 |    nan |           nan |
+| AMD      | 2026-10-01 00:00:00 |  615.730 |  608.100 | -0.012 |    nan |           nan |
+| MU       | 2026-10-01 00:00:00 | 1097.390 | 1029.000 | -0.062 |    nan |           nan |
+
 ## 17. Runs 25-26: concentrated leader portfolio (3-5 stocks) on top traders' rules, with fundamentals
 
 Hold N stocks (equal weight), decided at every close. Leaders only: price >= $10, >= $20M/day, above a rising 50-day that is above the 200-day, within 25% of the 52-week high; S&P 500 members at the time (incl. later-removed ones). Entry: best-ranked leader into an empty slot (optionally only within 3 days of a top-trader setup: episodic pivot / breakout / base / flag / VCP; optionally only while QQQ > 200-day). Exit at the close: below the 10/20/50-day average, 8% below entry, or (rank) out of the top 3N. 0.1% per side. 144 configurations x 7 fundamentals filters; the winner is chosen on 2007-2017 return / drawdown only.
 
 Top 10 configurations by IS (2007-2017) CAGR / max drawdown, with their OOS (2018+) results:
 
-|   N | rank by   | exit   | regime     | entry          | fundamentals                 |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
-|----:|:----------|:-------|:-----------|:---------------|:-----------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
-|   4 | mom_12_1  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.061 |     -0.216 |            0.283 |         177 |    0.452 |        40.497 |      0.117 |      -0.278 |             0.419 |          206 |     0.388 |         35.049 |
-|   3 | mom_12_1  | sma20  | none       | setup required | EPS growth >= 25% (O'Neil C) |     0.049 |     -0.184 |            0.266 |         296 |    0.446 |        16.916 |      0.115 |      -0.358 |             0.320 |          388 |     0.433 |         14.613 |
-|   5 | qull_best | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.057 |     -0.221 |            0.258 |         209 |    0.474 |        42.354 |      0.095 |      -0.303 |             0.313 |          250 |     0.408 |         35.344 |
-|   5 | mom_6m1m  | sma50  | QQQ > 200d | any leader     | EPS growth >= 25% (O'Neil C) |     0.074 |     -0.293 |            0.251 |         305 |    0.436 |        32.370 |      0.156 |      -0.344 |             0.454 |          326 |     0.374 |         28.442 |
-|   4 | mom_6m1m  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.057 |     -0.233 |            0.244 |         172 |    0.483 |        41.866 |      0.082 |      -0.273 |             0.300 |          207 |     0.401 |         34.362 |
-|   5 | qull_best | sma50  | none       | setup required | EPS growth >= 25% (O'Neil C) |     0.049 |     -0.217 |            0.224 |         224 |    0.446 |        40.478 |      0.095 |      -0.325 |             0.293 |          284 |     0.408 |         34.482 |
-|   5 | mom_6m1m  | sma50  | none       | any leader     | EPS growth >= 25% (O'Neil C) |     0.076 |     -0.343 |            0.221 |         336 |    0.432 |        31.167 |      0.136 |      -0.448 |             0.303 |          397 |     0.345 |         26.688 |
-|   5 | mom_6m1m  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.046 |     -0.216 |            0.214 |         218 |    0.468 |        40.798 |      0.083 |      -0.261 |             0.318 |          252 |     0.417 |         35.155 |
-|   3 | qull_best | sma50  | none       | setup required | EPS growth >= 25% (O'Neil C) |     0.062 |     -0.292 |            0.214 |         133 |    0.474 |        42.556 |      0.129 |      -0.371 |             0.347 |          173 |     0.405 |         34.590 |
-|   3 | mom_6m1m  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.061 |     -0.284 |            0.214 |         130 |    0.485 |        42.023 |      0.116 |      -0.270 |             0.430 |          157 |     0.408 |         34.529 |
+|   N | rank by   | exit   | regime     | entry          | fundamentals                 |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |   IS10_CAGR |   IS10_maxDD |   IS10_CAGR_per_DD |   IS10_trades |   IS10_win |   IS10_avg_days |
+|----:|:----------|:-------|:-----------|:---------------|:-----------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|------------:|-------------:|-------------------:|--------------:|-----------:|----------------:|
+|   4 | mom_12_1  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.061 |     -0.216 |            0.283 |         177 |    0.452 |        40.497 |      0.117 |      -0.278 |             0.419 |          206 |     0.388 |         35.049 |       0.068 |       -0.216 |              0.316 |           177 |      0.452 |          40.497 |
+|   3 | mom_12_1  | sma20  | none       | setup required | EPS growth >= 25% (O'Neil C) |     0.049 |     -0.184 |            0.266 |         296 |    0.446 |        16.916 |      0.115 |      -0.358 |             0.320 |          388 |     0.433 |         14.613 |       0.057 |       -0.184 |              0.307 |           296 |      0.446 |          16.916 |
+|   5 | qull_best | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.057 |     -0.221 |            0.258 |         209 |    0.474 |        42.354 |      0.095 |      -0.303 |             0.313 |          250 |     0.408 |         35.344 |       0.065 |       -0.221 |              0.296 |           209 |      0.474 |          42.354 |
+|   5 | mom_6m1m  | sma50  | QQQ > 200d | any leader     | EPS growth >= 25% (O'Neil C) |     0.074 |     -0.293 |            0.251 |         305 |    0.436 |        32.370 |      0.156 |      -0.344 |             0.454 |          326 |     0.374 |         28.442 |       0.079 |       -0.293 |              0.268 |           305 |      0.436 |          32.370 |
+|   4 | mom_6m1m  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.057 |     -0.233 |            0.244 |         172 |    0.483 |        41.866 |      0.082 |      -0.273 |             0.300 |          207 |     0.401 |         34.362 |       0.062 |       -0.233 |              0.268 |           172 |      0.483 |          41.866 |
+|   5 | qull_best | sma50  | none       | setup required | EPS growth >= 25% (O'Neil C) |     0.049 |     -0.217 |            0.224 |         224 |    0.446 |        40.478 |      0.095 |      -0.325 |             0.293 |          284 |     0.408 |         34.482 |       0.054 |       -0.217 |              0.248 |           224 |      0.446 |          40.478 |
+|   5 | mom_6m1m  | sma50  | none       | any leader     | EPS growth >= 25% (O'Neil C) |     0.076 |     -0.343 |            0.221 |         336 |    0.432 |        31.167 |      0.136 |      -0.448 |             0.303 |          397 |     0.345 |         26.688 |       0.082 |       -0.343 |              0.238 |           336 |      0.432 |          31.167 |
+|   5 | mom_6m1m  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.046 |     -0.216 |            0.214 |         218 |    0.468 |        40.798 |      0.083 |      -0.261 |             0.318 |          252 |     0.417 |         35.155 |       0.051 |       -0.216 |              0.234 |           218 |      0.468 |          40.798 |
+|   3 | qull_best | sma50  | none       | setup required | EPS growth >= 25% (O'Neil C) |     0.062 |     -0.292 |            0.214 |         133 |    0.474 |        42.556 |      0.129 |      -0.371 |             0.347 |          173 |     0.405 |         34.590 |       0.069 |       -0.292 |              0.236 |           133 |      0.474 |          42.556 |
+|   3 | mom_6m1m  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.061 |     -0.284 |            0.214 |         130 |    0.485 |        42.023 |      0.116 |      -0.270 |             0.430 |          157 |     0.408 |         34.529 |       0.063 |       -0.284 |              0.220 |           130 |      0.485 |          42.023 |
 
 Run 26: do fundamentals confirming the move help? Median over the same 144 configurations for each filter (sales growth = revenue YoY from SEC filings; EPS = diluted EPS YoY or turning positive; earnings gap = >= 5% gap up on an earnings day in the last 3 months), and the share of configurations where the filter beat no filter on return / drawdown:
 
@@ -809,9 +976,9 @@ Run 26: do fundamentals confirming the move help? Median over the same 144 confi
 
 Best configuration that requires fundamentals (chosen on IS):
 
-|   N | rank by   | exit   | regime     | entry          | fundamentals                 |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
-|----:|:----------|:-------|:-----------|:---------------|:-----------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
-|   4 | mom_12_1  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.061 |     -0.216 |            0.283 |         177 |    0.452 |        40.497 |      0.117 |      -0.278 |             0.419 |          206 |     0.388 |         35.049 |
+|   N | rank by   | exit   | regime     | entry          | fundamentals                 |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |   IS10_CAGR |   IS10_maxDD |   IS10_CAGR_per_DD |   IS10_trades |   IS10_win |   IS10_avg_days |
+|----:|:----------|:-------|:-----------|:---------------|:-----------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|------------:|-------------:|-------------------:|--------------:|-----------:|----------------:|
+|   4 | mom_12_1  | sma50  | QQQ > 200d | setup required | EPS growth >= 25% (O'Neil C) |     0.061 |     -0.216 |            0.283 |         177 |    0.452 |        40.497 |      0.117 |      -0.278 |             0.419 |          206 |     0.388 |         35.049 |       0.068 |       -0.216 |              0.316 |           177 |      0.452 |          40.497 |
 
 Case study: trades in NVDA / SNDK-type leaders (NVDA, SNDK, PLTR, SMCI, META, AVGO, VRT, ANET, CRWD, APP):
 
@@ -850,20 +1017,20 @@ Case study: trades in NVDA / SNDK-type leaders (NVDA, SNDK, PLTR, SMCI, META, AV
 
 Pre-registered trader-style versions (not selected on any results):
 
-|   N | rank by   | exit       | regime     | entry          | fundamentals                |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days | style                                                                                          |
-|----:|:----------|:-----------|:-----------|:---------------|:----------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|:-----------------------------------------------------------------------------------------------|
-|   4 | qull_best | sma20      | QQQ > 200d | setup required | none                        |    -0.011 |     -0.464 |           -0.024 |         559 |    0.422 |        16.182 |      0.073 |      -0.286 |             0.254 |          468 |     0.400 |         15.438 | Qullamaggie style (best-of 1/3/6m RS, setup, 20-day trail, QQQ > 200d, 4 stocks)               |
-|   4 | mom_6m1m  | sma50      | QQQ > 200d | setup required | none                        |     0.036 |     -0.283 |            0.127 |         243 |    0.440 |        38.580 |      0.123 |      -0.264 |             0.465 |          216 |     0.356 |         34.060 | Minervini / O'Neil style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, 4 stocks)           |
-|   5 | mom_6m1m  | sma50_rank | none       | any leader     | none                        |     0.001 |     -0.725 |            0.002 |         688 |    0.378 |        19.653 |      0.116 |      -0.510 |             0.228 |          590 |     0.378 |         18.193 | Pure leader rotation (6m/1m momentum, any leader, 50-day + rank, no regime, 5 stocks)          |
-|   4 | mom_6m1m  | sma50      | QQQ > 200d | setup required | sales >= 20% and EPS >= 25% |     0.012 |     -0.291 |            0.040 |         126 |    0.381 |        36.659 |      0.112 |      -0.260 |             0.431 |          169 |     0.373 |         34.118 | CAN SLIM style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, sales + EPS growth, 4 stocks) |
+|   N | rank by   | exit       | regime     | entry          | fundamentals                |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |   IS10_CAGR |   IS10_maxDD |   IS10_CAGR_per_DD |   IS10_trades |   IS10_win |   IS10_avg_days | style                                                                                          |
+|----:|:----------|:-----------|:-----------|:---------------|:----------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|------------:|-------------:|-------------------:|--------------:|-----------:|----------------:|:-----------------------------------------------------------------------------------------------|
+|   4 | qull_best | sma20      | QQQ > 200d | setup required | none                        |    -0.011 |     -0.464 |           -0.024 |         559 |    0.422 |        16.182 |      0.073 |      -0.286 |             0.254 |          468 |     0.400 |         15.438 |       0.016 |       -0.310 |              0.051 |           559 |      0.422 |          16.182 | Qullamaggie style (best-of 1/3/6m RS, setup, 20-day trail, QQQ > 200d, 4 stocks)               |
+|   4 | mom_6m1m  | sma50      | QQQ > 200d | setup required | none                        |     0.036 |     -0.283 |            0.127 |         243 |    0.440 |        38.580 |      0.123 |      -0.264 |             0.465 |          216 |     0.356 |         34.060 |       0.030 |       -0.283 |              0.105 |           243 |      0.440 |          38.580 | Minervini / O'Neil style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, 4 stocks)           |
+|   5 | mom_6m1m  | sma50_rank | none       | any leader     | none                        |     0.001 |     -0.725 |            0.002 |         688 |    0.378 |        19.653 |      0.116 |      -0.510 |             0.228 |          590 |     0.378 |         18.193 |       0.054 |       -0.473 |              0.114 |           688 |      0.378 |          19.653 | Pure leader rotation (6m/1m momentum, any leader, 50-day + rank, no regime, 5 stocks)          |
+|   4 | mom_6m1m  | sma50      | QQQ > 200d | setup required | sales >= 20% and EPS >= 25% |     0.012 |     -0.291 |            0.040 |         126 |    0.381 |        36.659 |      0.112 |      -0.260 |             0.431 |          169 |     0.373 |         34.118 |       0.009 |       -0.291 |              0.031 |           126 |      0.381 |          36.659 | CAN SLIM style (6m/1m momentum, setup, 50-day trail, QQQ > 200d, sales + EPS growth, 4 stocks) |
 
 IS winner: 4, mom_12_1, sma50, QQQ > 200d, setup required, EPS growth >= 25% (O'Neil C). Robustness:
 
-| version                                       |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
-|:----------------------------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
-| IS winner, S&P 500 point-in-time (0.1%/side)  |     0.061 |     -0.216 |            0.283 |         177 |    0.452 |        40.497 |      0.117 |      -0.278 |             0.419 |          206 |     0.388 |         35.049 |
-| IS winner, S&P 500 point-in-time, 0.3%/side   |     0.045 |     -0.239 |            0.188 |         177 |    0.452 |        40.497 |      0.091 |      -0.321 |             0.285 |          206 |     0.388 |         35.049 |
-| IS winner, all stocks (survivorship-inflated) |     0.049 |     -0.363 |            0.134 |         194 |    0.454 |        38.753 |      0.256 |      -0.328 |             0.779 |          232 |     0.371 |         31.379 |
+| version                                       |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   IS_trades |   IS_win |   IS_avg_days |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |   IS10_CAGR |   IS10_maxDD |   IS10_CAGR_per_DD |   IS10_trades |   IS10_win |   IS10_avg_days |
+|:----------------------------------------------|----------:|-----------:|-----------------:|------------:|---------:|--------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|------------:|-------------:|-------------------:|--------------:|-----------:|----------------:|
+| IS winner, S&P 500 point-in-time (0.1%/side)  |     0.061 |     -0.216 |            0.283 |         177 |    0.452 |        40.497 |      0.117 |      -0.278 |             0.419 |          206 |     0.388 |         35.049 |       0.068 |       -0.216 |              0.316 |           177 |      0.452 |          40.497 |
+| IS winner, S&P 500 point-in-time, 0.3%/side   |     0.045 |     -0.239 |            0.188 |         177 |    0.452 |        40.497 |      0.091 |      -0.321 |             0.285 |          206 |     0.388 |         35.049 |       0.046 |       -0.239 |              0.195 |           177 |      0.452 |          40.497 |
+| IS winner, all stocks (survivorship-inflated) |     0.049 |     -0.363 |            0.134 |         194 |    0.454 |        38.753 |      0.256 |      -0.328 |             0.779 |          232 |     0.371 |         31.379 |       0.045 |       -0.363 |              0.124 |           194 |      0.454 |          38.753 |
 
 Benchmarks (same periods):
 
@@ -903,12 +1070,12 @@ Year by year (IS winner vs SPY):
 
 Today's portfolio (IS winner, as of the last close):
 
-| ticker   | entry_date          |   entry |    last |   gain |   stop_8% |   trail_level |
-|:---------|:--------------------|--------:|--------:|-------:|----------:|--------------:|
-| VLO      | 2026-09-02 00:00:00 | 366.090 | 433.750 |  0.185 |   336.803 |       367.502 |
-| CRWD     | 2026-09-11 00:00:00 | 206.740 | 275.040 |  0.330 |   190.201 |       228.702 |
-| PLTR     | 2026-09-22 00:00:00 | 184.990 | 209.050 |  0.130 |   170.191 |       176.980 |
-| NTAP     | 2026-09-30 00:00:00 | 209.607 | 237.150 |  0.131 |   192.839 |       197.832 |
+| ticker   | entry_date          |   entry |    last |   gain |    stop |   trail_level |
+|:---------|:--------------------|--------:|--------:|-------:|--------:|--------------:|
+| VLO      | 2026-09-02 00:00:00 | 366.090 | 433.750 |  0.185 | 336.803 |       367.502 |
+| CRWD     | 2026-09-11 00:00:00 | 206.740 | 275.040 |  0.330 | 190.201 |       228.702 |
+| PLTR     | 2026-09-22 00:00:00 | 184.990 | 209.050 |  0.130 | 170.191 |       176.980 |
+| NTAP     | 2026-09-30 00:00:00 | 209.607 | 237.150 |  0.131 | 192.839 |       197.832 |
 
 ## 16. Run 24: consolidated tests
 
