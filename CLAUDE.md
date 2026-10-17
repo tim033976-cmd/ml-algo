@@ -86,3 +86,5 @@ using ML to test many variations honestly. The user trades breakout / momentum s
   book worse OOS in 100% of 120 configurations (2.9% vs 17.7%); momentum already concentrates in hot sectors.
 - "Buy last year's best S&P 500 stock" (run 28): picks match the viral thread, but 2007-2017 lost 17.6%/yr (-97% DD)
   and the 2018+ +80%/yr is December-start luck (other start months: median 2%). Top 10 is stable (~19% OOS).
+- Sector rotation into the top 1-3 stocks of the leading sector (run 29, sector momentum from S&P member indexes):
+  median config ~0%/yr; best (IS) 11% OOS vs SPY 14% / QQQ 19%. Weekly checks are worst. Doesn't beat the index.
