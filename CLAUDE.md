@@ -82,3 +82,7 @@ using ML to test many variations honestly. The user trades breakout / momentum s
   (8%, 2.5-3x ADR, 50-day, 200-day, fundamentals break) lowered return/DD in almost every config; no stop is best.
   Best: 15 stocks, 6m/1m, no stop: OOS 19.1% / -39% vs QQQ 20.2% / -35%. Catches NVDA/PLTR/SNDK runs. (N=20 results
   in run 27 were broken by a rounding bug, fixed.)
+- Sector-first (run 28): choosing the top 1-3 sectors by sector-ETF momentum before picking stocks made the momentum
+  book worse OOS in 100% of 120 configurations (2.9% vs 17.7%); momentum already concentrates in hot sectors.
+- "Buy last year's best S&P 500 stock" (run 28): picks match the viral thread, but 2007-2017 lost 17.6%/yr (-97% DD)
+  and the 2018+ +80%/yr is December-start luck (other start months: median 2%). Top 10 is stable (~19% OOS).
