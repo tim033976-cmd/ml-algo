@@ -43,12 +43,14 @@ def sector_returns(closes: pd.DataFrame, sector: pd.Series, members: pd.DataFram
 
 
 def choose(sret: pd.DataFrame, k: int, absolute: bool, decide: np.ndarray | None = None,
-           confirm: pd.DataFrame | None = None) -> pd.DataFrame:
+           confirm: pd.DataFrame | None = None, ranks: tuple | None = None) -> pd.DataFrame:
     """dates x sectors bool: the top-k sectors by return, decided on `decide` days and held until the
     next one. `absolute`: a chosen sector must also be up over the lookback (else its slot is cash).
-    `confirm`: dates x sectors bool a sector must pass to be ranked (e.g. earnings growing)."""
+    `confirm`: dates x sectors bool a sector must pass to be ranked (e.g. earnings growing).
+    `ranks` (run 29): keep exactly these sector ranks, e.g. (2,) = only the second strongest."""
     s = sret if confirm is None else sret.where(confirm.reindex_like(sret).fillna(False).astype(bool))
-    top = s.rank(axis=1, ascending=False, method="first") <= k
+    rk = s.rank(axis=1, ascending=False, method="first")
+    top = rk.isin(ranks) if ranks else rk <= k
     if absolute:
         top &= s > 0
     top = top & s.notna()
@@ -87,3 +89,10 @@ def today_table(closes, sector, etfs, leader, score, eps_yoy, members=None) -> p
         row["top_leaders"] = ", ".join(sc.index[:3])
         rows.append(row)
     return pd.DataFrame(rows).sort_values("1m", ascending=False)
+
+
+def top_in_sector(score: pd.DataFrame, pool: pd.DataFrame, sector: pd.Series, chosen: pd.DataFrame, n: int) -> np.ndarray:
+    """dates x tickers bool (run 29): the n highest-scoring pool stocks inside each chosen sector."""
+    ok = pool & pd.DataFrame(stock_mask(chosen, sector, score.columns), index=score.index, columns=score.columns)
+    rk = score.where(ok).T.groupby(sector.reindex(score.columns)).rank(ascending=False, method="first").T
+    return (rk <= n).reindex(columns=score.columns, fill_value=False).to_numpy()

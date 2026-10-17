@@ -590,3 +590,18 @@ def test_sector_rotation_mechanics():
     assert set(res["open"]["ticker"]) <= {"t1", "t2", "x"}
     none = R.run(P, n=3, exit_rule="none", stop=None, max_hold=np.zeros(len(idx)), start=str(idx[300].date()))
     assert len(none["open"]) == 0 and none["curve"].iloc[-1] == 1.0
+
+
+def test_top_stocks_in_second_sector():
+    from mlalgo.research import sectors as SC
+    idx = pd.bdate_range("2020-01-01", periods=3)
+    sret = pd.DataFrame({"Energy": [0.1, 0.1, 0.3], "Health Care": [0.2, 0.2, 0.1], "Utilities": [0.0, 0.0, 0.2]}, index=idx)
+    ch = SC.choose(sret, 0, False, ranks=(2,))
+    assert ch.iloc[0].tolist() == [True, False, False] and ch.iloc[2].tolist() == [False, False, True]
+    sector = pd.Series({"a": "Energy", "b": "Energy", "c": "Energy", "d": "Utilities", "e": "Utilities"})
+    score = pd.DataFrame([[3.0, 2.0, 1.0, 5.0, 4.0]] * 3, index=idx, columns=list("abcde"))
+    pool = pd.DataFrame(True, index=idx, columns=score.columns)
+    pool.loc[:, "a"] = False                      # not an S&P 500 member: never picked
+    pk = SC.top_in_sector(score, pool, sector, ch, 2)
+    assert pk[0].tolist() == [False, True, True, False, False]
+    assert pk[2].tolist() == [False, False, False, True, True]
