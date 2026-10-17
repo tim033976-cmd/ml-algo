@@ -1,5 +1,12 @@
 # Research log (newest first)
 
+## Run 30 — 2026-10-17 (commit 2bc1512): the user's exact weekly sector rule
+Every Friday: rank 9 sectors (S&P member indexes) on 1w/1m/3m/6m; strongest / second / both; hold the top 1/2/3 stocks by previous-month return; re-pick every Friday or only on sector change. 72 configurations.
+- **None of the 72 beat SPY in either period** (0/72 above SPY's 8.2% IS or 14.3% OOS). Median IS ~0%/yr, OOS −3%/yr, drawdowns −35% to −90%. 1 stock worst (OOS median −6.5%, DD −65%); 3 stocks least bad (−0.6%); switching only on sector change slightly better than every Friday; #1 sector worse than #2.
+- IS winner (3-month, #2 sector only, 3 stocks, re-pick weekly): IS 5.5% / −31%, **OOS 3.0% / −48%**; 2018 −23%, 2019-2024 flat to negative, 2026 +73%.
+- Why: last month's best stock in a hot sector is a short-term-reversal bet (buying after the move), and weekly switching pays costs on noise. Same finding as runs 28-29.
+- **Decision:** stop testing sector rotation into a few stocks. Before any further rotation idea: tests 1-4 (does sector leadership persist, how long, vs random picks) to see whether the signal exists at all.
+
 ## Run 29 — 2026-10-17 (commit 4b88e41): sector rotation from the S&P 500's own stocks -> top 1-3 stocks (user)
 Sector momentum from equal-weight indexes of point-in-time S&P 500 members (9 sectors), 1w/1m/3m/6m, weekly or monthly check; hold the top 1/2/3 stocks of the #1, #2 or both sectors, ranked by the same lookback or 6m/1m momentum. 144 configurations.
 - **Median configuration made ~0%: IS median 0.0-1%/yr, OOS −0.3% to +3.5%** with −40% to −60% drawdowns. Weekly checks worst (OOS median −2.5% vs monthly +6.6%); 1 stock per sector worst drawdowns (−61%); #1 vs #2 sector makes no difference.

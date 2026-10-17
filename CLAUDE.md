@@ -88,3 +88,5 @@ using ML to test many variations honestly. The user trades breakout / momentum s
   and the 2018+ +80%/yr is December-start luck (other start months: median 2%). Top 10 is stable (~19% OOS).
 - Sector rotation into the top 1-3 stocks of the leading sector (run 29, sector momentum from S&P member indexes):
   median config ~0%/yr; best (IS) 11% OOS vs SPY 14% / QQQ 19%. Weekly checks are worst. Doesn't beat the index.
+- User's weekly sector rule (run 30: top 1-3 stocks by last month's return in the #1/#2 sector, Friday checks):
+  0 of 72 configurations beat SPY; median OOS -3%/yr. Buying last month's winner = short-term reversal risk.
