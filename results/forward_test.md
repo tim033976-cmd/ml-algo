@@ -1,40 +1,26 @@
-# Forward test (paper trading record) — updated 2026-10-15
+# Forward test (paper trading record) — updated 2026-10-16
 
 Every day the top 10 of each picks list is logged and scored as real prices arrive: bought at that day's close, +20% (or +10%) target vs -10% stop, 63 trading days max. This is the only fully out-of-sample test there is.
 
-Logged picks: 112; finished (+20/-10): 8; still open: 104.
+Logged picks: 126; finished (+20/-10): 11; still open: 115.
 
 Finished trades, +20% before -10%:
 
 | list    |     n |   hit_target |   stopped |   avg_return |
 |:--------|------:|-------------:|----------:|-------------:|
-| all     | 4.000 |        0.000 |     1.000 |       -0.120 |
-| leaders | 4.000 |        0.000 |     1.000 |       -0.103 |
+| all     | 5.000 |        0.000 |     1.000 |       -0.122 |
+| leaders | 6.000 |        0.000 |     1.000 |       -0.111 |
 
 Most recent picks and their status so far:
 
 | date       | ticker   | list    |    close |   p_b20 | b20_result   |   b20_ret |
 |:-----------|:---------|:--------|---------:|--------:|:-------------|----------:|
-| 2026-10-14 | DAN      | all     |   27.980 |   0.370 | open         |     0.018 |
-| 2026-10-14 | FIX      | all     | 1541.680 |   0.370 | open         |     0.000 |
-| 2026-10-14 | NSP      | all     |   49.580 |   0.370 | open         |     0.025 |
-| 2026-10-14 | BJRI     | all     |   59.550 |   0.370 | open         |     0.011 |
-| 2026-10-14 | AEO      | all     |   17.600 |   0.370 | open         |     0.026 |
-| 2026-10-14 | ENS      | all     |  173.450 |   0.370 | open         |    -0.004 |
-| 2026-10-14 | OLED     | all     |   74.950 |   0.370 | open         |     0.046 |
-| 2026-10-14 | ECHO     | all     |   87.860 |   0.370 | open         |     0.000 |
-| 2026-10-14 | WGO      | all     |   23.090 |   0.370 | open         |     0.068 |
-| 2026-10-14 | CROX     | all     |  117.540 |   0.370 | open         |     0.062 |
-| 2026-10-14 | EZPW     | leaders |   32.720 |   0.370 | open         |     0.013 |
-| 2026-10-14 | FDS      | leaders |  289.740 |   0.370 | open         |     0.000 |
-| 2026-10-14 | ACHC     | leaders |   31.670 |   0.370 | open         |    -0.020 |
-| 2026-10-14 | CVLT     | leaders |  154.330 |   0.370 | open         |     0.030 |
 | 2026-10-14 | AVT      | leaders |   95.850 |   0.370 | open         |    -0.030 |
 | 2026-10-14 | KSS      | leaders |   21.150 |   0.370 | open         |     0.060 |
 | 2026-10-14 | ROG      | leaders |  139.720 |   0.370 | open         |    -0.014 |
 | 2026-10-14 | SMTC     | leaders |  160.260 |   0.370 | stop         |    -0.102 |
 | 2026-10-14 | TGTX     | leaders |   54.370 |   0.370 | open         |     0.030 |
-| 2026-10-14 | CRL      | leaders |  302.000 |   0.370 | open         |     0.000 |
+| 2026-10-14 | CRL      | leaders |  302.000 |   0.370 | open         |     0.014 |
 | 2026-10-15 | BJRI     | all     |   60.220 |   0.379 | open         |     0.000 |
 | 2026-10-15 | GPK      | all     |    8.730 |   0.379 | open         |     0.000 |
 | 2026-10-15 | EAT      | all     |  204.910 |   0.379 | open         |     0.000 |
@@ -55,3 +41,17 @@ Most recent picks and their status so far:
 | 2026-10-15 | SIG      | leaders |  118.160 |   0.351 | open         |     0.000 |
 | 2026-10-15 | TGTX     | leaders |   56.000 |   0.351 | open         |     0.000 |
 | 2026-10-15 | MORN     | leaders |  209.240 |   0.351 | open         |     0.000 |
+| 2026-10-16 | ALG      | all     |  150.660 |   0.346 | open         |     0.000 |
+| 2026-10-16 | CNS      | all     |   69.630 |   0.318 | open         |     0.000 |
+| 2026-10-16 | AMG      | all     |  383.760 |   0.318 | open         |     0.000 |
+| 2026-10-16 | SCL      | all     |   62.030 |   0.282 | open         |     0.000 |
+| 2026-10-16 | GHC      | all     | 1203.260 |   0.208 | open         |     0.000 |
+| 2026-10-16 | CNO      | all     |   54.710 |   0.161 | open         |     0.000 |
+| 2026-10-16 | CPF      | all     |   36.480 |   0.161 | open         |     0.000 |
+| 2026-10-16 | OGS      | all     |   75.600 |   0.161 | open         |     0.000 |
+| 2026-10-16 | OFG      | all     |   52.640 |   0.143 | open         |     0.000 |
+| 2026-10-16 | ABI      | all     |   24.505 |   0.069 | open         |     0.000 |
+| 2026-10-16 | AMG      | leaders |  383.760 |   0.318 | open         |     0.000 |
+| 2026-10-16 | GHC      | leaders | 1203.260 |   0.208 | open         |     0.000 |
+| 2026-10-16 | CNO      | leaders |   54.710 |   0.161 | open         |     0.000 |
+| 2026-10-16 | OFG      | leaders |   52.640 |   0.143 | open         |     0.000 |
