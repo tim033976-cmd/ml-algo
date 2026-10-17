@@ -12,6 +12,8 @@ using ML to test many variations honestly. The user trades breakout / momentum s
   run (and **cancels any run in progress**, so don't push mid-run unless you mean to).
 - **Ask the user before starting, stopping, cancelling or restarting a research run**, including any push that
   triggers one. Never cancel a run in progress on your own.
+- **Always tell the user exactly what you plan to test (the full list of variants) and get their OK before
+  building or running it.**
 - Selection on 2006-2017 only (`IS_END` in `mlalgo/research/analyze.py`), judgement on 2018+.
   Never tune anything on out-of-sample results and then report those same results as validation.
 - Always compare against the `random_uptrend` baseline with the same exit and filter.
