@@ -656,6 +656,123 @@ def run28(prices, market, sp_hist, universe, out, fund=None):
     return r
 
 
+def run30(prices, market, sp_hist, universe, out):
+    """Run 30 (user's exact rule): every Friday rank the 9 sectors by the 1w / 1m / 3m / 6m return of an
+    equal-weight index of their point-in-time S&P 500 members; hold the top 1/2/3 stocks by previous-month
+    return in the strongest, the second strongest or both sectors; re-pick the stocks every Friday or only
+    when the leading sector changes. 72 configurations, chosen on 2007-2017, judged on 2018+."""
+    from mlalgo.research import rotation as RT
+    from mlalgo.research import sectors as SC
+    r = {}
+    closes = pd.DataFrame({t: df["close"] for t, df in prices.items()})
+    idx, cols = closes.index, closes.columns
+    dv = pd.DataFrame({t: (df["close"] * df["volume"]).rolling(50).mean() for t, df in prices.items()}).reindex(idx)
+    members = D.sp500_mask(sp_hist, idx, cols) if sp_hist is not None and len(sp_hist) else \
+        pd.DataFrame(True, index=idx, columns=cols)
+    P = RT.prepare(closes, dv, members)
+    etfs = {k: v["close"] for k, v in market.items() if k in D.SECTOR_ETF.values()}
+    known = universe.set_index("ticker")["sector"] if "sector" in universe else pd.Series(dtype=object)
+    sector = SC.assign_sectors(closes, known[~known.index.duplicated()], etfs)
+    pool = members.reindex(index=idx, columns=cols).fillna(False).astype(bool) & closes.notna()
+    friday = (idx.to_series().groupby(idx.to_period("W")).transform("max") == idx).to_numpy()
+    r1m = closes / closes.shift(21) - 1
+    Pn = {**P, "scores": {**P["scores"], "r1m": r1m.to_numpy()}}
+    LB = {"1 week": 5, "1 month": 21, "3 months": 63, "6 months": 126}
+    SECT = {"#1 only": (1,), "#2 only": (2,), "#1 and #2": (1, 2)}
+    keys = ["sector momentum", "sectors", "stocks per sector", "switch stocks"]
+    rows, results = [], {}
+    for lb_name, L in LB.items():
+        sret = SC.sector_returns(closes, sector, members, etfs, L, source="members")
+        for sname, ranks in SECT.items():
+            ch = SC.choose(sret, 0, False, friday, ranks=ranks)
+            changed = (ch != ch.shift()).any(axis=1).to_numpy() & friday
+            for n in (1, 2, 3):
+                picks = SC.top_in_sector(r1m, pool, sector, ch, n)
+                for sw, days in (("every Friday", friday), ("only when the sector changes", changed)):
+                    res = RT.run(Pn, n=n * len(ranks), score="r1m", exit_rule="none", stop=None, filt=picks,
+                                 entry_days=days, rebalance_days=days, rank_buffer=1)
+                    key = (lb_name, sname, n, sw)
+                    results[key] = (res, ch)
+                    rows.append(dict(zip(keys, key), **RT.stats(res, A.IS_END)))
+    grid = pd.DataFrame(rows)
+    grid.to_csv(out / "run30_grid.csv", index=False)
+    cols_ = ["IS_CAGR", "IS_maxDD", "IS_CAGR_per_DD", "OOS_CAGR", "OOS_maxDD", "OOS_CAGR_per_DD", "OOS_trades", "OOS_win", "OOS_avg_days"]
+    r["grid"] = grid[keys + cols_]
+    r["by_setting"] = pd.concat([grid.groupby(k)[cols_[:6]].median().reset_index().rename(columns={k: "value"}).assign(setting=k)
+                                 for k in keys])
+    best = grid[grid["IS_trades"] >= 30].sort_values("IS_CAGR_per_DD", ascending=False)
+    bkey = tuple(int(best.iloc[0][k]) if k == "stocks per sector" else best.iloc[0][k] for k in keys)
+    win, win_ch = results[bkey]
+    r["winner"] = ", ".join(f"{k}: {v}" for k, v in zip(keys, bkey))
+    bench = []
+    for name in ("SPY", "QQQ"):
+        if name in market:
+            px = market[name]["close"]
+            st = {p: A._curve_stats(px[m]) for p, m in (("IS", (px.index >= "2007-01-01") & (px.index < A.IS_END)),
+                                                         ("OOS", px.index >= A.IS_END))}
+            bench.append({"strategy": name, "IS_CAGR": st["IS"]["CAGR"], "IS_maxDD": st["IS"]["max_DD"],
+                          "OOS_CAGR": st["OOS"]["CAGR"], "OOS_maxDD": st["OOS"]["max_DD"]})
+    r["bench"] = pd.DataFrame(bench)
+    yr = A.yearly(win["curve"][win["curve"].index >= "2007-01-01"]).rename("winner")
+    for name in ("SPY", "QQQ"):
+        if name in market:
+            q = market[name]["close"]
+            yr = pd.concat([yr, A.yearly(q[q.index >= "2007-01-01"]).rename(name)], axis=1)
+    yr.index = yr.index.astype(int)
+    r["years"] = yr.dropna(how="all").rename_axis("year").reset_index()
+    t = win["trades"]
+    r["trades_oos"] = t[t["date_in"] >= A.IS_END].assign(sector=lambda d: sector.reindex(d["ticker"]).to_numpy())[
+        ["ticker", "sector", "date_in", "date_out", "days", "ret"]] if len(t) else t
+    now = []
+    for key in [tuple(int(x[k]) if k == "stocks per sector" else x[k] for k in keys) for _, x in best.head(5).iterrows()]:
+        res, ch = results[key]
+        now.append({"configuration": ", ".join(map(str, key)), "sectors now": ", ".join(ch.columns[ch.iloc[-1]]),
+                    "holdings now": ", ".join(res["open"]["ticker"]) if len(res["open"]) else "(cash)"})
+    r["now"] = pd.DataFrame(now)
+    for k in ("by_setting", "bench", "years", "trades_oos", "now"):
+        r[k].to_csv(out / f"run30_{k}.csv", index=False)
+    return r
+
+
+def _run30_section(r, md):
+    T = lambda k: md(r[k], floatfmt=".3f") if isinstance(r.get(k), pd.DataFrame) and len(r[k]) else "(not available)"
+    return [
+        "## 21. Run 30: the user's exact rule: weekly sector check, top 1-3 stocks of last month in the leading sector",
+        "",
+        "Every Friday close: rank the 9 sectors (communication services = tech, real estate = financials) by the "
+        "1-week / 1-month / 3-month / 6-month return of an equal-weight index of their S&P 500 members at the time "
+        "(former members included); take the strongest, the second strongest or both; hold the top 1/2/3 S&P 500 "
+        "stocks of each chosen sector by previous-month (21-day) return. Stocks are re-picked every Friday, or only "
+        "when the leading sector changes. Equal weight, 0.1% per side, no stop. 72 configurations, chosen on "
+        "2007-2017, judged on 2018+.",
+        "",
+        "All 72 configurations:",
+        "",
+        T("grid"),
+        "",
+        "Median by setting:",
+        "",
+        T("by_setting"),
+        "",
+        f"Winner (by 2007-2017 return / drawdown): {r.get('winner', '')}",
+        "",
+        T("bench"),
+        "",
+        "Year by year:",
+        "",
+        T("years"),
+        "",
+        "Today, top 5 configurations:",
+        "",
+        T("now"),
+        "",
+        "Winner's trades since 2018:",
+        "",
+        T("trades_oos"),
+        "",
+    ]
+
+
 def run29(prices, market, sp_hist, universe, out):
     """Run 29 (user): sector momentum from the S&P 500 stocks themselves (equal-weight index of each sector's
     point-in-time members, 9 sectors), then hold the top 1-3 stocks of the strongest / second strongest /
@@ -1514,6 +1631,8 @@ def main() -> None:
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
 
     # ---------------- run 24: consolidated tests
+    r30 = run30(prices, market, sp_hist, universe, out)
+    print(f"[research] run 30 user's weekly sector rule done ({time.time() - t0:.0f}s)")
     r29 = run29(prices, market, sp_hist, universe, out)
     print(f"[research] run 29 sector -> stock rotation done ({time.time() - t0:.0f}s)")
     r28 = run28(prices, market, sp_hist, universe, out, fund=fund)
@@ -1712,6 +1831,7 @@ def main() -> None:
             "",
             *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
         ] if short else []),
+        *_run30_section(r30, md),
         *_run29_section(r29, md),
         *_run28_section(r28, md),
         *_run27_section(r27, md),
