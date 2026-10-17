@@ -1,6 +1,6 @@
 # Strategy research report
 
-Generated 2026-10-17 03:59 UTC in 85 min.
+Generated 2026-10-17 05:28 UTC in 87 min.
 Universe: 1543 stocks with data (sp500: 658, sp600: 537, sp400: 346; 159 former S&P 500 members). Signals 2006-01-03 -> 2026-10-15: 954,390.
 **In-sample (selection): trades closed before 2018-01-01. Out-of-sample (judgement): entries from 2018-01-01.**
 R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side. Entries at the signal-day close.
@@ -108,7 +108,6 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 
 | run_utc          | commit   |   tickers |   signals |   rank_corr |   top20_oos |   baseline_oos | edge_entries                                                                                                                                                                                                                                                                                | no_edge_entries                                                            | best_exit   | helpful_filters                                                                                              |   ml_auc |   ml_rank_corr |   ml_monotonic |   ml_gap | top_features                                                       | filters_lifting_baseline                 |   rules_held | best_portfolio                                                                    |   best_cagr |   spy_cagr | best_calmar                                                                       |   super_auc |   super_lift | super_features                                                  |   goal_b10_top_hit |   goal_b10_top_ret |   goal_b20_top_hit |   goal_b20_top_ret | menu_choice   |   menu_choice_oos_ret |
 |:-----------------|:---------|----------:|----------:|------------:|------------:|---------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|:------------|:-------------------------------------------------------------------------------------------------------------|---------:|---------------:|---------------:|---------:|:-------------------------------------------------------------------|:-----------------------------------------|-------------:|:----------------------------------------------------------------------------------|------------:|-----------:|:----------------------------------------------------------------------------------|------------:|-------------:|:----------------------------------------------------------------|-------------------:|-------------------:|-------------------:|-------------------:|:--------------|----------------------:|
-| 2026-10-09 12:54 | 5ce3166  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme            |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 | 2026-10-09 14:16 | e1db28d  |      1488 |    669336 |        0.51 |        0.06 |          -0.01 | ep_gap15, ep_gap10_vol5, desc_triangle, ep_gap8_hold, ep_gap8_neglected, ep_gap10, ep_gap5, falling_wedge, sym_triangle, ep_gap10_vol2, undercut, donchian_20, ema_retest, flag_60                                                                                                          | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | sma50_close | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage                                       |     0.51 |           0.01 |          -0.36 |     0.01 | sma200_slope, adr_pct, above_52w_low, rs_rank, mkt_ok              | early_stage, rs80_early_theme            |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.47 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (5316 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 | 2026-10-09 15:34 | 246a119  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme            |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
 | 2026-10-09 16:26 | c39a032  |      1488 |    880290 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, ep_gap5, ep_gap10, wf_rocket_gap, falling_wedge, sym_triangle, ep_gap10_vol2, wf_rocket_breakout, donchian_20, undercut, wf_scan_pullback, ema_retest, flag_60, wf_scan_base                                       | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.01 |          -0.16 |     0.03 | sma200_slope, above_52w_low, rates_rising, adr_pct, industry_rs    | early_stage, rs80_early_theme            |            1 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.43 |       0.15 | SURVIVORSHIP S&P 500 names, all dates, top 10% model (7203 signals) / sma50_close |        0.83 |         4.21 | adr_pct, dist_52w_high, above_52w_low, mkt_above200, leg1_range |               0.53 |               0.01 |               0.37 |               0.02 | +20% / -15%   |                  0.04 |
@@ -118,6 +117,7 @@ R = profit in multiples of the initial risk (entry - stop). Costs: 0.1% per side
 | 2026-10-10 16:44 | 51ff2b3  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme                         |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.32 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
 | 2026-10-11 05:33 | f92aaf7  |      1540 |    952523 |        0.48 |        0.06 |          -0.01 | ep_gap15, ep_gap8_hold, ep_gap10_vol5, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, tc_ema_cross_base, donchian_20, undercut, wf_scan_pullback, ema_retest, wf_scan_base, flag_60, sym_triangle | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green, rs80 |     0.51 |           0.01 |          -0.26 |     0.01 | rates_rising, above_52w_low, sma200_slope, sector_rs, sma150_slope | rs80_early_theme                         |            2 | RULE revenue growth accelerating 2+ quarters, model top 10% / +20% -10%           |        0.32 |       0.15 | REGIME 3-day market model: skip ['rest'] / +20% -10%                              |        0.83 |         4.22 | adr_pct, dist_52w_high, above_52w_low, atr_pct, leg2_range      |               0.52 |               0.01 |               0.37 |               0.02 | +30% / -5%    |                  0.02 |
 | 2026-10-17 03:59 | ccaba0b  |      1543 |    954390 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap10_vol5, ep_gap8_hold, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, undercut, tc_ema_cross_base, donchian_20, wf_scan_pullback, sym_triangle                                    | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.00 |          -0.55 |     0.01 | rates_rising, above_52w_low, adr_pct, sector_rs, rs_rank           | early_stage, qull_scan, rs80_early_theme |            2 | RULE ADR% 5-12% and >= $10M/day, model top 10% / +20% -10%                        |        0.36 |       0.14 | RULE SPY above its 21 & 50 SMA, model top 10% / +20% -10%                         |        0.83 |         4.22 | adr_pct, above_52w_low, dist_52w_high, atr_pct, leg1_range      |               0.53 |               0.01 |               0.36 |               0.02 | +20% / -8%    |                  0.02 |
+| 2026-10-17 05:28 | 86eb5f4  |      1543 |    954390 |        0.49 |        0.06 |          -0.02 | ep_gap15, ep_gap10_vol5, ep_gap8_hold, ep_gap8_neglected, desc_triangle, tc_supertrend_ema, ep_gap5, wf_rocket_gap, ep_gap10, falling_wedge, ep_gap10_vol2, wf_rocket_breakout, undercut, tc_ema_cross_base, donchian_20, wf_scan_pullback, sym_triangle                                    | high52, multi_touch, pocket_pivot, qull_breakout, qull_breakout_60, stage2 | wf_weekly10 | qull_scan_regime, rs80_early, qull_scan, rs80_early_theme, early_stage, wf_scan_green, wf_rocket_green       |     0.51 |           0.00 |          -0.55 |     0.01 | rates_rising, above_52w_low, adr_pct, sector_rs, rs_rank           | early_stage, qull_scan, rs80_early_theme |            2 | RULE ADR% 5-12% and >= $10M/day, model top 10% / +20% -10%                        |        0.36 |       0.14 | RULE SPY above its 21 & 50 SMA, model top 10% / +20% -10%                         |        0.83 |         4.22 | adr_pct, above_52w_low, dist_52w_high, atr_pct, leg1_range      |               0.53 |               0.01 |               0.36 |               0.02 | +20% / -8%    |                  0.02 |
 
 ## 1. Did picking the best in-sample strategies work out-of-sample?
 
@@ -775,6 +775,340 @@ Do the new features improve the +20%/-10% goal model? (OOS tiers)
 | top 5%     |  2909.000 |        0.393 |      0.481 |            0.035 |
 | top 2%     |  1268.000 |        0.433 |      0.438 |            0.049 |
 | top 1%     |   650.000 |        0.466 |      0.428 |            0.056 |
+
+## 20. Run 29: sector rotation from the S&P 500's own stocks -> the top 1-3 stocks of the leading sector
+
+Sector momentum = return of an equal-weight index of each sector's S&P 500 members at the time (9 sectors: communication services counted as tech, real estate as financials; former members included). At each weekly (Friday) or monthly check: rank sectors by 1-week / 1-month / 3-month / 6-month return, take the strongest, the second strongest, or both, and hold the top 1/2/3 S&P 500 stocks of each chosen sector (ranked by the same lookback or by 6m/1m momentum). Everything else is sold at the check. Equal weight, 0.1% per side, no stop. 144 configurations, chosen on 2007-2017, judged on 2018+.
+
+Median by setting:
+
+| value          |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD | setting           |
+|:---------------|----------:|-----------:|-----------------:|-----------:|------------:|------------------:|:------------------|
+| 1 month        |    -0.004 |     -0.496 |           -0.006 |      0.035 |      -0.496 |             0.081 | sector momentum   |
+| 1 week         |    -0.002 |     -0.398 |           -0.004 |     -0.003 |      -0.475 |            -0.006 | sector momentum   |
+| 3 months       |     0.009 |     -0.511 |            0.018 |      0.031 |      -0.531 |             0.051 | sector momentum   |
+| 6 months       |     0.010 |     -0.566 |            0.014 |     -0.002 |      -0.557 |            -0.002 | sector momentum   |
+| monthly        |     0.025 |     -0.440 |            0.065 |      0.066 |      -0.422 |             0.153 | check             |
+| weekly         |    -0.012 |     -0.548 |           -0.024 |     -0.025 |      -0.587 |            -0.049 | check             |
+| #1 and #2      |     0.007 |     -0.434 |            0.017 |      0.015 |      -0.448 |             0.046 | sectors           |
+| #1 only        |    -0.002 |     -0.531 |           -0.003 |      0.006 |      -0.606 |             0.009 | sectors           |
+| #2 only        |     0.001 |     -0.488 |            0.003 |     -0.002 |      -0.556 |            -0.004 | sectors           |
+| 6m/1m momentum |     0.007 |     -0.521 |            0.012 |      0.017 |      -0.538 |             0.029 | stocks ranked by  |
+| same lookback  |    -0.005 |     -0.444 |           -0.012 |      0.002 |      -0.491 |             0.005 | stocks ranked by  |
+| 1              |    -0.012 |     -0.575 |           -0.019 |      0.021 |      -0.607 |             0.029 | stocks per sector |
+| 2              |     0.002 |     -0.465 |            0.005 |      0.004 |      -0.509 |             0.007 | stocks per sector |
+| 3              |     0.011 |     -0.392 |            0.023 |     -0.003 |      -0.480 |            -0.007 | stocks per sector |
+
+Top 10 (by 2007-2017 return / drawdown). Winner: sector momentum: 3 months, check: monthly, sectors: #2 only, stocks ranked by: same lookback, stocks per sector: 3
+
+| sector momentum   | check   | sectors   | stocks ranked by   |   stocks per sector |   IS_CAGR |   IS_maxDD |   IS_CAGR_per_DD |   OOS_CAGR |   OOS_maxDD |   OOS_CAGR_per_DD |   OOS_trades |   OOS_win |   OOS_avg_days |
+|:------------------|:--------|:----------|:-------------------|--------------------:|----------:|-----------:|-----------------:|-----------:|------------:|------------------:|-------------:|----------:|---------------:|
+| 3 months          | monthly | #2 only   | same lookback      |                   3 |     0.109 |     -0.277 |            0.395 |      0.111 |      -0.389 |             0.284 |          218 |     0.546 |         23.867 |
+| 1 week            | monthly | #1 only   | same lookback      |                   3 |     0.053 |     -0.191 |            0.276 |      0.035 |      -0.288 |             0.122 |          126 |     0.540 |         21.262 |
+| 6 months          | monthly | #1 and #2 | 6m/1m momentum     |                   3 |     0.069 |     -0.266 |            0.260 |      0.056 |      -0.361 |             0.155 |          365 |     0.482 |         29.482 |
+| 6 months          | monthly | #1 and #2 | same lookback      |                   3 |     0.061 |     -0.273 |            0.223 |      0.049 |      -0.407 |             0.119 |          351 |     0.479 |         29.940 |
+| 1 week            | monthly | #1 and #2 | 6m/1m momentum     |                   3 |     0.051 |     -0.242 |            0.212 |      0.084 |      -0.252 |             0.331 |          422 |     0.576 |         23.332 |
+| 3 months          | monthly | #2 only   | 6m/1m momentum     |                   3 |     0.061 |     -0.319 |            0.190 |      0.077 |      -0.413 |             0.187 |          236 |     0.517 |         23.716 |
+| 6 months          | monthly | #2 only   | 6m/1m momentum     |                   3 |     0.071 |     -0.372 |            0.190 |     -0.013 |      -0.688 |            -0.019 |          235 |     0.532 |         23.345 |
+| 3 months          | monthly | #1 and #2 | 6m/1m momentum     |                   3 |     0.061 |     -0.352 |            0.174 |      0.054 |      -0.396 |             0.137 |          409 |     0.494 |         27.015 |
+| 6 months          | monthly | #1 and #2 | 6m/1m momentum     |                   2 |     0.052 |     -0.323 |            0.162 |      0.076 |      -0.418 |             0.183 |          242 |     0.517 |         29.537 |
+| 1 month           | monthly | #1 and #2 | 6m/1m momentum     |                   3 |     0.047 |     -0.314 |            0.151 |      0.089 |      -0.348 |             0.255 |          461 |     0.538 |         23.249 |
+
+Benchmarks:
+
+| strategy                                     |   IS_CAGR |   IS_maxDD |   OOS_CAGR |   OOS_maxDD |
+|:---------------------------------------------|----------:|-----------:|-----------:|------------:|
+| SPY                                          |     0.082 |     -0.552 |      0.143 |      -0.337 |
+| QQQ                                          |     0.134 |     -0.534 |      0.194 |      -0.351 |
+| hold the #1 sector's ETF (3 months, monthly) |     0.040 |     -0.507 |      0.074 |      -0.378 |
+
+| strategy (2018+)   |   beta |   alpha_annual |   alpha_t |   sharpe |   spy_sharpe |   CAGR |   max_DD |   CAGR_per_DD |   worst_month |
+|:-------------------|-------:|---------------:|----------:|---------:|-------------:|-------:|---------:|--------------:|--------------:|
+| run 29 winner      |  0.620 |          0.048 |     0.576 |    0.524 |        0.803 |  0.111 |   -0.389 |         0.284 |        -0.140 |
+
+Year by year:
+
+|     year |   winner |    SPY |    QQQ |
+|---------:|---------:|-------:|-------:|
+| 2007.000 |    0.492 |  0.053 |  0.188 |
+| 2008.000 |   -0.106 | -0.368 | -0.417 |
+| 2009.000 |    0.016 |  0.264 |  0.547 |
+| 2010.000 |    0.408 |  0.151 |  0.201 |
+| 2011.000 |   -0.135 |  0.019 |  0.035 |
+| 2012.000 |    0.129 |  0.160 |  0.181 |
+| 2013.000 |    0.286 |  0.323 |  0.366 |
+| 2014.000 |   -0.067 |  0.135 |  0.192 |
+| 2015.000 |    0.021 |  0.012 |  0.094 |
+| 2016.000 |    0.062 |  0.120 |  0.071 |
+| 2017.000 |    0.290 |  0.217 |  0.327 |
+| 2018.000 |   -0.283 | -0.046 | -0.001 |
+| 2019.000 |    0.107 |  0.312 |  0.390 |
+| 2020.000 |    0.226 |  0.183 |  0.484 |
+| 2021.000 |    0.427 |  0.287 |  0.274 |
+| 2022.000 |   -0.116 | -0.182 | -0.326 |
+| 2023.000 |    0.025 |  0.262 |  0.549 |
+| 2024.000 |    0.315 |  0.249 |  0.256 |
+| 2025.000 |    0.197 |  0.177 |  0.208 |
+| 2026.000 |    0.310 |  0.128 |  0.159 |
+
+Where the winner's money was (share of holding days by sector):
+
+| sector                 |   share of holding days |
+|:-----------------------|------------------------:|
+| Consumer Staples       |                   0.150 |
+| Information Technology |                   0.141 |
+| Consumer Discretionary |                   0.139 |
+| Materials              |                   0.117 |
+| Industrials            |                   0.114 |
+| Utilities              |                   0.108 |
+| Health Care            |                   0.084 |
+| Financials             |                   0.077 |
+| Energy                 |                   0.068 |
+
+Sector momentum today (S&P 500 member index):
+
+| sector                 |   1 week |   1 month |   3 months |   6 months |
+|:-----------------------|---------:|----------:|-----------:|-----------:|
+| Health Care            |    0.035 |     0.051 |      0.152 |      0.229 |
+| Energy                 |    0.039 |     0.050 |      0.145 |      0.215 |
+| Consumer Staples       |    0.055 |     0.042 |      0.017 |      0.070 |
+| Utilities              |    0.023 |     0.024 |     -0.053 |     -0.062 |
+| Consumer Discretionary |    0.025 |     0.018 |     -0.025 |     -0.074 |
+| Industrials            |    0.005 |     0.006 |     -0.041 |     -0.017 |
+| Financials             |    0.015 |    -0.010 |     -0.032 |      0.035 |
+| Materials              |    0.031 |    -0.010 |      0.019 |     -0.010 |
+| Information Technology |   -0.058 |    -0.025 |      0.060 |      0.162 |
+
+Today's holdings of the top 3 configurations:
+
+| configuration                                   | sectors             | holdings now                   |
+|:------------------------------------------------|:--------------------|:-------------------------------|
+| 3 months, monthly, #2 only, same lookback, 3    | Energy              | MPC, VLO, APA                  |
+| 1 week, monthly, #1 only, same lookback, 3      | Consumer Staples    | KDP                            |
+| 6 months, monthly, #1 and #2, 6m/1m momentum, 3 | Health Care, Energy | MRNA, MPC, HUM, VLO, PSX, VEEV |
+
+Winner's trades since 2018:
+
+| ticker   | sector                 | date_in             | date_out            |   days |    ret |
+|:---------|:-----------------------|:--------------------|:--------------------|-------:|-------:|
+| KR       | Consumer Staples       | 2018-01-31 00:00:00 | 2018-02-28 00:00:00 |     19 | -0.103 |
+| KDP      | Consumer Staples       | 2018-01-31 00:00:00 | 2018-02-28 00:00:00 |     19 | -0.026 |
+| TGT      | Consumer Staples       | 2018-01-31 00:00:00 | 2018-02-28 00:00:00 |     19 |  0.011 |
+| NFLX     | Information Technology | 2018-02-28 00:00:00 | 2018-03-29 00:00:00 |     21 |  0.014 |
+| HPE      | Information Technology | 2018-02-28 00:00:00 | 2018-03-29 00:00:00 |     21 | -0.053 |
+| STX      | Information Technology | 2018-02-28 00:00:00 | 2018-03-29 00:00:00 |     21 |  0.107 |
+| NKTR     | Consumer Discretionary | 2018-03-29 00:00:00 | 2018-04-30 00:00:00 |     21 | -0.213 |
+| KSS      | Consumer Discretionary | 2018-03-29 00:00:00 | 2018-04-30 00:00:00 |     21 | -0.052 |
+| VLO      | Energy                 | 2018-04-30 00:00:00 | 2018-05-31 00:00:00 |     22 |  0.100 |
+| COP      | Energy                 | 2018-04-30 00:00:00 | 2018-05-31 00:00:00 |     22 |  0.033 |
+| PSX      | Energy                 | 2018-04-30 00:00:00 | 2018-05-31 00:00:00 |     22 |  0.053 |
+| NRG      | Utilities              | 2018-05-31 00:00:00 | 2018-06-29 00:00:00 |     21 | -0.103 |
+| EXC      | Utilities              | 2018-05-31 00:00:00 | 2018-06-29 00:00:00 |     21 |  0.029 |
+| UA       | Consumer Discretionary | 2018-06-29 00:00:00 | 2018-07-31 00:00:00 |     21 | -0.111 |
+| TRIP     | Consumer Discretionary | 2018-06-29 00:00:00 | 2018-07-31 00:00:00 |     21 |  0.041 |
+| UAA      | Consumer Discretionary | 2018-06-29 00:00:00 | 2018-07-31 00:00:00 |     21 | -0.112 |
+| NOV      | Energy                 | 2018-07-31 00:00:00 | 2018-08-31 00:00:00 |     23 | -0.032 |
+| DVN      | Energy                 | 2018-07-31 00:00:00 | 2018-08-31 00:00:00 |     23 | -0.046 |
+| OKE      | Energy                 | 2018-07-31 00:00:00 | 2018-08-31 00:00:00 |     23 | -0.053 |
+| KR       | Consumer Staples       | 2018-08-31 00:00:00 | 2018-09-28 00:00:00 |     19 | -0.076 |
+| MKC      | Consumer Staples       | 2018-08-31 00:00:00 | 2018-09-28 00:00:00 |     19 |  0.055 |
+| CHD      | Consumer Staples       | 2018-08-31 00:00:00 | 2018-09-28 00:00:00 |     19 |  0.049 |
+| FLS      | Industrials            | 2018-09-28 00:00:00 | 2018-10-31 00:00:00 |     23 | -0.161 |
+| UAL      | Industrials            | 2018-09-28 00:00:00 | 2018-10-31 00:00:00 |     23 | -0.040 |
+| LUV      | Industrials            | 2018-09-28 00:00:00 | 2018-10-31 00:00:00 |     23 | -0.214 |
+| DG       | Consumer Staples       | 2018-10-31 00:00:00 | 2018-11-30 00:00:00 |     21 | -0.004 |
+| MKC      | Consumer Staples       | 2018-10-31 00:00:00 | 2018-12-31 00:00:00 |     40 | -0.029 |
+| HRL      | Consumer Staples       | 2018-10-31 00:00:00 | 2018-12-31 00:00:00 |     40 | -0.022 |
+| CHD      | Consumer Staples       | 2018-11-30 00:00:00 | 2019-01-31 00:00:00 |     40 | -0.024 |
+| PG       | Consumer Staples       | 2018-12-31 00:00:00 | 2019-01-31 00:00:00 |     21 |  0.058 |
+| CMG      | Consumer Discretionary | 2019-02-28 00:00:00 | 2019-04-30 00:00:00 |     42 |  0.133 |
+| ULTA     | Consumer Discretionary | 2019-03-29 00:00:00 | 2019-04-30 00:00:00 |     21 |  0.001 |
+| EL       | Consumer Staples       | 2019-04-30 00:00:00 | 2019-05-31 00:00:00 |     22 | -0.060 |
+| MKC      | Consumer Staples       | 2019-04-30 00:00:00 | 2019-05-31 00:00:00 |     22 |  0.013 |
+| AWK      | Utilities              | 2019-05-31 00:00:00 | 2019-06-28 00:00:00 |     20 |  0.026 |
+| SRE      | Utilities              | 2019-05-31 00:00:00 | 2019-06-28 00:00:00 |     20 |  0.046 |
+| SO       | Utilities              | 2019-05-31 00:00:00 | 2019-06-28 00:00:00 |     20 |  0.033 |
+| APD      | Materials              | 2019-06-28 00:00:00 | 2019-07-31 00:00:00 |     22 |  0.008 |
+| VMC      | Materials              | 2019-06-28 00:00:00 | 2019-07-31 00:00:00 |     22 |  0.008 |
+| CF       | Materials              | 2019-07-31 00:00:00 | 2019-08-30 00:00:00 |     22 | -0.022 |
+| SHW      | Materials              | 2019-07-31 00:00:00 | 2019-08-30 00:00:00 |     22 |  0.029 |
+| COST     | Consumer Staples       | 2019-08-30 00:00:00 | 2019-09-30 00:00:00 |     20 | -0.023 |
+| TGT      | Consumer Staples       | 2019-08-30 00:00:00 | 2019-10-31 00:00:00 |     43 | -0.001 |
+| CPB      | Consumer Staples       | 2019-08-30 00:00:00 | 2019-10-31 00:00:00 |     43 |  0.037 |
+| LKQ      | Industrials            | 2019-10-31 00:00:00 | 2019-11-29 00:00:00 |     20 |  0.038 |
+| PWR      | Industrials            | 2019-10-31 00:00:00 | 2019-11-29 00:00:00 |     20 | -0.010 |
+| NWL      | Industrials            | 2019-10-31 00:00:00 | 2019-11-29 00:00:00 |     20 |  0.025 |
+| GE       | Industrials            | 2019-11-29 00:00:00 | 2019-12-31 00:00:00 |     21 | -0.009 |
+| URI      | Industrials            | 2019-11-29 00:00:00 | 2019-12-31 00:00:00 |     21 |  0.090 |
+| XRX      | Industrials            | 2019-11-29 00:00:00 | 2019-12-31 00:00:00 |     21 | -0.047 |
+| SWKS     | Information Technology | 2019-12-31 00:00:00 | 2020-01-31 00:00:00 |     21 | -0.064 |
+| AMD      | Information Technology | 2019-12-31 00:00:00 | 2020-02-28 00:00:00 |     40 | -0.008 |
+| FTNT     | Information Technology | 2019-12-31 00:00:00 | 2020-02-28 00:00:00 |     40 | -0.044 |
+| NOW      | Information Technology | 2020-01-31 00:00:00 | 2020-03-31 00:00:00 |     41 | -0.153 |
+| NFLX     | Information Technology | 2020-02-28 00:00:00 | 2020-03-31 00:00:00 |     22 |  0.018 |
+| REGN     | Health Care            | 2020-03-31 00:00:00 | 2020-04-30 00:00:00 |     21 |  0.077 |
+| GILD     | Health Care            | 2020-03-31 00:00:00 | 2020-04-30 00:00:00 |     21 |  0.124 |
+| KR       | Consumer Staples       | 2020-04-30 00:00:00 | 2020-05-29 00:00:00 |     20 |  0.037 |
+| CLX      | Consumer Staples       | 2020-04-30 00:00:00 | 2020-06-30 00:00:00 |     42 |  0.177 |
+| GIS      | Consumer Staples       | 2020-04-30 00:00:00 | 2020-06-30 00:00:00 |     42 |  0.029 |
+| CAG      | Consumer Staples       | 2020-05-29 00:00:00 | 2020-06-30 00:00:00 |     22 |  0.011 |
+| EBAY     | Consumer Discretionary | 2020-06-30 00:00:00 | 2020-07-31 00:00:00 |     22 |  0.054 |
+| DHI      | Consumer Discretionary | 2020-06-30 00:00:00 | 2020-07-31 00:00:00 |     22 |  0.193 |
+| UPS      | Industrials            | 2020-07-31 00:00:00 | 2020-08-31 00:00:00 |     21 |  0.153 |
+| WHR      | Industrials            | 2020-07-31 00:00:00 | 2020-08-31 00:00:00 |     21 |  0.097 |
+| AMZN     | Consumer Discretionary | 2020-08-31 00:00:00 | 2020-09-30 00:00:00 |     21 | -0.088 |
+| BBY      | Consumer Discretionary | 2020-08-31 00:00:00 | 2020-09-30 00:00:00 |     21 |  0.009 |
+| DHI      | Consumer Discretionary | 2020-08-31 00:00:00 | 2020-10-30 00:00:00 |     43 | -0.064 |
+| PHM      | Consumer Discretionary | 2020-09-30 00:00:00 | 2020-10-30 00:00:00 |     22 | -0.119 |
+| LEN      | Consumer Discretionary | 2020-09-30 00:00:00 | 2020-10-30 00:00:00 |     22 | -0.138 |
+| TPR      | Consumer Discretionary | 2020-10-30 00:00:00 | 2020-12-31 00:00:00 |     42 |  0.398 |
+| UAA      | Consumer Discretionary | 2020-11-30 00:00:00 | 2020-12-31 00:00:00 |     22 |  0.036 |
+| LNC      | Financials             | 2020-12-31 00:00:00 | 2021-01-29 00:00:00 |     19 | -0.089 |
+| IVZ      | Financials             | 2020-12-31 00:00:00 | 2021-01-29 00:00:00 |     19 |  0.181 |
+| ZION     | Financials             | 2020-12-31 00:00:00 | 2021-01-29 00:00:00 |     19 |  0.016 |
+| NTAP     | Information Technology | 2021-01-29 00:00:00 | 2021-02-26 00:00:00 |     19 | -0.058 |
+| AMAT     | Information Technology | 2021-01-29 00:00:00 | 2021-03-31 00:00:00 |     42 |  0.385 |
+| MU       | Information Technology | 2021-01-29 00:00:00 | 2021-03-31 00:00:00 |     42 |  0.127 |
+| WDC      | Information Technology | 2021-02-26 00:00:00 | 2021-03-31 00:00:00 |     23 | -0.026 |
+| AAL      | Financials             | 2021-03-31 00:00:00 | 2021-04-30 00:00:00 |     21 | -0.091 |
+| IVZ      | Financials             | 2021-03-31 00:00:00 | 2021-04-30 00:00:00 |     21 |  0.071 |
+| HIG      | Financials             | 2021-03-31 00:00:00 | 2021-04-30 00:00:00 |     21 | -0.012 |
+| WFC      | Financials             | 2021-04-30 00:00:00 | 2021-05-28 00:00:00 |     20 |  0.039 |
+| COF      | Financials             | 2021-04-30 00:00:00 | 2021-05-28 00:00:00 |     20 |  0.081 |
+| LNC      | Financials             | 2021-04-30 00:00:00 | 2021-05-28 00:00:00 |     20 |  0.088 |
+| DXC      | Industrials            | 2021-05-28 00:00:00 | 2021-06-30 00:00:00 |     22 |  0.027 |
+| EFX      | Industrials            | 2021-05-28 00:00:00 | 2021-06-30 00:00:00 |     22 |  0.019 |
+| EXPD     | Industrials            | 2021-05-28 00:00:00 | 2021-06-30 00:00:00 |     22 |  0.007 |
+| IDXX     | Health Care            | 2021-06-30 00:00:00 | 2021-07-30 00:00:00 |     21 |  0.074 |
+| CRL      | Health Care            | 2021-06-30 00:00:00 | 2021-07-30 00:00:00 |     21 |  0.100 |
+| WST      | Health Care            | 2021-06-30 00:00:00 | 2021-07-30 00:00:00 |     21 |  0.147 |
+| IT       | Information Technology | 2021-07-30 00:00:00 | 2021-08-31 00:00:00 |     22 |  0.166 |
+| AMD      | Information Technology | 2021-07-30 00:00:00 | 2021-08-31 00:00:00 |     22 |  0.043 |
+| FTNT     | Information Technology | 2021-07-30 00:00:00 | 2021-09-30 00:00:00 |     43 |  0.073 |
+| MPWR     | Information Technology | 2021-08-31 00:00:00 | 2021-09-30 00:00:00 |     21 | -0.020 |
+| NOW      | Information Technology | 2021-08-31 00:00:00 | 2021-09-30 00:00:00 |     21 | -0.033 |
+| DXCM     | Health Care            | 2021-09-30 00:00:00 | 2021-10-29 00:00:00 |     21 |  0.140 |
+| BAC      | Financials             | 2021-10-29 00:00:00 | 2021-11-30 00:00:00 |     21 | -0.069 |
+| AIG      | Financials             | 2021-10-29 00:00:00 | 2021-11-30 00:00:00 |     21 | -0.110 |
+| RF       | Financials             | 2021-10-29 00:00:00 | 2021-11-30 00:00:00 |     21 | -0.039 |
+| NVDA     | Information Technology | 2021-11-30 00:00:00 | 2021-12-31 00:00:00 |     22 | -0.100 |
+| AMD      | Information Technology | 2021-11-30 00:00:00 | 2021-12-31 00:00:00 |     22 | -0.091 |
+| ANET     | Information Technology | 2021-11-30 00:00:00 | 2021-12-31 00:00:00 |     22 |  0.159 |
+| EIX      | Utilities              | 2021-12-31 00:00:00 | 2022-01-31 00:00:00 |     20 | -0.080 |
+| EXC      | Utilities              | 2021-12-31 00:00:00 | 2022-01-31 00:00:00 |     20 |  0.003 |
+| ED       | Utilities              | 2021-12-31 00:00:00 | 2022-01-31 00:00:00 |     20 |  0.013 |
+| MKC      | Consumer Staples       | 2022-01-31 00:00:00 | 2022-02-28 00:00:00 |     19 | -0.051 |
+| CHD      | Consumer Staples       | 2022-01-31 00:00:00 | 2022-02-28 00:00:00 |     19 | -0.044 |
+| ADM      | Consumer Staples       | 2022-02-28 00:00:00 | 2022-03-31 00:00:00 |     23 |  0.151 |
+| SYY      | Consumer Staples       | 2022-02-28 00:00:00 | 2022-03-31 00:00:00 |     23 | -0.057 |
+| MO       | Consumer Staples       | 2022-02-28 00:00:00 | 2022-03-31 00:00:00 |     23 |  0.036 |
+| SRE      | Utilities              | 2022-03-31 00:00:00 | 2022-04-29 00:00:00 |     20 | -0.040 |
+| EXC      | Utilities              | 2022-03-31 00:00:00 | 2022-04-29 00:00:00 |     20 | -0.018 |
+| NI       | Utilities              | 2022-03-31 00:00:00 | 2022-04-29 00:00:00 |     20 | -0.077 |
+| NUE      | Materials              | 2022-04-29 00:00:00 | 2022-05-31 00:00:00 |     21 | -0.144 |
+| CF       | Materials              | 2022-04-29 00:00:00 | 2022-05-31 00:00:00 |     21 |  0.024 |
+| NRG      | Utilities              | 2022-05-31 00:00:00 | 2022-06-30 00:00:00 |     21 | -0.171 |
+| CNP      | Utilities              | 2022-05-31 00:00:00 | 2022-06-30 00:00:00 |     21 | -0.077 |
+| LW       | Industrials            | 2022-07-29 00:00:00 | 2022-08-31 00:00:00 |     23 |  0.001 |
+| PWR      | Industrials            | 2022-07-29 00:00:00 | 2022-08-31 00:00:00 |     23 |  0.019 |
+| AES      | Utilities              | 2022-08-31 00:00:00 | 2022-09-30 00:00:00 |     21 | -0.112 |
+| NEE      | Utilities              | 2022-08-31 00:00:00 | 2022-09-30 00:00:00 |     21 | -0.078 |
+| MPC      | Energy                 | 2022-09-30 00:00:00 | 2022-10-31 00:00:00 |     21 |  0.144 |
+| COP      | Energy                 | 2022-09-30 00:00:00 | 2022-10-31 00:00:00 |     21 |  0.232 |
+| BIIB     | Health Care            | 2022-10-31 00:00:00 | 2022-12-30 00:00:00 |     42 | -0.023 |
+| GILD     | Health Care            | 2022-10-31 00:00:00 | 2022-12-30 00:00:00 |     42 |  0.103 |
+| DXCM     | Health Care            | 2022-11-30 00:00:00 | 2022-12-30 00:00:00 |     21 | -0.026 |
+| UHS      | Health Care            | 2022-12-30 00:00:00 | 2023-01-31 00:00:00 |     20 |  0.052 |
+| FCX      | Materials              | 2023-01-31 00:00:00 | 2023-02-28 00:00:00 |     19 | -0.082 |
+| STLD     | Materials              | 2023-01-31 00:00:00 | 2023-02-28 00:00:00 |     19 |  0.045 |
+| LVS      | Consumer Discretionary | 2023-02-28 00:00:00 | 2023-03-31 00:00:00 |     23 | -0.000 |
+| BKNG     | Consumer Discretionary | 2023-02-28 00:00:00 | 2023-03-31 00:00:00 |     23 |  0.051 |
+| WYNN     | Consumer Discretionary | 2023-02-28 00:00:00 | 2023-04-28 00:00:00 |     42 |  0.055 |
+| MGM      | Consumer Discretionary | 2023-03-31 00:00:00 | 2023-04-28 00:00:00 |     19 |  0.011 |
+| PNW      | Utilities              | 2023-04-28 00:00:00 | 2023-05-31 00:00:00 |     22 | -0.015 |
+| EIX      | Utilities              | 2023-04-28 00:00:00 | 2023-05-31 00:00:00 |     22 | -0.083 |
+| PCG      | Utilities              | 2023-05-31 00:00:00 | 2023-06-30 00:00:00 |     21 |  0.020 |
+| CCL      | Consumer Discretionary | 2023-06-30 00:00:00 | 2023-07-31 00:00:00 |     20 |  0.001 |
+| NCLH     | Consumer Discretionary | 2023-06-30 00:00:00 | 2023-07-31 00:00:00 |     20 |  0.014 |
+| RCL      | Consumer Discretionary | 2023-06-30 00:00:00 | 2023-07-31 00:00:00 |     20 |  0.052 |
+| DAL      | Industrials            | 2023-07-31 00:00:00 | 2023-08-31 00:00:00 |     23 | -0.073 |
+| CARR     | Industrials            | 2023-07-31 00:00:00 | 2023-09-29 00:00:00 |     43 | -0.073 |
+| URI      | Industrials            | 2023-08-31 00:00:00 | 2023-09-29 00:00:00 |     20 | -0.067 |
+| CAT      | Industrials            | 2023-08-31 00:00:00 | 2023-09-29 00:00:00 |     20 | -0.029 |
+| ANET     | Information Technology | 2023-10-31 00:00:00 | 2023-11-30 00:00:00 |     21 |  0.097 |
+| INTC     | Information Technology | 2023-11-30 00:00:00 | 2023-12-29 00:00:00 |     20 |  0.124 |
+| IT       | Information Technology | 2023-11-30 00:00:00 | 2023-12-29 00:00:00 |     20 |  0.037 |
+| PANW     | Information Technology | 2023-11-30 00:00:00 | 2023-12-29 00:00:00 |     20 | -0.001 |
+| DHI      | Consumer Discretionary | 2023-12-29 00:00:00 | 2024-01-31 00:00:00 |     21 | -0.060 |
+| EXPE     | Consumer Discretionary | 2023-12-29 00:00:00 | 2024-02-29 00:00:00 |     41 | -0.099 |
+| RCL      | Consumer Discretionary | 2023-12-29 00:00:00 | 2024-02-29 00:00:00 |     41 | -0.047 |
+| BBWI     | Consumer Discretionary | 2024-01-31 00:00:00 | 2024-02-29 00:00:00 |     20 |  0.076 |
+| URI      | Industrials            | 2024-02-29 00:00:00 | 2024-03-28 00:00:00 |     20 |  0.040 |
+| BLDR     | Industrials            | 2024-02-29 00:00:00 | 2024-03-28 00:00:00 |     20 |  0.069 |
+| UBER     | Industrials            | 2024-02-29 00:00:00 | 2024-03-28 00:00:00 |     20 | -0.032 |
+| GE       | Industrials            | 2024-03-28 00:00:00 | 2024-04-30 00:00:00 |     22 |  0.157 |
+| ETN      | Industrials            | 2024-03-28 00:00:00 | 2024-04-30 00:00:00 |     22 |  0.018 |
+| PCAR     | Industrials            | 2024-03-28 00:00:00 | 2024-04-30 00:00:00 |     22 | -0.144 |
+| CEG      | Utilities              | 2024-04-30 00:00:00 | 2024-05-31 00:00:00 |     22 |  0.170 |
+| NRG      | Utilities              | 2024-04-30 00:00:00 | 2024-05-31 00:00:00 |     22 |  0.115 |
+| PEG      | Utilities              | 2024-04-30 00:00:00 | 2024-05-31 00:00:00 |     22 |  0.097 |
+| TRGP     | Energy                 | 2024-05-31 00:00:00 | 2024-06-28 00:00:00 |     19 |  0.089 |
+| WMB      | Energy                 | 2024-05-31 00:00:00 | 2024-06-28 00:00:00 |     19 |  0.036 |
+| KMI      | Energy                 | 2024-05-31 00:00:00 | 2024-06-28 00:00:00 |     19 |  0.019 |
+| FICO     | Information Technology | 2024-07-31 00:00:00 | 2024-08-30 00:00:00 |     22 |  0.081 |
+| UHS      | Health Care            | 2024-08-30 00:00:00 | 2024-09-30 00:00:00 |     20 | -0.037 |
+| GILD     | Health Care            | 2024-08-30 00:00:00 | 2024-09-30 00:00:00 |     20 |  0.071 |
+| MHK      | Industrials            | 2024-09-30 00:00:00 | 2024-10-31 00:00:00 |     23 | -0.164 |
+| UAL      | Industrials            | 2024-10-31 00:00:00 | 2024-11-29 00:00:00 |     20 |  0.237 |
+| AXON     | Industrials            | 2024-10-31 00:00:00 | 2024-11-29 00:00:00 |     20 |  0.528 |
+| RJF      | Financials             | 2024-11-29 00:00:00 | 2024-12-31 00:00:00 |     21 | -0.082 |
+| SYF      | Financials             | 2024-11-29 00:00:00 | 2024-12-31 00:00:00 |     21 | -0.037 |
+| BX       | Financials             | 2024-11-29 00:00:00 | 2024-12-31 00:00:00 |     21 | -0.098 |
+| AVGO     | Information Technology | 2024-12-31 00:00:00 | 2025-01-31 00:00:00 |     20 | -0.046 |
+| PLTR     | Information Technology | 2024-12-31 00:00:00 | 2025-02-28 00:00:00 |     39 |  0.123 |
+| GDDY     | Information Technology | 2024-12-31 00:00:00 | 2025-02-28 00:00:00 |     39 | -0.091 |
+| JBL      | Information Technology | 2025-01-31 00:00:00 | 2025-02-28 00:00:00 |     19 | -0.046 |
+| PM       | Consumer Staples       | 2025-02-28 00:00:00 | 2025-03-31 00:00:00 |     21 |  0.031 |
+| WMT      | Consumer Staples       | 2025-02-28 00:00:00 | 2025-03-31 00:00:00 |     21 | -0.107 |
+| ED       | Utilities              | 2025-03-31 00:00:00 | 2025-04-30 00:00:00 |     21 |  0.020 |
+| EXC      | Utilities              | 2025-03-31 00:00:00 | 2025-04-30 00:00:00 |     21 |  0.018 |
+| AEP      | Utilities              | 2025-03-31 00:00:00 | 2025-04-30 00:00:00 |     21 | -0.009 |
+| PM       | Consumer Staples       | 2025-04-30 00:00:00 | 2025-05-30 00:00:00 |     21 |  0.054 |
+| MNST     | Consumer Staples       | 2025-04-30 00:00:00 | 2025-05-30 00:00:00 |     21 |  0.064 |
+| AXON     | Industrials            | 2025-05-30 00:00:00 | 2025-07-31 00:00:00 |     42 |  0.007 |
+| PWR      | Industrials            | 2025-06-30 00:00:00 | 2025-07-31 00:00:00 |     22 |  0.074 |
+| GEV      | Industrials            | 2025-05-30 00:00:00 | 2025-08-29 00:00:00 |     63 |  0.297 |
+| ROK      | Industrials            | 2025-07-31 00:00:00 | 2025-08-29 00:00:00 |     21 | -0.020 |
+| BKR      | Energy                 | 2025-08-29 00:00:00 | 2025-09-30 00:00:00 |     21 |  0.073 |
+| APP      | Information Technology | 2025-09-30 00:00:00 | 2025-10-31 00:00:00 |     23 | -0.113 |
+| WDC      | Information Technology | 2025-09-30 00:00:00 | 2025-10-31 00:00:00 |     23 |  0.251 |
+| STX      | Information Technology | 2025-09-30 00:00:00 | 2025-10-31 00:00:00 |     23 |  0.084 |
+| UHS      | Health Care            | 2025-10-31 00:00:00 | 2025-11-28 00:00:00 |     19 |  0.123 |
+| NEE      | Utilities              | 2025-11-28 00:00:00 | 2025-12-31 00:00:00 |     22 | -0.070 |
+| CEG      | Utilities              | 2025-11-28 00:00:00 | 2025-12-31 00:00:00 |     22 | -0.030 |
+| NRG      | Utilities              | 2025-11-28 00:00:00 | 2025-12-31 00:00:00 |     22 | -0.060 |
+| NUE      | Materials              | 2025-12-31 00:00:00 | 2026-01-30 00:00:00 |     20 |  0.090 |
+| ALB      | Materials              | 2025-12-31 00:00:00 | 2026-03-31 00:00:00 |     61 |  0.272 |
+| FCX      | Materials              | 2025-12-31 00:00:00 | 2026-03-31 00:00:00 |     61 |  0.160 |
+| NEM      | Materials              | 2026-01-30 00:00:00 | 2026-03-31 00:00:00 |     41 | -0.035 |
+| LYB      | Materials              | 2026-03-31 00:00:00 | 2026-04-30 00:00:00 |     21 | -0.074 |
+| DOW      | Materials              | 2026-03-31 00:00:00 | 2026-04-30 00:00:00 |     21 | -0.028 |
+| CF       | Materials              | 2026-03-31 00:00:00 | 2026-04-30 00:00:00 |     21 | -0.043 |
+| LITE     | Information Technology | 2026-04-30 00:00:00 | 2026-05-29 00:00:00 |     20 | -0.052 |
+| CIEN     | Information Technology | 2026-04-30 00:00:00 | 2026-05-29 00:00:00 |     20 |  0.100 |
+| SNDK     | Information Technology | 2026-04-30 00:00:00 | 2026-05-29 00:00:00 |     20 |  0.546 |
+| MPC      | Energy                 | 2026-05-29 00:00:00 | 2026-06-30 00:00:00 |     21 |  0.028 |
+| VLO      | Energy                 | 2026-05-29 00:00:00 | 2026-06-30 00:00:00 |     21 |  0.064 |
+| CAT      | Industrials            | 2026-06-30 00:00:00 | 2026-07-31 00:00:00 |     22 | -0.233 |
+| UAL      | Industrials            | 2026-06-30 00:00:00 | 2026-07-31 00:00:00 |     22 | -0.108 |
+| URI      | Industrials            | 2026-06-30 00:00:00 | 2026-07-31 00:00:00 |     22 | -0.047 |
+| DOC      | Financials             | 2026-07-31 00:00:00 | 2026-08-31 00:00:00 |     21 | -0.042 |
+| MPC      | Energy                 | 2026-08-31 00:00:00 | 2026-09-30 00:00:00 |     21 |  0.059 |
+| VLO      | Energy                 | 2026-08-31 00:00:00 | 2026-09-30 00:00:00 |     21 |  0.080 |
+| PSX      | Energy                 | 2026-08-31 00:00:00 | 2026-09-30 00:00:00 |     21 |  0.035 |
+| MRNA     | Health Care            | 2026-09-30 00:00:00 | 2026-10-16 00:00:00 |     12 |  0.132 |
+| VEEV     | Health Care            | 2026-09-30 00:00:00 | 2026-10-16 00:00:00 |     12 |  0.087 |
+| RVTY     | Health Care            | 2026-09-30 00:00:00 | 2026-10-16 00:00:00 |     12 | -0.002 |
 
 ## 19. Run 28: sector momentum first, then the strongest stocks in the leading sectors; and the best stock of the year
 

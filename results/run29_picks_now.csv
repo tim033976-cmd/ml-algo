@@ -1,0 +1,4 @@
+configuration,sectors,holdings now
+"3 months, monthly, #2 only, same lookback, 3",Energy,"MPC, VLO, APA"
+"1 week, monthly, #1 only, same lookback, 3",Consumer Staples,KDP
+"6 months, monthly, #1 and #2, 6m/1m momentum, 3","Health Care, Energy","MRNA, MPC, HUM, VLO, PSX, VEEV"
