@@ -18,10 +18,12 @@ WIKI = {
 SP500_FALLBACK = "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
 # run 24: every S&P 500 membership spell since 1996 (ticker, start_date, end_date), incl. removed members
 SP500_HISTORY = "https://raw.githubusercontent.com/fja05680/sp500/master/sp500_ticker_start_end.csv"
-# run 28: sector ETFs, used only as momentum indicators (GICS sector -> SPDR ETF)
+# run 28: broad sector ETFs, used only as momentum indicators (GICS sector -> SPDR ETF, all trading since 1998).
+# User: no niche sectors. Communication services (GOOGL, META, NFLX) counts as tech; real estate as financials
+# (it was part of XLF until 2016).
 SECTOR_ETF = {"Information Technology": "XLK", "Health Care": "XLV", "Financials": "XLF", "Consumer Discretionary": "XLY",
-              "Communication Services": "XLC", "Industrials": "XLI", "Consumer Staples": "XLP", "Energy": "XLE",
-              "Utilities": "XLU", "Real Estate": "XLRE", "Materials": "XLB"}
+              "Industrials": "XLI", "Consumer Staples": "XLP", "Energy": "XLE", "Utilities": "XLU", "Materials": "XLB"}
+SECTOR_MERGE = {"Communication Services": "Information Technology", "Real Estate": "Financials"}
 MARKET = ("SPY", "QQQ", "^IRX", "^VIX", "^VIX3M", *SECTOR_ETF.values())
 
 

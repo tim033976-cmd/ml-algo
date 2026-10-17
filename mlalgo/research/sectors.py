@@ -1,21 +1,21 @@
 """Run 28: sector momentum first, then the strongest S&P 500 stocks inside the leading sectors.
 
-Sector ETFs are used only as indicators (we hold stocks, not ETFs). Where an ETF did not exist yet
-(XLRE before Oct 2015, XLC before Jun 2018) the sector's momentum comes from an equal-weight index of
-its point-in-time S&P 500 members.
+Broad sector ETFs are used only as indicators (we hold stocks, not ETFs); communication services and
+real estate are folded into tech and financials (data.SECTOR_MERGE). 'members' momentum (equal-weight
+index of a sector's point-in-time S&P 500 members) is kept as a fallback for missing ETF data.
 """
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
-from mlalgo.research.data import SECTOR_ETF
+from mlalgo.research.data import SECTOR_ETF, SECTOR_MERGE
 
 
 def assign_sectors(closes: pd.DataFrame, known: pd.Series, etfs: dict[str, pd.Series]) -> pd.Series:
     """ticker -> GICS sector. Former members have no sector on Wikipedia: give them the sector whose
     ETF their daily returns track most closely (shortcut: uses the whole history, not point-in-time)."""
-    sec = known.reindex(closes.columns).where(lambda s: s.isin(list(SECTOR_ETF)))
+    sec = known.replace(SECTOR_MERGE).reindex(closes.columns).where(lambda s: s.isin(list(SECTOR_ETF)))
     todo = sec.index[sec.isna()]
     if len(todo) and etfs:
         r = closes[todo].pct_change(fill_method=None)

@@ -573,9 +573,9 @@ def test_sector_rotation_mechanics():
     closes.loc[idx[200]:, "e2"] = np.nan
     etfs = {"XLK": pd.Series(50 * np.exp(0.003 * g + 0.01 * np.sin(g)), index=idx),
             "XLE": pd.Series(50 * np.exp(-0.002 * g), index=idx)}
-    known = pd.Series({"t1": "Information Technology", "t2": "Information Technology", "e1": "Energy", "e2": "Energy"})
+    known = pd.Series({"t1": "Information Technology", "t2": "Communication Services", "e1": "Energy", "e2": "Energy"})
     sec = SC.assign_sectors(closes, known, etfs)
-    assert sec["x"] == "Information Technology"
+    assert sec["x"] == "Information Technology" and sec["t2"] == "Information Technology"   # comm services = tech
     sret = SC.sector_returns(closes, sec, None, etfs, 21)
     ch = SC.choose(sret, 1, absolute=True)
     assert ch["Information Technology"].iloc[-1] and not ch["Energy"].iloc[-1]

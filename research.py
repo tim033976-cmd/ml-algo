@@ -556,7 +556,7 @@ def run28(prices, market, sp_hist, universe, out, fund=None):
     baseline = RT.run(P, n=N, rebalance_days=month_end, **base)
     bst = RT.stats(baseline, A.IS_END)
     rows, results = [], {}
-    for source in ("etf", "members"):
+    for source in ("etf",):
         for L in (5, 21, 63, 126):
             sret = SC.sector_returns(closes, sector, members, etfs, L, source)
             for reb_name, reb in (("weekly", week_end), ("monthly", month_end)):
@@ -661,11 +661,11 @@ def _run28_section(r, md):
     return [
         "## 19. Run 28: sector momentum first, then the strongest stocks in the leading sectors; and the best stock of the year",
         "",
-        "Sector ETFs (XLK, XLV, XLE, ...) are only the momentum signal; the book holds the strongest S&P 500 stocks "
+        "9 broad sector ETFs (XLK, XLV, XLF, XLY, XLI, XLP, XLE, XLU, XLB; communication services counted as tech, "
+        "real estate as financials) are only the momentum signal; the book holds the strongest S&P 500 stocks "
         "(point-in-time incl. former members; leaders: rising 50-day > 200-day, near highs, 6m/1m momentum) from the "
         "top 1-3 sectors, 15 positions, no stop, sold when the sector drops out or the stock leaves the top 30 at a "
-        "rebalance. Sector momentum over 1 week / 1 month / 3 / 6 months, from the ETF or from an equal-weight index "
-        "of the sector's members; weekly or monthly; optionally cash for a chosen sector that is down "
+        "rebalance. Sector momentum over 1 week / 1 month / 3 / 6 months; weekly or monthly; optionally cash for a chosen sector that is down "
         "(dual momentum) or only sectors whose median reported EPS growth is positive. Chosen on 2010-2017, judged "
         "on 2018+. 0.1% per side. Former members get the sector whose ETF they track most closely.",
         "",
@@ -687,7 +687,7 @@ def _run28_section(r, md):
         "",
         T("years"),
         "",
-        "### Today's sector table (like the user's BofA table, with reported, not estimated, EPS growth)",
+        "### Today's sector table (like the user's BofA table, but reported, not estimated, EPS growth)",
         "",
         T("table"),
         "",
@@ -711,7 +711,7 @@ def _run28_section(r, md):
         "",
         T("user_years"),
         "",
-        "Stocks per sector (incl. assigned former members):",
+        "Stocks per sector (incl. former members assigned by correlation):",
         "",
         T("sector_counts"),
         "",
