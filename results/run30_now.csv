@@ -1,0 +1,6 @@
+configuration,sectors now,holdings now
+"3 months, #2 only, 3, every Friday",Energy,"MPC, COP, XOM"
+"6 months, #2 only, 3, every Friday",Energy,"MPC, COP, XOM"
+"3 months, #2 only, 3, only when the sector changes",Energy,"MPC, COP, XOM"
+"1 month, #2 only, 2, only when the sector changes",Energy,"MPC, COP"
+"3 months, #1 and #2, 2, only when the sector changes","Health Care, Energy","MPC, VLO, MRNA, RVTY"
