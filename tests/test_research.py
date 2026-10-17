@@ -559,3 +559,34 @@ def test_rotation_fills_every_slot():
     for n in (10, 15, 20):
         r = R.run(P, n=n, exit_rule="none", stop=None, start=str(idx[300].date()))
         assert len(r["open"]) == n
+
+
+def test_sector_rotation_mechanics():
+    from mlalgo.research import rotation as R
+    from mlalgo.research import sectors as SC
+    idx = pd.bdate_range("2010-01-01", periods=400)
+    g = np.arange(400)
+    # tech rises, energy falls; 'x' has no known sector but tracks the tech ETF
+    closes = pd.DataFrame({"t1": 20 * np.exp(0.003 * g), "t2": 20 * np.exp(0.0025 * g),
+                           "e1": 20 * np.exp(-0.002 * g), "e2": 20 * np.exp(0.004 * g) * (g < 200) + 1e-9,
+                           "x": 20 * np.exp(0.003 * g + 0.01 * np.sin(g))}, index=idx)
+    closes.loc[idx[200]:, "e2"] = np.nan
+    etfs = {"XLK": pd.Series(50 * np.exp(0.003 * g + 0.01 * np.sin(g)), index=idx),
+            "XLE": pd.Series(50 * np.exp(-0.002 * g), index=idx)}
+    known = pd.Series({"t1": "Information Technology", "t2": "Information Technology", "e1": "Energy", "e2": "Energy"})
+    sec = SC.assign_sectors(closes, known, etfs)
+    assert sec["x"] == "Information Technology"
+    sret = SC.sector_returns(closes, sec, None, etfs, 21)
+    ch = SC.choose(sret, 1, absolute=True)
+    assert ch["Information Technology"].iloc[-1] and not ch["Energy"].iloc[-1]
+    # only energy allowed and it is falling: dual momentum leaves the book in cash
+    ch_e = SC.choose(sret[["Energy"]], 1, absolute=True)
+    assert not ch_e.iloc[-1].any()
+    mask = SC.stock_mask(ch, sec, closes.columns)
+    assert mask[-1].tolist() == [True, True, False, False, True]
+    P = R.prepare(closes, closes * 1e6)
+    res = R.run(P, n=3, exit_rule="none", stop=None, filt=mask, max_hold=np.where(ch.any(axis=1), 3, 0),
+                start=str(idx[300].date()))
+    assert set(res["open"]["ticker"]) <= {"t1", "t2", "x"}
+    none = R.run(P, n=3, exit_rule="none", stop=None, max_hold=np.zeros(len(idx)), start=str(idx[300].date()))
+    assert len(none["open"]) == 0 and none["curve"].iloc[-1] == 1.0

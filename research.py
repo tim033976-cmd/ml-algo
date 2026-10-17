@@ -531,6 +531,193 @@ def run27(prices, market, sp_hist, out, fund=None, earn=None):
     return r
 
 
+def run28(prices, market, sp_hist, universe, out, fund=None):
+    """Run 28 (user): sector ETFs as momentum indicators -> the strongest S&P 500 stocks inside the leading
+    sectors (we hold stocks, not ETFs); and the user's rule 'on 31 Dec buy the best S&P 500 stock(s) of the
+    year'. S&P 500 point-in-time incl. former members. Chosen on 2010-2017, judged on 2018+."""
+    from mlalgo.research import rotation as RT
+    from mlalgo.research import sectors as SC
+    r = {}
+    closes = pd.DataFrame({t: df["close"] for t, df in prices.items()})
+    idx, cols = closes.index, closes.columns
+    dv = pd.DataFrame({t: (df["close"] * df["volume"]).rolling(50).mean() for t, df in prices.items()}).reindex(idx)
+    members = D.sp500_mask(sp_hist, idx, cols) if sp_hist is not None and len(sp_hist) else None
+    P = RT.prepare(closes, dv, members)
+    etfs = {k: v["close"] for k, v in market.items() if k in D.SECTOR_ETF.values()}
+    known = universe.set_index("ticker")["sector"] if "sector" in universe else pd.Series(dtype=object)
+    sector = SC.assign_sectors(closes, known[~known.index.duplicated()], etfs)
+    r["sector_counts"] = sector.value_counts(dropna=False).rename_axis("sector").reset_index(name="stocks")
+    period = lambda f: (idx.to_series().groupby(idx.to_period(f)).transform("max") == idx).to_numpy()
+    month_end, week_end = period("M"), period("W")
+    eps = RT.fund_daily(fund, idx, cols, "eps_yoy") if fund is not None and len(fund) and "eps_yoy" in fund else None
+    earn_ok = eps.T.groupby(sector.reindex(cols)).median().T > 0 if eps is not None else None
+    N, base = 15, dict(score="mom_6m1m", exit_rule="none", stop=None, rank_buffer=2)
+    cols_ = ["IS_CAGR", "IS_maxDD", "IS10_CAGR", "IS10_maxDD", "IS10_CAGR_per_DD", "OOS_CAGR", "OOS_maxDD", "OOS_CAGR_per_DD", "OOS_trades"]
+    baseline = RT.run(P, n=N, rebalance_days=month_end, **base)
+    bst = RT.stats(baseline, A.IS_END)
+    rows, results = [], {}
+    for source in ("etf", "members"):
+        for L in (5, 21, 63, 126):
+            sret = SC.sector_returns(closes, sector, members, etfs, L, source)
+            for reb_name, reb in (("weekly", week_end), ("monthly", month_end)):
+                for k in (1, 2, 3):
+                    for absolute in (False, True):
+                        for conf_name, conf in (("none", None), ("sector EPS growing", earn_ok)):
+                            if conf_name != "none" and (conf is None or source != "etf" or reb_name != "monthly"):
+                                continue
+                            ch = SC.choose(sret, k, absolute, reb, conf)
+                            mh = ch.sum(axis=1).to_numpy() * N / k if absolute else None
+                            res = RT.run(P, n=N, filt=SC.stock_mask(ch, sector, cols), rebalance_days=reb, max_hold=mh, **base)
+                            key = (source, L, reb_name, k, "yes" if absolute else "no", conf_name)
+                            results[key] = (res, ch)
+                            rows.append(dict(zip(("indicator", "lookback_days", "rebalance", "top_sectors", "cash_if_negative",
+                                                  "earnings_confirm"), key), **RT.stats(res, A.IS_END)))
+    grid = pd.DataFrame(rows)
+    grid.to_csv(out / "run28_grid.csv", index=False)
+    for c in ("IS10_CAGR_per_DD", "OOS_CAGR_per_DD", "OOS_CAGR"):
+        grid[f"beats_base_{c}"] = grid[c] > bst.get(c, np.nan)
+    keys = ("indicator", "lookback_days", "rebalance", "top_sectors", "cash_if_negative", "earnings_confirm")
+    r["by_setting"] = pd.concat([grid.groupby(k)[cols_[:-1] + ["beats_base_IS10_CAGR_per_DD", "beats_base_OOS_CAGR_per_DD"]]
+                                 .median().reset_index().rename(columns={k: "value"}).assign(setting=k) for k in keys])
+    best = grid[grid["IS10_trades"] >= 30].sort_values("IS10_CAGR_per_DD", ascending=False)
+    r["best"] = best.head(10)
+    b = best.iloc[0]
+    key = tuple(int(b[k]) if k in ("lookback_days", "top_sectors") else b[k] for k in keys)
+    win, win_ch = results[key]
+    r["winner"] = ", ".join(f"{k}={v}" for k, v in zip(keys, key))
+    bench = [{"strategy": "no sector rule (run 27 style: 15 leaders, 6m/1m, monthly top-30 check)", **bst}]
+    for name in ("SPY", "QQQ"):
+        if name in market:
+            px = market[name]["close"]
+            st = {p: A._curve_stats(px[m]) for p, m in (("IS", (px.index >= "2007-01-01") & (px.index < A.IS_END)),
+                                                         ("IS10", (px.index >= "2010-01-01") & (px.index < A.IS_END)),
+                                                         ("OOS", px.index >= A.IS_END))}
+            bench.append({"strategy": name, **{f"{p}_CAGR": v["CAGR"] for p, v in st.items()},
+                          **{f"{p}_maxDD": v["max_DD"] for p, v in st.items()}})
+    r["bench"] = pd.DataFrame(bench).reindex(columns=["strategy"] + cols_[:-1])
+    yr = pd.concat([A.yearly(win["curve"][win["curve"].index >= "2010-01-01"]).rename("sector winner"),
+                    A.yearly(baseline["curve"][baseline["curve"].index >= "2010-01-01"]).rename("no sector rule")], axis=1)
+    if "SPY" in market:
+        spy = market["SPY"]["close"]
+        yr = pd.concat([yr, A.yearly(spy[spy.index >= "2010-01-01"]).rename("SPY")], axis=1)
+        r["alpha"] = pd.DataFrame([{"strategy (2018+)": k, **A.alpha_beta(c["curve"][c["curve"].index >= A.IS_END], spy)}
+                                   for k, c in (("sector winner", win), ("no sector rule", baseline))])
+    yr.index = yr.index.astype(int)
+    r["years"] = yr.rename_axis("year").reset_index()
+    ch_last = win_ch.iloc[-1]
+    r["today_sectors"] = ", ".join(ch_last.index[ch_last]) or "none (cash)"
+    r["today"] = win["open"]
+    leader_df = pd.DataFrame(P["leader"], index=idx, columns=cols)
+    score_df = pd.DataFrame(P["scores"]["mom_6m1m"], index=idx, columns=cols)
+    r["table"] = SC.today_table(closes, sector, etfs, leader_df, score_df, eps, members)
+
+    # the user's rule: at a year-end (or any month-end), buy the top M S&P 500 members by 12-month return
+    P2 = {**P, "leader": (members.to_numpy() if members is not None else np.ones(closes.shape, bool)) & ~np.isnan(P["c"])}
+    r12 = P["scores"]["ret_12m"]
+    ends = {m: month_end & (idx.month == m) for m in range(1, 13)}
+    exits = {"hold 12 months (re-rank each year)": {},
+             "monthly: sell if out of the top 20": {"rebalance_days": month_end, "rank_buffer_top": 20},
+             "close below 50-day": {"exit_rule": "sma50"},
+             "monthly: sell if 12-month return < 0": {"break_mask": (r12 < 0) & month_end[:, None]}}
+    urows, ures = [], {}
+    for M in (1, 3, 5, 10):
+        for ex, kw in exits.items():
+            for refill, ed in (("once a year", ends[12]), ("refill monthly", month_end)):
+                if refill != "once a year" and not kw:
+                    continue
+                kw2 = dict(kw)
+                top = kw2.pop("rank_buffer_top", None)
+                kw2.setdefault("rebalance_days", ends[12])
+                res = RT.run(P2, n=M, score="ret_12m", stop=None, entry_days=ed, start="2006-12-01",
+                             rank_buffer=top / M if top else 1, **{"exit_rule": "none", **kw2})
+                ures[(M, ex, refill)] = res
+                urows.append({"stocks": M, "exit": ex, "buy": refill, **RT.stats(res, A.IS_END)})
+    r["user"] = pd.DataFrame(urows)
+    srows = []
+    for M in (1, 3, 5, 10):
+        for m, ed in ends.items():
+            res = RT.run(P2, n=M, score="ret_12m", exit_rule="none", stop=None, entry_days=ed, rebalance_days=ed,
+                         rank_buffer=1, start="2006-01-01")
+            srows.append({"stocks": M, "start_month": m, **RT.stats(res, A.IS_END)})
+    sm = pd.DataFrame(srows)
+    r["user_months"] = sm.groupby("stocks")[["IS_CAGR", "IS_maxDD", "OOS_CAGR", "OOS_maxDD"]].agg(["median", "min", "max"])
+    r["user_months"].columns = [f"{a}_{b}" for a, b in r["user_months"].columns]
+    r["user_months"] = r["user_months"].reset_index()
+    t1 = ures[(1, "hold 12 months (re-rank each year)", "once a year")]["trades"]
+    r["user_picks"] = t1[["ticker", "date_in", "date_out", "ret"]].sort_values("date_in")
+    uy = A.yearly(ures[(1, "hold 12 months (re-rank each year)", "once a year")]["curve"]).rename("best stock of the year")
+    if "SPY" in market:
+        uy = pd.concat([uy, A.yearly(market["SPY"]["close"][lambda s: s.index >= "2007-01-01"]).rename("SPY")], axis=1).dropna()
+    uy.index = uy.index.astype(int)
+    r["user_years"] = uy.rename_axis("year").reset_index()
+    for k in ("sector_counts", "by_setting", "best", "bench", "years", "alpha", "today", "table", "user", "user_months", "user_picks", "user_years"):
+        if isinstance(r.get(k), pd.DataFrame):
+            r[k].to_csv(out / f"run28_{k}.csv", index=False)
+    return r
+
+
+def _run28_section(r, md):
+    T = lambda k: md(r[k], floatfmt=".3f") if isinstance(r.get(k), pd.DataFrame) and len(r[k]) else "(not available)"
+    return [
+        "## 19. Run 28: sector momentum first, then the strongest stocks in the leading sectors; and the best stock of the year",
+        "",
+        "Sector ETFs (XLK, XLV, XLE, ...) are only the momentum signal; the book holds the strongest S&P 500 stocks "
+        "(point-in-time incl. former members; leaders: rising 50-day > 200-day, near highs, 6m/1m momentum) from the "
+        "top 1-3 sectors, 15 positions, no stop, sold when the sector drops out or the stock leaves the top 30 at a "
+        "rebalance. Sector momentum over 1 week / 1 month / 3 / 6 months, from the ETF or from an equal-weight index "
+        "of the sector's members; weekly or monthly; optionally cash for a chosen sector that is down "
+        "(dual momentum) or only sectors whose median reported EPS growth is positive. Chosen on 2010-2017, judged "
+        "on 2018+. 0.1% per side. Former members get the sector whose ETF they track most closely.",
+        "",
+        "Median by setting (beats_base = share of configurations better than the same book with no sector rule):",
+        "",
+        T("by_setting"),
+        "",
+        f"Top 10 (by 2010-2017 return / drawdown). Winner: {r.get('winner', '')}",
+        "",
+        T("best"),
+        "",
+        "Benchmarks:",
+        "",
+        T("bench"),
+        "",
+        T("alpha"),
+        "",
+        "Year by year:",
+        "",
+        T("years"),
+        "",
+        "### Today's sector table (like the user's BofA table, with reported, not estimated, EPS growth)",
+        "",
+        T("table"),
+        "",
+        f"Winner's sectors today: {r.get('today_sectors', '')}. Its holdings at the last close:",
+        "",
+        T("today"),
+        "",
+        "### The user's rule: buy the best S&P 500 stock(s) of the past 12 months",
+        "",
+        "Members on that date only (no price or liquidity filter), ranked by 12-month return, equal weight.",
+        "",
+        T("user"),
+        "",
+        "Does it depend on the month you start? Hold 12 months, bought at each of the 12 month-ends (median / worst / best):",
+        "",
+        T("user_months"),
+        "",
+        "One stock, bought every 31 Dec: the picks",
+        "",
+        T("user_picks"),
+        "",
+        T("user_years"),
+        "",
+        "Stocks per sector (incl. assigned former members):",
+        "",
+        T("sector_counts"),
+        "",
+    ]
+
+
 def _run27_section(r, md):
     T = lambda k: md(r[k], floatfmt=".3f") if isinstance(r.get(k), pd.DataFrame) and len(r[k]) else "(not available)"
     return [
@@ -739,7 +926,7 @@ def main() -> None:
 
     if a.prices_parquet:
         prices = D.from_long(pd.read_parquet(a.prices_parquet))
-        market = {k: prices.pop(k) for k in ("SPY", "QQQ", "^IRX", "^VIX", "^VIX3M") if k in prices}
+        market = {k: prices.pop(k) for k in D.MARKET if k in prices}
         universe = (pd.read_csv(a.universe_csv) if a.universe_csv else
                     pd.DataFrame({"ticker": list(prices), "index": "file", "status": "current"}))
     else:
@@ -1173,6 +1360,8 @@ def main() -> None:
     pd.DataFrame({k: res["curve"] for k, res in port_rows}).ffill().to_csv(out / "equity_curves.csv")
 
     # ---------------- run 24: consolidated tests
+    r28 = run28(prices, market, sp_hist, universe, out, fund=fund)
+    print(f"[research] run 28 sector rotation done ({time.time() - t0:.0f}s)")
     r27 = run27(prices, market, sp_hist, out, fund=fund, earn=earn)
     print(f"[research] run 27 long-term book done ({time.time() - t0:.0f}s)")
     r25 = run25(sig, prices, market, sp_hist, out, fund=fund, earn=earn)
@@ -1367,6 +1556,7 @@ def main() -> None:
             "",
             *sum(([f"**{k}**", "", md(v, index=True, floatfmt=".3f"), ""] for k, v in goal_ext.items()), []),
         ] if short else []),
+        *_run28_section(r28, md),
         *_run27_section(r27, md),
         *_run25_section(r25, md),
         *_run24_section(r24, md),

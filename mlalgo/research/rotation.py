@@ -30,6 +30,7 @@ def prepare(closes: pd.DataFrame, dollar_vol: pd.DataFrame, members: pd.DataFram
     scores = {
         "mom_6m1m": 0.7 * r[126] + 0.3 * r[21],                       # the course's momentum score
         "mom_12_1": c.shift(21) / c.shift(252) - 1,                    # academic 12-1 momentum
+        "ret_12m": r[252],                                             # run 28: the user's 'best stock of the past year'
         "qull_best": pd.concat([r[n].rank(axis=1, pct=True) for n in (21, 63, 126)]).groupby(level=0).max(),
     }
     leader = ((c >= 10) & (dollar_vol.reindex_like(c) >= 20e6) & (c > s[50]) & (s[50] > s[200])
@@ -45,13 +46,14 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
         setup: np.ndarray | None = None, stop: float = 0.08, cost: float = 0.001, start: str = "2007-01-01",
         filt: np.ndarray | None = None, stop_adr: float | None = None, break_mask: np.ndarray | None = None,
         entry_days: np.ndarray | None = None, rank_buffer: int | None = None,
-        rebalance_days: np.ndarray | None = None) -> dict:
+        rebalance_days: np.ndarray | None = None, max_hold: np.ndarray | None = None) -> dict:
     """Simulate one configuration. `regime`: bool per date (True = new entries allowed). `setup`: bool
     dates x tickers (True = a setup fired that day); None = any leader may be bought.
     Run 27 (long-term book): exit_rule 'none' / 'sma200'; `stop` None = no fixed stop; `stop_adr` k = stop
     k x ADR (at entry) below the entry; `break_mask` True = the fundamentals broke -> sell; `entry_days`
     True = buying allowed that day (e.g. month-ends); `rank_buffer` b = on rebalance days (default: entry
-    days), sell holdings that fell out of the top b x N."""
+    days), sell holdings that fell out of the top b x N. `max_hold` (run 28): per-date cap on positions
+    (slots above it stay in cash; each position is still 1/N of equity)."""
     dates, c, sc, lead = P["dates"], P["c"], P["scores"][score], P["leader"]
     if filt is not None:                       # run 26: e.g. fundamentals must confirm (sales / EPS growth)
         lead = lead & filt
@@ -70,7 +72,7 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
         buy_day = entry_days is None or entry_days[t]
         reb = rebalance_days[t] if rebalance_days is not None else buy_day
         if rank_buffer and reb:
-            top_set = set(ranked[:rank_buffer * n].tolist())
+            top_set = set(ranked[:int(rank_buffer * n)].tolist())
         # exits
         for j in list(hold):
             h = hold[j]
@@ -90,11 +92,12 @@ def run(P: dict, n: int = 4, score: str = "mom_6m1m", exit_rule: str = "sma50", 
                 del hold[j]
         equity = cash + sum(h[0] * h[3] for h in hold.values())
         # entries
-        if len(hold) < n and (regime is None or regime[t]) and buy_day:
+        cap = n if max_hold is None else min(n, int(max_hold[t]))
+        if len(hold) < cap and (regime is None or regime[t]) and buy_day:
             cand = ranked[setup[t, ranked]] if setup is not None else ranked
             cand = [j for j in cand[: n + len(hold)] if j not in hold]
             for j in cand:
-                if len(hold) >= n:
+                if len(hold) >= cap:
                     break
                 alloc = min(equity / n, cash)
                 if alloc < 0.5 * equity / n:     # (was equity * 0.05: float rounding blocked buys at N = 20)

@@ -18,6 +18,11 @@ WIKI = {
 SP500_FALLBACK = "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
 # run 24: every S&P 500 membership spell since 1996 (ticker, start_date, end_date), incl. removed members
 SP500_HISTORY = "https://raw.githubusercontent.com/fja05680/sp500/master/sp500_ticker_start_end.csv"
+# run 28: sector ETFs, used only as momentum indicators (GICS sector -> SPDR ETF)
+SECTOR_ETF = {"Information Technology": "XLK", "Health Care": "XLV", "Financials": "XLF", "Consumer Discretionary": "XLY",
+              "Communication Services": "XLC", "Industrials": "XLI", "Consumer Staples": "XLP", "Energy": "XLE",
+              "Utilities": "XLU", "Real Estate": "XLRE", "Materials": "XLB"}
+MARKET = ("SPY", "QQQ", "^IRX", "^VIX", "^VIX3M", *SECTOR_ETF.values())
 
 
 def sp500_history(since: str = "2006-01-01") -> pd.DataFrame:
@@ -193,16 +198,22 @@ def load_all(cache_dir: str, start: str, indexes=("sp500", "sp400", "sp600"), ma
             universe["status"] = universe["status"].fillna("current")
             universe.to_csv(ufile, index=False)
         long = pd.read_parquet(pfile)
+        missing = [t for t in MARKET if t not in set(long["ticker"])]
+        if missing:                            # run 28: market tickers added after the cache was built
+            extra = download(missing, start)
+            if extra:
+                long = pd.concat([long, to_long(extra)], ignore_index=True)
+                long.to_parquet(pfile, index=False)
         print(f"[data] loaded cache: {long['ticker'].nunique()} tickers")
     else:
         universe = build_universe(indexes)
-        tickers = list(universe["ticker"]) + ["SPY", "QQQ", "^IRX", "^VIX", "^VIX3M"]
+        tickers = list(universe["ticker"]) + list(MARKET)
         prices = download(list(dict.fromkeys(tickers)), start)
         long = to_long(prices)
         long.to_parquet(pfile, index=False)
         universe.to_csv(ufile, index=False)
     prices = from_long(long)
-    market = {k: prices.pop(k) for k in ("SPY", "QQQ", "^IRX", "^VIX", "^VIX3M") if k in prices}
+    market = {k: prices.pop(k) for k in MARKET if k in prices}
     universe = universe[universe["ticker"].isin(prices)]
     return universe, prices, market
 
