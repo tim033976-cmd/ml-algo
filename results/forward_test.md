@@ -1,15 +1,15 @@
-# Forward test (paper trading record) — updated 2026-10-22
+# Forward test (paper trading record) — updated 2026-10-23
 
 Every day the top 10 of each picks list is logged and scored as real prices arrive: bought at that day's close, +20% (or +10%) target vs -10% stop, 63 trading days max. This is the only fully out-of-sample test there is.
 
-Logged picks: 157; finished (+20/-10): 19; still open: 138.
+Logged picks: 157; finished (+20/-10): 30; still open: 127.
 
 Finished trades, +20% before -10%:
 
 | list    |      n |   hit_target |   stopped |   avg_return |
 |:--------|-------:|-------------:|----------:|-------------:|
-| all     | 12.000 |        0.083 |     0.917 |       -0.086 |
-| leaders |  7.000 |        0.143 |     0.857 |       -0.067 |
+| all     | 16.000 |        0.125 |     0.875 |       -0.071 |
+| leaders | 14.000 |        0.357 |     0.643 |        0.001 |
 
 Most recent picks and their status so far:
 
@@ -26,7 +26,7 @@ Most recent picks and their status so far:
 | 2026-10-16 | OFG      | leaders |   52.640 |   0.143 | open         |    -0.024 |
 | 2026-10-21 | ADEA     | all     |   22.560 |   0.352 | open         |    -0.057 |
 | 2026-10-21 | WLY      | all     |   52.040 |   0.341 | open         |     0.039 |
-| 2026-10-21 | ALG      | all     |  148.500 |   0.341 | open         |     0.000 |
+| 2026-10-21 | ALG      | all     |  148.500 |   0.341 | open         |    -0.009 |
 | 2026-10-21 | AMG      | all     |  393.660 |   0.300 | open         |     0.005 |
 | 2026-10-21 | HUBB     | all     |  460.760 |   0.250 | open         |    -0.032 |
 | 2026-10-21 | SCL      | all     |   63.900 |   0.250 | open         |     0.007 |
