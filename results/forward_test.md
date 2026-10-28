@@ -1,8 +1,8 @@
-# Forward test (paper trading record) — updated 2026-10-26
+# Forward test (paper trading record) — updated 2026-10-27
 
 Every day the top 10 of each picks list is logged and scored as real prices arrive: bought at that day's close, +20% (or +10%) target vs -10% stop, 63 trading days max. This is the only fully out-of-sample test there is.
 
-Logged picks: 177; finished (+20/-10): 36; still open: 141.
+Logged picks: 197; finished (+20/-10): 36; still open: 161.
 
 Finished trades, +20% before -10%:
 
@@ -13,45 +13,45 @@ Finished trades, +20% before -10%:
 
 Most recent picks and their status so far:
 
-| date       | ticker   | list    |    close |   p_b20 | b20_result   |   b20_ret |
-|:-----------|:---------|:--------|---------:|--------:|:-------------|----------:|
-| 2026-10-21 | AMG      | leaders |  393.660 |   0.300 | open         |    -0.007 |
-| 2026-10-21 | SCL      | leaders |   63.900 |   0.250 | open         |     0.014 |
-| 2026-10-21 | GHC      | leaders | 1223.430 |   0.231 | open         |    -0.021 |
-| 2026-10-21 | CNO      | leaders |   55.410 |   0.121 | open         |    -0.022 |
-| 2026-10-22 | ADEA     | all     |   21.265 |   0.359 | open         |    -0.003 |
-| 2026-10-22 | WLY      | all     |   54.050 |   0.321 | open         |    -0.003 |
-| 2026-10-22 | AMG      | all     |  395.530 |   0.282 | open         |    -0.012 |
-| 2026-10-22 | HUBB     | all     |  445.800 |   0.267 | open         |     0.005 |
-| 2026-10-22 | SCL      | all     |   64.320 |   0.236 | open         |     0.007 |
-| 2026-10-22 | GHC      | all     | 1239.590 |   0.166 | open         |    -0.034 |
-| 2026-10-22 | OGS      | all     |   78.250 |   0.116 | open         |     0.001 |
-| 2026-10-22 | OFG      | all     |   51.360 |   0.094 | open         |     0.003 |
-| 2026-10-22 | CPF      | all     |   37.770 |   0.094 | open         |    -0.001 |
-| 2026-10-22 | CNO      | all     |   55.500 |   0.067 | open         |    -0.023 |
-| 2026-10-22 | WLY      | leaders |   54.050 |   0.321 | open         |    -0.003 |
-| 2026-10-22 | AMG      | leaders |  395.530 |   0.282 | open         |    -0.012 |
-| 2026-10-22 | SCL      | leaders |   64.320 |   0.236 | open         |     0.007 |
-| 2026-10-22 | GHC      | leaders | 1239.590 |   0.166 | open         |    -0.034 |
-| 2026-10-22 | CPF      | leaders |   37.770 |   0.094 | open         |    -0.001 |
-| 2026-10-22 | CNO      | leaders |   55.500 |   0.067 | open         |    -0.023 |
-| 2026-10-26 | PZZA     | all     |   18.230 |   0.367 | open         |     0.000 |
-| 2026-10-26 | HUBG     | all     |   26.060 |   0.367 | open         |     0.000 |
-| 2026-10-26 | CELH     | all     |   28.150 |   0.367 | open         |     0.000 |
-| 2026-10-26 | AHCO     | all     |    5.930 |   0.367 | open         |     0.000 |
-| 2026-10-26 | ICHR     | all     |   38.060 |   0.367 | open         |     0.000 |
-| 2026-10-26 | HIMS     | all     |   27.590 |   0.367 | open         |     0.000 |
-| 2026-10-26 | STX      | all     |  644.210 |   0.367 | open         |     0.000 |
-| 2026-10-26 | WDC      | all     |  356.130 |   0.367 | open         |     0.000 |
-| 2026-10-26 | MTW      | all     |   22.320 |   0.367 | open         |     0.000 |
-| 2026-10-26 | MTZ      | all     |  172.590 |   0.359 | open         |     0.000 |
-| 2026-10-26 | MTW      | leaders |   22.320 |   0.367 | open         |     0.000 |
-| 2026-10-26 | AZTA     | leaders |   37.170 |   0.359 | open         |     0.000 |
-| 2026-10-26 | S        | leaders |   25.500 |   0.359 | open         |     0.000 |
-| 2026-10-26 | KSS      | leaders |   23.650 |   0.346 | open         |     0.000 |
-| 2026-10-26 | ANF      | leaders |  164.730 |   0.346 | open         |     0.000 |
-| 2026-10-26 | HUM      | leaders |  417.220 |   0.346 | open         |     0.000 |
-| 2026-10-26 | RXO      | leaders |   28.680 |   0.346 | open         |     0.000 |
-| 2026-10-26 | CLF      | leaders |   13.380 |   0.346 | open         |     0.000 |
-| 2026-10-26 | CRSR     | leaders |   13.600 |   0.346 | open         |     0.000 |
-| 2026-10-26 | CBRL     | leaders |   68.840 |   0.346 | open         |     0.000 |
+| date       | ticker   | list    |   close |   p_b20 | b20_result   |   b20_ret |
+|:-----------|:---------|:--------|--------:|--------:|:-------------|----------:|
+| 2026-10-26 | PZZA     | all     |  18.230 |   0.367 | open         |     0.000 |
+| 2026-10-26 | HUBG     | all     |  26.060 |   0.367 | open         |     0.000 |
+| 2026-10-26 | CELH     | all     |  28.150 |   0.367 | open         |     0.000 |
+| 2026-10-26 | AHCO     | all     |   5.930 |   0.367 | open         |     0.000 |
+| 2026-10-26 | ICHR     | all     |  38.060 |   0.367 | open         |     0.000 |
+| 2026-10-26 | HIMS     | all     |  27.590 |   0.367 | open         |     0.000 |
+| 2026-10-26 | STX      | all     | 644.210 |   0.367 | open         |     0.000 |
+| 2026-10-26 | WDC      | all     | 356.130 |   0.367 | open         |     0.000 |
+| 2026-10-26 | MTW      | all     |  22.320 |   0.367 | open         |     0.000 |
+| 2026-10-26 | MTZ      | all     | 172.590 |   0.359 | open         |     0.000 |
+| 2026-10-26 | MTW      | leaders |  22.320 |   0.367 | open         |     0.000 |
+| 2026-10-26 | AZTA     | leaders |  37.170 |   0.359 | open         |     0.000 |
+| 2026-10-26 | S        | leaders |  25.500 |   0.359 | open         |     0.000 |
+| 2026-10-26 | KSS      | leaders |  23.650 |   0.346 | open         |     0.000 |
+| 2026-10-26 | ANF      | leaders | 164.730 |   0.346 | open         |     0.000 |
+| 2026-10-26 | HUM      | leaders | 417.220 |   0.346 | open         |     0.000 |
+| 2026-10-26 | RXO      | leaders |  28.680 |   0.346 | open         |     0.000 |
+| 2026-10-26 | CLF      | leaders |  13.380 |   0.346 | open         |     0.000 |
+| 2026-10-26 | CRSR     | leaders |  13.600 |   0.346 | open         |     0.000 |
+| 2026-10-26 | CBRL     | leaders |  68.840 |   0.346 | open         |     0.000 |
+| 2026-10-27 | WRBY     | all     |  25.070 |   0.361 | open         |     0.000 |
+| 2026-10-27 | YELP     | all     |  18.750 |   0.356 | open         |     0.000 |
+| 2026-10-27 | UPWK     | all     |   9.070 |   0.356 | open         |     0.000 |
+| 2026-10-27 | YOU      | all     |  45.530 |   0.356 | open         |     0.000 |
+| 2026-10-27 | WRLD     | all     | 169.830 |   0.356 | open         |     0.000 |
+| 2026-10-27 | WS       | all     |  42.710 |   0.356 | open         |     0.000 |
+| 2026-10-27 | XPEL     | all     |  42.910 |   0.349 | open         |     0.000 |
+| 2026-10-27 | WINA     | all     | 281.000 |   0.349 | open         |     0.000 |
+| 2026-10-27 | WT       | all     |  21.230 |   0.349 | open         |     0.000 |
+| 2026-10-27 | SRPT     | all     |  18.890 |   0.349 | open         |     0.000 |
+| 2026-10-27 | WS       | leaders |  42.710 |   0.356 | open         |     0.000 |
+| 2026-10-27 | TALO     | leaders |  18.190 |   0.349 | open         |     0.000 |
+| 2026-10-27 | XNCR     | leaders |  29.990 |   0.343 | open         |     0.000 |
+| 2026-10-27 | ZD       | leaders |  57.030 |   0.333 | open         |     0.000 |
+| 2026-10-27 | AMG      | leaders | 391.990 |   0.278 | open         |     0.000 |
+| 2026-10-27 | XHR      | leaders |  20.270 |   0.263 | open         |     0.000 |
+| 2026-10-27 | WKC      | leaders |  36.380 |   0.221 | open         |     0.000 |
+| 2026-10-27 | SXT      | leaders | 131.890 |   0.199 | open         |     0.000 |
+| 2026-10-27 | SCL      | leaders |  65.210 |   0.137 | open         |     0.000 |
+| 2026-10-27 | STBA     | leaders |  50.590 |   0.097 | open         |     0.000 |
