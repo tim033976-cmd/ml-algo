@@ -1,4 +1,4 @@
-# Forward test (paper trading record) — updated 2026-11-25
+# Forward test (paper trading record) — updated 2026-11-26
 
 Every day the top 10 of each picks list is logged and scored as real prices arrive: bought at that day's close, +20% (or +10%) target vs -10% stop, 63 trading days max. This is the only fully out-of-sample test there is.
 
