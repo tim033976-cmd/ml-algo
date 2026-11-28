@@ -1,17 +1,78 @@
-# Daily picks — 2026-11-26
+# Daily picks — 2026-11-27
 
 Goal: **+20% (or +10%) before a -10% loss**, daily chart, buy near the close, exit after 63 trading days at the latest.
-Model trained on 542,047 past snapshots of 1533 stocks. Probabilities are in %.
+Model trained on 542,088 past snapshots of 1533 stocks. Probabilities are in %.
 
-**Probabilities are calibrated out-of-sample** (model trained before 2023, checked on 2023-today). On those held-out years: all stocks hit +20% before -10% 24% of the time; the model's top 10% 35% (avg +1.4% net per trade; break-even ~33%). +10% before -10%: 50% vs 50% (break-even ~50%).
+**Probabilities are calibrated out-of-sample** (model trained before 2023, checked on 2023-today). On those held-out years: all stocks hit +20% before -10% 24% of the time; the model's top 10% 36% (avg +1.5% net per trade; break-even ~33%). +10% before -10%: 50% vs 47% (break-even ~50%).
 
 Columns: p_b20 / p_b10 = chance (%) of +20% / +10% before -10%. `setups_last_3_days` = setups that fired recently (e.g. ep_gap10 = episodic pivot, falling_wedge, desc_triangle). Not financial advice; paper trade first.
 
 ## Leaders (your style): RS in the top 30%, within 25% of the 52-week high, above the 50-day
 
-_No leaders today._
+| ticker   |   close |   p_b20 |   p_b10 |   stop_-10% |   target_+10% |   target_+20% |   adr_pct |   rs_rank |   dist_52w_high |   base_count | setups_last_3_days                                | sector                 |
+|:---------|--------:|--------:|--------:|------------:|--------------:|--------------:|----------:|----------:|----------------:|-------------:|:--------------------------------------------------|:-----------------------|
+| KSS      |   27.77 |   30.90 |   50.10 |       24.99 |         30.55 |         33.32 |      6.10 |     98.80 |           -1.70 |         2.00 | donchian_20, donchian_55, high52, base_25, stage2 | nan                    |
+| ANF      |  184.43 |   30.90 |   50.50 |      165.99 |        202.87 |        221.32 |      5.80 |     99.60 |           -0.70 |         4.00 | ep_gap5, ep_gap10, ep_gap10_vol2, ep_gap8_hold    | nan                    |
+| ELF      |  112.98 |   30.20 |   50.50 |      101.68 |        124.28 |        135.58 |      5.40 |     97.80 |           -8.20 |         2.00 |                                                   | Consumer Staples       |
+| QLYS     |  206.33 |   30.20 |   50.10 |      185.70 |        226.96 |        247.60 |      7.50 |     96.90 |          -12.40 |         4.00 |                                                   | Information Technology |
+| CRL      |  337.39 |   30.20 |   49.80 |      303.65 |        371.13 |        404.87 |      5.00 |     98.60 |          -11.10 |         4.00 |                                                   | Health Care            |
+| TGTX     |   69.46 |   30.20 |   49.80 |       62.51 |         76.41 |         83.35 |      6.10 |     99.30 |           -2.50 |         3.00 | donchian_20, donchian_55, high52, multi_touch     | Health Care            |
+| NSP      |   49.68 |   28.60 |   50.50 |       44.71 |         54.65 |         59.62 |      5.30 |     89.70 |          -10.10 |         2.00 | wf_scan_pullback                                  | Industrials            |
+| PAYC     |  245.55 |   28.60 |   50.10 |      221.00 |        270.11 |        294.66 |      3.90 |     95.80 |          -10.60 |         1.00 |                                                   | nan                    |
+| S        |   25.29 |   28.60 |   51.60 |       22.76 |         27.82 |         30.35 |      6.20 |     95.90 |           -4.60 |         4.00 |                                                   | nan                    |
+| OKTA     |  207.46 |   28.60 |   51.60 |      186.71 |        228.21 |        248.95 |      7.50 |     99.50 |          -11.70 |         3.00 |                                                   | Information Technology |
+| CAKE     |  111.20 |   28.60 |   50.50 |      100.08 |        122.32 |        133.44 |      4.40 |     98.90 |           -7.90 |         4.00 |                                                   | Consumer Discretionary |
+| CBRL     |   76.59 |   28.60 |   51.60 |       68.93 |         84.25 |         91.91 |      4.40 |     99.70 |           -0.50 |         4.00 |                                                   | Consumer Discretionary |
+| ASO      |   73.88 |   28.60 |   50.50 |       66.49 |         81.27 |         88.66 |      4.10 |     98.60 |           -0.20 |         1.00 | qull_breakout, qull_breakout_60                   | nan                    |
+| UPBD     |   28.84 |   28.60 |   50.50 |       25.96 |         31.72 |         34.61 |      5.20 |     98.70 |           -0.10 |         0.00 |                                                   | Consumer Discretionary |
+| XNCR     |   38.75 |   28.60 |   50.10 |       34.88 |         42.62 |         46.50 |      5.90 |     99.90 |           -4.60 |         2.00 |                                                   | Health Care            |
+| GKOS     |  264.06 |   28.60 |   50.10 |      237.65 |        290.47 |        316.87 |      4.90 |     99.90 |           -0.40 |         3.00 | donchian_20, donchian_55, high52                  | Health Care            |
+| BOX      |   46.78 |   28.60 |   51.60 |       42.10 |         51.46 |         56.14 |      2.90 |     98.00 |           -1.70 |         4.00 |                                                   | Information Technology |
+| CHYM     |   33.65 |   27.50 |   51.60 |       30.29 |         37.02 |         40.38 |      4.60 |     97.60 |           -5.30 |         3.00 |                                                   | Financials             |
+| CERT     |   10.96 |   27.50 |   50.10 |        9.86 |         12.06 |         13.15 |      5.20 |     97.30 |          -13.10 |         4.00 |                                                   | Health Care            |
+| GEO      |   30.83 |   27.50 |   49.80 |       27.75 |         33.91 |         37.00 |      5.40 |     95.20 |           -8.20 |         5.00 | wf_scan_pullback                                  | Industrials            |
+| ACHC     |   36.11 |   27.50 |   50.10 |       32.50 |         39.72 |         43.33 |      5.30 |     99.00 |           -9.00 |         4.00 |                                                   | Health Care            |
+| NWL      |    6.08 |   27.50 |   51.60 |        5.47 |          6.69 |          7.30 |      5.80 |     97.80 |          -13.70 |         3.00 |                                                   | nan                    |
+| FOSL     |    8.61 |   27.50 |   51.60 |        7.75 |          9.47 |         10.33 |      7.90 |     99.80 |          -18.40 |         7.00 |                                                   | nan                    |
+| LFST     |   14.61 |   27.50 |   50.50 |       13.15 |         16.07 |         17.53 |      5.60 |     99.40 |           -6.70 |         8.00 |                                                   | Health Care            |
+| SN       |  236.98 |   27.50 |   51.10 |      213.28 |        260.68 |        284.38 |      4.30 |     99.70 |           -0.30 |         5.00 |                                                   | Consumer Discretionary |
+| AZTA     |   48.72 |   27.50 |   50.10 |       43.85 |         53.59 |         58.46 |      6.60 |     98.80 |           -2.70 |         2.00 |                                                   | Health Care            |
+| TRUP     |   38.77 |   27.50 |   47.50 |       34.89 |         42.65 |         46.52 |      5.50 |     95.40 |           -0.50 |         1.00 | pocket_pivot, qull_breakout, qull_breakout_60     | Financials             |
+| MTW      |   23.73 |   27.50 |   50.10 |       21.36 |         26.10 |         28.48 |      6.00 |     99.50 |           -6.20 |         2.00 |                                                   | nan                    |
+| VYX      |   10.73 |   27.50 |   47.50 |        9.66 |         11.80 |         12.88 |      6.70 |     88.60 |           -5.10 |         0.00 |                                                   | Information Technology |
+| WWW      |   25.99 |   27.50 |   51.60 |       23.39 |         28.59 |         31.19 |      5.10 |     97.50 |           -1.00 |         3.00 |                                                   | Consumer Discretionary |
 
 ## All stocks (the model's overall favourites; often beaten-down, volatile names)
 
-| ticker   | close   | p_b20   | p_b10   | stop_-10%   | target_+10%   | target_+20%   | adr_pct   | rs_rank   | dist_52w_high   | base_count   | setups_last_3_days   | sector   |
-|----------|---------|---------|---------|-------------|---------------|---------------|-----------|-----------|-----------------|--------------|----------------------|----------|
+| ticker   |   close |   p_b20 |   p_b10 |   stop_-10% |   target_+10% |   target_+20% |   adr_pct |   rs_rank |   dist_52w_high |   base_count | setups_last_3_days                                | sector                 |
+|:---------|--------:|--------:|--------:|------------:|--------------:|--------------:|----------:|----------:|----------------:|-------------:|:--------------------------------------------------|:-----------------------|
+| KSS      |   27.77 |   30.90 |   50.10 |       24.99 |         30.55 |         33.32 |      6.10 |     98.80 |           -1.70 |         2.00 | donchian_20, donchian_55, high52, base_25, stage2 | nan                    |
+| ANF      |  184.43 |   30.90 |   50.50 |      165.99 |        202.87 |        221.32 |      5.80 |     99.60 |           -0.70 |         4.00 | ep_gap5, ep_gap10, ep_gap10_vol2, ep_gap8_hold    | nan                    |
+| MPC      |  359.80 |   30.20 |   51.10 |      323.82 |        395.78 |        431.76 |      4.50 |     96.10 |          -27.00 |         6.00 |                                                   | Energy                 |
+| ELF      |  112.98 |   30.20 |   50.50 |      101.68 |        124.28 |        135.58 |      5.40 |     97.80 |           -8.20 |         2.00 |                                                   | Consumer Staples       |
+| QLYS     |  206.33 |   30.20 |   50.10 |      185.70 |        226.96 |        247.60 |      7.50 |     96.90 |          -12.40 |         4.00 |                                                   | Information Technology |
+| CRL      |  337.39 |   30.20 |   49.80 |      303.65 |        371.13 |        404.87 |      5.00 |     98.60 |          -11.10 |         4.00 |                                                   | Health Care            |
+| AMN      |   35.47 |   30.20 |   50.50 |       31.92 |         39.02 |         42.56 |      5.80 |     95.30 |          -28.50 |         5.00 |                                                   | Health Care            |
+| TGTX     |   69.46 |   30.20 |   49.80 |       62.51 |         76.41 |         83.35 |      6.10 |     99.30 |           -2.50 |         3.00 | donchian_20, donchian_55, high52, multi_touch     | Health Care            |
+| VLO      |  329.39 |   28.60 |   50.10 |      296.45 |        362.33 |        395.27 |      4.00 |     94.50 |          -28.40 |        11.00 |                                                   | Energy                 |
+| PARR     |   60.92 |   28.60 |   50.50 |       54.83 |         67.01 |         73.10 |      5.10 |     50.60 |          -32.90 |         0.00 |                                                   | Energy                 |
+| NSP      |   49.68 |   28.60 |   50.50 |       44.71 |         54.65 |         59.62 |      5.30 |     89.70 |          -10.10 |         2.00 | wf_scan_pullback                                  | Industrials            |
+| CORT     |   66.38 |   28.60 |   50.50 |       59.74 |         73.02 |         79.66 |      6.10 |      9.20 |          -47.50 |         0.00 |                                                   | Health Care            |
+| RNG      |   71.36 |   28.60 |   51.60 |       64.22 |         78.50 |         85.63 |      4.60 |     99.20 |          -27.20 |         7.00 |                                                   | Information Technology |
+| PSX      |  242.12 |   28.60 |   50.50 |      217.91 |        266.33 |        290.54 |      3.60 |     95.00 |          -18.70 |         9.00 |                                                   | Energy                 |
+| PAYC     |  245.55 |   28.60 |   50.10 |      221.00 |        270.11 |        294.66 |      3.90 |     95.80 |          -10.60 |         1.00 |                                                   | nan                    |
+| HUM      |  405.46 |   28.60 |   50.10 |      364.91 |        446.01 |        486.55 |      5.10 |     93.80 |          -12.40 |         3.00 | undercut                                          | Health Care            |
+| LEU      |   85.43 |   28.60 |   47.50 |       76.89 |         93.97 |        102.52 |      8.50 |      1.00 |          -75.30 |         0.00 |                                                   | Energy                 |
+| S        |   25.29 |   28.60 |   51.60 |       22.76 |         27.82 |         30.35 |      6.20 |     95.90 |           -4.60 |         4.00 |                                                   | nan                    |
+| NSIT     |  161.89 |   28.60 |   49.80 |      145.70 |        178.08 |        194.27 |      5.90 |     96.90 |          -11.10 |         3.00 |                                                   | Industrials            |
+| CRSR     |   12.27 |   28.60 |   50.10 |       11.05 |         13.50 |         14.73 |      7.10 |     92.60 |          -18.00 |         2.00 |                                                   | Information Technology |
+| OKTA     |  207.46 |   28.60 |   51.60 |      186.71 |        228.21 |        248.95 |      7.50 |     99.50 |          -11.70 |         3.00 |                                                   | Information Technology |
+| CAKE     |  111.20 |   28.60 |   50.50 |      100.08 |        122.32 |        133.44 |      4.40 |     98.90 |           -7.90 |         4.00 |                                                   | Consumer Discretionary |
+| CBRL     |   76.59 |   28.60 |   51.60 |       68.93 |         84.25 |         91.91 |      4.40 |     99.70 |           -0.50 |         4.00 |                                                   | Consumer Discretionary |
+| ASO      |   73.88 |   28.60 |   50.50 |       66.49 |         81.27 |         88.66 |      4.10 |     98.60 |           -0.20 |         1.00 | qull_breakout, qull_breakout_60                   | nan                    |
+| UPBD     |   28.84 |   28.60 |   50.50 |       25.96 |         31.72 |         34.61 |      5.20 |     98.70 |           -0.10 |         0.00 |                                                   | Consumer Discretionary |
+| XNCR     |   38.75 |   28.60 |   50.10 |       34.88 |         42.62 |         46.50 |      5.90 |     99.90 |           -4.60 |         2.00 |                                                   | Health Care            |
+| ICHR     |   26.11 |   28.60 |   51.10 |       23.50 |         28.72 |         31.33 |      9.60 |     10.30 |          -77.00 |         0.00 |                                                   | Information Technology |
+| AVTR     |   14.66 |   28.60 |   51.70 |       13.19 |         16.13 |         17.59 |      3.60 |     88.60 |          -16.00 |         3.00 |                                                   | Health Care            |
+| MATX     |  186.53 |   28.60 |   49.80 |      167.88 |        205.18 |        223.84 |      4.00 |     75.80 |          -22.40 |         0.00 |                                                   | Industrials            |
+| GKOS     |  264.06 |   28.60 |   50.10 |      237.65 |        290.47 |        316.87 |      4.90 |     99.90 |           -0.40 |         3.00 | donchian_20, donchian_55, high52                  | Health Care            |
